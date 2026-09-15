@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ForgeLabs AI — Where the Clicks Go</title>
-<meta name="description" content="We audited 73 Texas home-service businesses running live Meta ads. 59% were paying for clicks that never reached a page they own. Find out what your funnel actually does — free, no account access required.">
+<title>ForgeLabs AI — Where Do Your Ad Clicks Go?</title>
+<meta name="description" content="We checked 73 Texas home service businesses paying for Facebook ads. For most, the click never reached a real page. Find out what happens to yours — free, and we don't need access to any of your accounts.">
 <meta name="theme-color" content="#0a0e14">
-<meta property="og:title" content="ForgeLabs AI — Where the Clicks Go">
-<meta property="og:description" content="59% of local advertisers are paying for clicks that never reach a page they own. See what yours does.">
+<meta property="og:title" content="ForgeLabs AI — Where Do Your Ad Clicks Go?">
+<meta property="og:description" content="Most local businesses pay for ads that lead nowhere. We'll check yours free.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -180,6 +180,28 @@ footer{border-top:1px solid var(--line); padding:38px 0; position:relative; z-in
 .foot .sp{margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--dim)}
 @media(max-width:620px){.foot .sp{margin-left:0; width:100%}}
 
+/* ── form ──────────────────────────────────────────────── */
+.form{display:grid; gap:14px; margin-top:32px; text-align:left; max-width:520px; margin-inline:auto}
+.form label{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); display:block; margin-bottom:7px}
+.form input,.form textarea{
+  width:100%; padding:13px 15px; background:rgba(10,14,20,.7); color:var(--ink);
+  border:1px solid var(--line); font:400 15px Inter,sans-serif; border-radius:0;
+  transition:border-color .2s, box-shadow .2s;
+}
+.form input:focus,.form textarea:focus{
+  outline:none; border-color:var(--cy); box-shadow:0 0 0 3px rgba(0,212,255,.13);
+}
+.form input::placeholder,.form textarea::placeholder{color:#4d5f74}
+.form textarea{min-height:88px; resize:vertical}
+.form .req{color:var(--cy)}
+/* honeypot: off-screen rather than display:none, which some bots detect */
+.hp{position:absolute!important; left:-9999px!important; width:1px; height:1px; overflow:hidden}
+.msg{margin-top:16px; padding:14px 16px; font-size:14.5px; display:none; text-align:left}
+.msg.show{display:block}
+.msg.ok{border:1px solid rgba(0,212,255,.4); background:rgba(0,212,255,.08); color:var(--ink)}
+.msg.err{border:1px solid rgba(255,176,32,.45); background:var(--am-ghost); color:var(--am)}
+.btn[disabled]{opacity:.55; cursor:default; animation:none}
+
 /* ── reveal ────────────────────────────────────────────── */
 /* Scoped to .js: without scripting, every .rv element must still be visible.
    Hiding by default and revealing via JS means one script error blanks the
@@ -213,11 +235,11 @@ addEventListener("error", function(){
   <div class="nav-in">
     <a class="brand" href="#hero"><i></i>ForgeLabs AI</a>
     <div class="nav-links">
-      <a href="#report">The Report</a>
+      <a href="#report">What We Found</a>
       <a href="#ladder">What We Do</a>
       <a href="#how">How It Works</a>
       <a href="#why">Why Us</a>
-      <a href="#contact">Get a Teardown</a>
+      <a href="#contact">Check My Ads</a>
     </div>
   </div>
 </nav>
@@ -226,106 +248,101 @@ addEventListener("error", function(){
 <section id="hero">
   <canvas id="field" aria-hidden="true"></canvas>
   <div class="wrap">
-    <span class="tag">Field report · Aug–Sep 2026</span>
-    <h1>59% of local advertisers pay for clicks that <em>never reach a page they own.</em></h1>
+    <span class="tag">We checked 73 local businesses</span>
+    <h1>Your ads are running. But where do the clicks <em>actually go?</em></h1>
     <p class="lede">
-      We audited 73 Texas home-service businesses running live Meta ads. Most of the money
-      was landing in a chat inbox, on a social profile, or nowhere at all. We can tell you
-      what yours does — before you ever talk to us.
+      We checked 73 Texas home service businesses paying for Facebook ads right now.
+      For most of them, the click never reached a real page. It opened a chat nobody
+      was reading — or went nowhere at all.
     </p>
     <div class="cta-row">
-      <a class="btn pri" href="#contact">Get your free funnel teardown</a>
-      <a class="btn ghost" href="#report">Read the findings</a>
+      <a class="btn pri" href="#contact">Check my ads — it's free</a>
+      <a class="btn ghost" href="#report">See what we found</a>
     </div>
-    <p class="hero-note">No account access. No credentials. No meeting required.</p>
+    <p class="hero-note">We don't need your passwords or access to your ad account.</p>
   </div>
 </section>
 
 <!-- ── REPORT ─────────────────────────────────────────── -->
 <section id="report">
   <div class="wrap">
-    <span class="tag rv">Where the clicks go</span>
-    <h2 class="rv">We followed the money from the ad to wherever it actually landed.</h2>
+    <span class="tag rv">What we found</span>
+    <h2 class="rv">We clicked their ads, the same way a customer would.</h2>
     <p class="sub rv">
-      Every business in the sample had ads <strong style="color:var(--ink)">running live</strong>
-      on the day we looked. These aren't companies that gave up on advertising — the spend
-      was moving. We followed each click through every redirect to its true endpoint, then
-      inspected what was waiting there.
+      Every business we checked had ads <strong style="color:var(--ink)">running that day</strong>.
+      They were spending real money. We clicked each ad and followed it all the way
+      through to see where it ended up — and what was waiting there.
     </p>
 
     <div class="readout rv" id="readout" style="margin-top:52px">
       <div class="stat">
         <div class="n" data-to="73">73</div>
-        <div class="k">Businesses audited, all with live Meta ads</div>
-        <div class="s">Sample size</div>
+        <div class="k">Businesses we checked, all running ads that day</div>
+        <div class="s">What we looked at</div>
       </div>
       <div class="stat">
         <div class="n" data-to="59" data-suf="%">59%</div>
-        <div class="k">Had no owned destination — chat inbox, social profile, or nothing</div>
-        <div class="s">The headline finding</div>
+        <div class="k">Sent people somewhere that couldn't take a booking</div>
+        <div class="s">The main problem</div>
       </div>
       <div class="stat">
         <div class="n" data-to="57" data-suf="%">57%</div>
-        <div class="k">Of those that did have a page, had no Meta Pixel on it</div>
-        <div class="s">Flying blind</div>
+        <div class="k">Of those with a real page, couldn't tell which ad brought in work</div>
+        <div class="s">Spending blind</div>
       </div>
       <div class="stat">
         <div class="n am" data-to="0">0</div>
-        <div class="k">Businesses named, then or now</div>
-        <div class="s">By design</div>
+        <div class="k">Businesses we named. We don't do that.</div>
+        <div class="s">Our rule</div>
       </div>
     </div>
 
     <div class="grid g3">
       <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">A chat thread isn't automatically wrong</h3>
+        <h3 style="font-size:17px;font-weight:600">Ads that open a chat box</h3>
         <p style="margin-top:12px;font-size:14.5px">
-          Click-to-Message is a legitimate objective. But we verified by hand that opening one
-          without a Facebook session shows a sign-in wall, not a conversation — and on desktop
-          that's a lot of people. We recorded 25 instances of the pattern.
+          Plenty of ads open a Facebook message instead of a web page. We tried it ourselves:
+          if the person isn't already logged into Facebook, they get a login screen instead
+          of you. Most of them give up there.
         </p>
       </div>
       <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">No pixel means no answers</h3>
+        <h3 style="font-size:17px;font-weight:600">No idea what's working</h3>
         <p style="margin-top:12px;font-size:14.5px">
-          More than half the businesses that had built a landing page couldn't tell which ad
-          produced a job. Every optimisation decision after that is made blind — including the
-          ones an agency bills for.
+          Over half of the ones with a real page had no tracking on it. So there's no way to
+          know which ads actually bring in jobs and which ones just burn money — including
+          for whoever they're paying to run them.
         </p>
       </div>
       <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">The mismatch costs the most</h3>
+        <h3 style="font-size:17px;font-weight:600">The ad promises what the page can't do</h3>
         <p style="margin-top:12px;font-size:14.5px">
-          An ad whose button says <em>Get a quote</em> leading to an unmonitored inbox is
-          promising a process the destination can't deliver. The visitor came ready. Nothing
-          was there to catch them.
+          The button says <em>Get a quote</em>. It opens a chat nobody's watching. That person
+          was ready to book you right then — and there was nobody there to take it.
         </p>
       </div>
     </div>
 
     <div class="note rv">
-      <h3>About this report — read this part</h3>
+      <h3>Being straight about what this is</h3>
       <p>
-        The sample is <strong>Austin-weighted</strong> and should not be read as representative
-        of Texas as a whole. It is <strong>not a random sample</strong> — these businesses were
-        found by searching for active ads in specific trades, so they represent businesses that
-        advertise on Meta, not home-service businesses generally. It is a
-        <strong>point-in-time snapshot</strong>; campaigns change weekly. We could not measure
-        whether anyone was actually reading those inboxes, what any of them pay per lead, or
-        whether the ads were profitable anyway — that needs access we didn't have and didn't ask for.
+        Most of these businesses are around Austin, so it's not a picture of all of Texas.
+        We found them by searching for ads that were running, which means they're businesses
+        that advertise — not every home service business. And it's one day's snapshot; ads
+        change every week. We also couldn't tell whether anyone was reading those chat
+        inboxes, or whether the ads were making money anyway. That would need access to
+        their accounts, which we didn't have and didn't ask for.
       </p>
       <p style="margin-top:14px">
-        <strong style="color:var(--am)">No business is named in the report, and none will be.</strong>
-        Publicly labelling named local businesses as having a marketing problem — in a document
-        written by the company that wants to sell them the fix — isn't a trade we're willing to
-        make. So the report gives percentages and patterns only. Trades with fewer than five
-        businesses in the sample are folded into the totals, because a category of two identifies
-        its members.
+        <strong style="color:var(--am)">We don't name any of them, and we won't.</strong>
+        Publicly pointing at a local business and saying their ads are broken — in a document
+        written by the people who'd like to sell them the fix — isn't something we're willing
+        to do. So you get the numbers and the patterns, nothing that identifies anyone.
       </p>
     </div>
 
     <div class="cta-row rv" style="margin-top:34px">
-      <a class="btn" id="get-report" href="#">Request the full report</a>
+      <a class="btn" href="#contact">Get the full write-up</a>
     </div>
   </div>
 </section>
@@ -333,12 +350,12 @@ addEventListener("error", function(){
 <!-- ── LADDER ─────────────────────────────────────────── -->
 <section id="ladder" style="background:var(--bg-2)">
   <div class="wrap">
-    <span class="tag rv">The progression</span>
+    <span class="tag rv">What we do</span>
     <h2 class="rv">Each step earns the next one.</h2>
     <p class="sub rv">
-      This isn't a menu. We start by showing you what's broken, at no charge. If that's useful,
-      we fix one thing, fast. Everything after that is a decision you make with evidence already
-      in hand.
+      This isn't a menu to pick from. We start by showing you what's wrong, free. If that's
+      useful, we fix one thing, fast. Anything after that is your call — and by then you've
+      already seen how we work.
     </p>
 
     <div class="grid" style="margin-top:56px">
@@ -346,17 +363,16 @@ addEventListener("error", function(){
         <div class="rung">
           <div class="idx">01</div>
           <div>
-            <h3>Free Funnel Teardown</h3>
-            <div class="role">Start here · no charge</div>
+            <h3>Free ad check</h3>
+            <div class="role">Start here · costs nothing</div>
             <p>
-              We pull your live Meta ads, follow every click to where it actually ends up, and
-              tell you exactly what breaks along the way. You get a short written breakdown:
-              what we found, why it matters, and what we'd do about it. Built entirely from
-              public data — we need nothing from you to produce it.
+              We click your ads the way a customer would and see where they land. Then we
+              send you a short write-up: what's losing you calls, and what we'd do about it.
+              Your ads are already public, so we don't need anything from you to do this.
             </p>
             <div class="gtee">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
-              Evidence, not a sales pitch
+              Yours to keep, either way
             </div>
           </div>
         </div>
@@ -366,13 +382,13 @@ addEventListener("error", function(){
         <div class="rung">
           <div class="idx">02</div>
           <div>
-            <h3>The Fix</h3>
-            <div class="role">One-time · small on purpose</div>
+            <h3>Fix the page</h3>
+            <div class="role">One job · small on purpose</div>
             <p>
-              One landing or quote-request page, built for the ad you're already running. Form
-              wired end to end and confirmed with a live test submission. Meta Pixel installed
-              with a real lead event. Mobile-first, click-to-call in the header. Deliberately
-              narrow scope — this is proof we execute before anything bigger is discussed.
+              One page built to turn clicks into phone calls. A quote form that actually
+              reaches your inbox — we test it and show you. A button to call you straight
+              from a phone. Built for phones first, because that's where people see your ads.
+              Small on purpose: you get to see how we work before anything bigger.
             </p>
             <div class="gtee">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
@@ -386,17 +402,17 @@ addEventListener("error", function(){
         <div class="rung">
           <div class="idx">03</div>
           <div>
-            <h3>AI Receptionist</h3>
-            <div class="role">Monthly · the one that compounds</div>
+            <h3>Answer every call</h3>
+            <div class="role">Monthly · the one that pays for itself</div>
             <p>
-              Every inbound call answered, day or night. The caller is qualified against a script
-              you approve, booked straight into your calendar, and you get a summary of the
-              conversation before you've put the tools down. Calls you'd have lost at 9pm on a
-              Saturday become jobs on Monday.
+              Someone picks up every call, day or night. They ask what the job is, where it
+              is, and how soon — using words you approve — then book it straight into your
+              calendar. You get a summary before you've put your tools down. The 8pm Saturday
+              call you'd normally lose becomes Monday's work.
             </p>
             <div class="gtee">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
-              Answered in 60 seconds, 24/7 — or the month is free
+              Every call answered in 60 seconds, day or night — or that month is free
             </div>
           </div>
         </div>
@@ -406,20 +422,21 @@ addEventListener("error", function(){
         <div class="rung">
           <div class="idx">04</div>
           <div>
-            <h3>Managed Growth</h3>
-            <div class="role">Monthly · where clients go next</div>
+            <h3>Run the whole thing</h3>
+            <div class="role">Monthly · where people go next</div>
             <p>
-              We run the ads, own the funnel end to end, and the receptionist answers what it
-              produces. Weekly reporting on cost per qualified lead — not impressions, not clicks.
-              One team accountable for the whole path, so nobody gets to blame the other half.
+              We run your ads, keep the page working, and answer the calls that come in.
+              Every week you get one number that matters: what each new customer cost you.
+              Not "impressions". One team for the whole job, so nobody gets to point at
+              anybody else when it isn't working.
             </p>
             <div class="gtee">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
-              30 qualified leads in 30 days, or we work free until you get them
+              30 new enquiries in 30 days, or we keep working free until you get them
             </div>
             <p class="after">
-              Not a first step. This one opens up after a Fix or a Receptionist engagement —
-              taking over an account we've never seen isn't fair to either of us.
+              Not a starting point. This one opens up once we've already done something
+              smaller for you — taking over ads we've never seen isn't fair to either of us.
             </p>
           </div>
         </div>
@@ -432,34 +449,33 @@ addEventListener("error", function(){
 <section id="how">
   <div class="wrap">
     <span class="tag rv">How it works</span>
-    <h2 class="rv">Find the defect. Repair it. Answer what it produces.</h2>
+    <h2 class="rv">Find the problem. Fix it. Answer the phone.</h2>
 
     <div class="grid g3">
       <div class="panel step rv"><span class="scan"></span>
-        <div class="num">Step 01 · We look</div>
-        <h3>Before you've spoken to us</h3>
+        <div class="num">Step 1 · We look</div>
+        <h3>Before you've even spoken to us</h3>
         <p>
-          Your live ads are public. We follow every click path to its true endpoint and inspect
-          what's there — does the page load, is the form wired to send anywhere, is anything
-          measuring the result. No access required, nothing submitted, nobody contacted.
+          Your ads are public, so we can just click them. Does the page load? Does the form
+          actually reach you? Can someone call you with one tap on a phone? We don't fill
+          anything in, we don't ring anyone, and we don't need your login.
         </p>
       </div>
       <div class="panel step rv"><span class="scan"></span>
-        <div class="num">Step 02 · We fix one thing</div>
-        <h3>Small, fast, and provable</h3>
+        <div class="num">Step 2 · We fix one thing</div>
+        <h3>Small, fast, and easy to judge</h3>
         <p>
-          One page, wired properly, tracked properly, live inside two weeks. Narrow on purpose:
-          you find out whether we do what we say long before you've committed to anything that
-          matters.
+          One page, done properly, live within two weeks. Deliberately small: you find out
+          whether we do what we say long before you've committed to anything that matters.
         </p>
       </div>
       <div class="panel step rv"><span class="scan"></span>
-        <div class="num">Step 03 · We catch the leads</div>
-        <h3>The part most funnels lose</h3>
+        <div class="num">Step 3 · We pick up the phone</div>
+        <h3>Where the money actually shows up</h3>
         <p>
-          A fixed funnel produces calls. Calls at 7pm, during a job, on a Sunday. The receptionist
-          answers all of them in under a minute and books the ones worth booking — which is where
-          the return on the whole thing actually shows up.
+          A page that works means more calls — at 7pm, mid-job, on a Sunday. We make sure
+          every one of them gets answered and booked, instead of going to voicemail while
+          the caller rings the next company on the list.
         </p>
       </div>
     </div>
@@ -472,34 +488,33 @@ addEventListener("error", function(){
     <div class="grid g2" style="margin-top:0;align-items:center;gap:56px">
       <div>
         <span class="tag rv">Why ForgeLabs AI</span>
-        <h2 class="rv">We build the systems. We don't just run the ads.</h2>
+        <h2 class="rv">We build the thing. We don't just run the ads.</h2>
         <p class="sub rv">
-          Most agencies serving this market are marketers who outsource the engineering. That's
-          why so many of the funnels in our own audit were broken in ways nobody noticed —
-          a form that silently sends nowhere and a form that works look identical from the outside
-          unless someone inspects the wiring.
+          Most marketing agencies hire someone else to build the actual pages. That's how so
+          many of the ones we checked ended up broken without anyone noticing — a form that
+          quietly goes nowhere looks exactly like a form that works, unless somebody opens it
+          up and checks.
         </p>
         <p class="sub rv">
-          ForgeLabs is led by a cloud infrastructure engineer — Microsoft-certified in Azure
-          administration and security engineering, with a background in production systems,
-          identity and access management, and infrastructure automation. The audit behind the
-          report above wasn't bought from a vendor. We built the pipeline that produced it.
+          ForgeLabs is run by a software engineer — Microsoft-certified, with a background
+          building and securing systems that businesses depend on. The check behind the
+          numbers above wasn't bought in from anyone. We built the tool that did it.
         </p>
       </div>
       <div class="panel rv"><span class="scan"></span>
-        <div class="tag" style="color:var(--am)">What that changes</div>
+        <div class="tag" style="color:var(--am)">What that means for you</div>
         <div style="margin-top:22px;display:grid;gap:18px">
           <div>
-            <h3 style="font-size:15.5px;font-weight:600">We inspect, we don't assume</h3>
-            <p style="margin-top:7px;font-size:14px">Every finding in the report came from loading the real page and reading what's actually there.</p>
+            <h3 style="font-size:15.5px;font-weight:600">We check, we don't guess</h3>
+            <p style="margin-top:7px;font-size:14px">Every number above came from opening the real page and looking at what's actually on it.</p>
           </div>
           <div>
-            <h3 style="font-size:15.5px;font-weight:600">We say what we couldn't verify</h3>
-            <p style="margin-top:7px;font-size:14px">Where a check couldn't see something, it's marked unverified — not quietly counted as a defect.</p>
+            <h3 style="font-size:15.5px;font-weight:600">We tell you what we don't know</h3>
+            <p style="margin-top:7px;font-size:14px">If we couldn't confirm something, we say so, instead of counting it against you to pad a number.</p>
           </div>
           <div>
-            <h3 style="font-size:15.5px;font-weight:600">The guarantees are things we control</h3>
-            <p style="margin-top:7px;font-size:14px">Delivery speed, response time, lead volume against agreed spend. We don't promise you sales we can't close for you.</p>
+            <h3 style="font-size:15.5px;font-weight:600">We only promise what we control</h3>
+            <p style="margin-top:7px;font-size:14px">How fast we build, how fast we answer, how many enquiries come in. We won't promise to close sales for you — that's your job, and you're better at it.</p>
           </div>
         </div>
       </div>
@@ -512,15 +527,37 @@ addEventListener("error", function(){
   <div class="wrap">
     <div class="panel rv"><span class="scan"></span>
       <span class="tag" style="justify-content:center">Start here</span>
-      <h2>Find out where your ad spend actually goes.</h2>
+      <h2>Find out where your ad clicks actually go.</h2>
       <p class="sub">
-        Send us your business name and we'll do the teardown. You'll get the findings whether or
-        not we ever work together — and we'll need nothing from your accounts to produce them.
+        Tell us your business name and how to reach you. We'll check your ads and send you
+        what we find — free, and yours to keep whether we ever work together or not.
       </p>
-      <div class="cta-row">
-        <a class="btn pri" id="teardown" href="#">Get your free funnel teardown</a>
-        <a class="btn ghost" href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Or book 15 minutes</a>
-      </div>
+
+      <form class="form" id="lead-form" novalidate>
+        <div>
+          <label for="f-business">Business name</label>
+          <input id="f-business" name="business" type="text" autocomplete="organization"
+                 placeholder="e.g. Hill Country Heating &amp; Air">
+        </div>
+        <div>
+          <label for="f-contact">Phone or email <span class="req">*</span></label>
+          <input id="f-contact" name="contact" type="text" autocomplete="email"
+                 placeholder="How should we get back to you?" required>
+        </div>
+        <div>
+          <label for="f-note">Anything else? <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+          <textarea id="f-note" name="note" placeholder="Where you work, what you'd want more of, anything useful."></textarea>
+        </div>
+        <div class="hp" aria-hidden="true">
+          <label for="f-cw">Leave this empty</label>
+          <input id="f-cw" name="company_website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="cta-row" style="margin-top:6px;justify-content:center">
+          <button class="btn pri" id="f-submit" type="submit">Check my ads — it's free</button>
+          <a class="btn ghost" href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Or book a 15-min call</a>
+        </div>
+        <div class="msg" id="f-msg" role="status" aria-live="polite"></div>
+      </form>
     </div>
   </div>
 </section>
@@ -545,19 +582,66 @@ addEventListener("error", function(){
     nav.classList.toggle("on", scrollY > 12);
   }, {passive:true});
 
-  /* mailto CTAs — built in JS so the address isn't sitting in the markup for scrapers */
-  var A = "hassan", B = "forgelaboratory.net";
-  function mailto(subject, body){
-    return "mailto:" + A + "@" + B + "?subject=" + encodeURIComponent(subject) +
-           "&body=" + encodeURIComponent(body);
+  /* Lead form.
+     This replaced two mailto: links. A mailto: does nothing at all on a machine
+     with no desktop mail client configured -- which is most visitors, since they
+     read mail in a browser tab -- so the site's main call to action was silently
+     doing nothing when clicked. This posts to an edge function instead, and
+     always tells the visitor what happened either way. */
+  var form = document.getElementById("lead-form");
+  if(form){
+    var btn = document.getElementById("f-submit");
+    var msg = document.getElementById("f-msg");
+    var ENDPOINT = "https://anppgukwdmgfmjnqindy.supabase.co/functions/v1/lead-intake";
+    var FALLBACK = "If this keeps failing, call 206-724-1071 or email hassan@forgelaboratory.net.";
+
+    function say(text, kind){
+      msg.textContent = text;
+      msg.className = "msg show " + kind;
+    }
+
+    form.addEventListener("submit", function(e){
+      e.preventDefault();
+      var contact = document.getElementById("f-contact");
+      if(!contact.value.trim()){
+        say("Please add a phone number or email so we can get back to you.", "err");
+        contact.focus();
+        return;
+      }
+      btn.disabled = true;
+      var label = btn.textContent;
+      btn.textContent = "Sending...";
+      msg.className = "msg";
+
+      fetch(ENDPOINT, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          business: document.getElementById("f-business").value,
+          contact:  contact.value,
+          note:     document.getElementById("f-note").value,
+          company_website: document.getElementById("f-cw").value
+        })
+      })
+      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+      .then(function(x){
+        if(!x.ok){
+          say((x.j && x.j.error) || ("Something went wrong. " + FALLBACK), "err");
+          btn.disabled = false; btn.textContent = label;
+          return;
+        }
+        form.querySelectorAll("input,textarea").forEach(function(el){ el.value = ""; });
+        btn.textContent = "Sent - thank you";
+        say("Got it. We'll check your ads and get back to you within a day, usually sooner.", "ok");
+      })
+      .catch(function(){
+        /* Network failure, offline, blocked request -- never leave the visitor
+           thinking it worked. */
+        say("Couldn't send that - you may be offline. " + FALLBACK, "err");
+        btn.disabled = false; btn.textContent = label;
+      });
+    });
   }
-  var t = document.getElementById("teardown");
-  if(t) t.href = mailto("Free funnel teardown request",
-    "Business name:\n\nCity:\n\nFacebook page or website (if you have one):\n\n" +
-    "That's all we need — we'll take it from here and send the findings over.");
-  var r = document.getElementById("get-report");
-  if(r) r.href = mailto("Send me the full report",
-    "Please send the full \"Where the Clicks Go\" report.\n\nName:\n\nBusiness:\n");
 
   /* scroll reveals */
   var rv = document.querySelectorAll(".rv");
