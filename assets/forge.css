@@ -118,7 +118,7 @@ h1 em{font-style:normal; color:var(--cy); text-shadow:0 0 34px rgba(0,212,255,.4
 .hero-note{margin-top:20px; font-family:var(--mono); font-size:12px; color:var(--dim)}
 /* sub-page hero: same type, no full-viewport hold and no particle canvas */
 .phero{padding:146px 0 74px}
-.phero h1{max-width:19ch}
+.phero h1{max-width:21ch}
 .crumb{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim)}
 .crumb a{color:var(--dim); text-decoration:none; transition:color .2s}
 .crumb a:hover{color:var(--cy)}
