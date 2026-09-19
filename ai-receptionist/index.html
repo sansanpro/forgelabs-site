@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Receptionist for Local Service Businesses | ForgeLabs AI</title>
+<meta name="description" content="Every call answered — after hours, at lunch, and when your line is already busy. An AI assistant takes the details, books the job and hands urgent calls to your on-call person. It works alongside your front desk, not instead of it.">
+<meta name="theme-color" content="#0a0e14">
+<meta property="og:title" content="Never miss another call — ForgeLabs AI">
+<meta property="og:description" content="After-hours, lunch-hour and busy-line call answering for home service businesses. Books the job, texts you the summary, passes emergencies to a person.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://forgelaboratory.net/ai-receptionist/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Never miss another call — ForgeLabs AI">
+<meta name="twitter:description" content="After-hours, lunch-hour and busy-line call answering for home service businesses.">
+<link rel="canonical" href="https://forgelaboratory.net/ai-receptionist/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/assets/forge.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "AI Receptionist",
+  "serviceType": "Telephone answering service",
+  "url": "https://forgelaboratory.net/ai-receptionist/",
+  "description": "An AI voice assistant that answers inbound calls for local service businesses after hours, at lunch and when the line is busy. It captures job details, books appointments and transfers urgent calls to an on-call person.",
+  "provider": {
+    "@type": "Organization",
+    "name": "ForgeLabs AI",
+    "url": "https://forgelaboratory.net/",
+    "email": "hassan@forgelaboratory.net",
+    "telephone": "+1-206-724-1071"
+  },
+  "areaServed": [
+    { "@type": "City", "name": "Austin", "containedInPlace": { "@type": "State", "name": "Texas" } },
+    { "@type": "Country", "name": "United States" }
+  ],
+  "audience": {
+    "@type": "BusinessAudience",
+    "name": "Local home service businesses"
+  }
+}
+</script>
+</head>
+<body>
+<script>
+/* Set before first paint so reveal-hidden elements never flash visible.
+   Also the switch that keeps the page readable when scripting is off. */
+document.documentElement.className += " js";
+/* Capture phase on purpose — a <script src> that 404s fires an error event
+   that does NOT bubble, and forge.js failing to load would otherwise leave
+   every .rv element hidden forever. */
+addEventListener("error", function(){
+  document.documentElement.classList.remove("js");
+}, true);
+/* Last resort: forge.js never ran at all (blocked, cached 404, offline). */
+setTimeout(function(){
+  if(!window.__forge) document.documentElement.classList.remove("js");
+}, 2500);
+</script>
+
+<nav id="nav">
+  <div class="nav-in">
+    <a class="brand" href="/"><i></i>ForgeLabs AI</a>
+    <div class="nav-links">
+      <a href="/#report">What We Found</a>
+      <a href="/#ladder">What We Do</a>
+      <a href="/ai-receptionist/" aria-current="page">Answer Every Call</a>
+      <a href="/#how">How It Works</a>
+      <a href="/#why">Why Us</a>
+      <a href="/#contact">Check My Ads</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ───────────────────────────────────────────── -->
+<section class="phero">
+  <div class="wrap">
+    <p class="crumb"><a href="/">ForgeLabs AI</a> &nbsp;/&nbsp; Answer every call</p>
+    <h1>Never miss another call.</h1>
+    <p class="lede">
+      After six. At lunch. On a Sunday. When you're already on the other line and
+      under a sink. Every one of those calls gets answered, the details get taken
+      down, and the job lands in your calendar — <strong style="color:var(--ink)">without
+      replacing the person who answers your phone today</strong>.
+    </p>
+    <div class="cta-row">
+      <a class="btn pri" href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Book a 15-min call</a>
+      <a class="btn ghost" href="/#contact">Get a free ad check</a>
+    </div>
+    <p class="hero-note">Your number stays yours. We only pick up the calls you'd otherwise miss.</p>
+  </div>
+</section>
+
+<!-- ── PROBLEM ────────────────────────────────────────── -->
+<section id="problem" aria-labelledby="problem-h" style="background:var(--bg-2)">
+  <div class="wrap">
+    <span class="tag rv">The problem</span>
+    <h2 class="rv" id="problem-h">A missed call doesn't wait for you.</h2>
+    <p class="sub rv">
+      When someone's water heater goes at 8pm, they don't leave a voicemail and sit
+      tight. They hang up and call the next company on the list. That call is worth
+      the same as any other — you just weren't there to take it.
+    </p>
+    <p class="sub rv">
+      And it's worst exactly when you're doing well. The busier the week, the more
+      of the phone gets missed: you're on a job, your front desk is already on
+      another call, or it's simply gone six. The calls you lose are the ones your
+      advertising just paid for.
+    </p>
+  </div>
+</section>
+
+<!-- ── WHAT IT DOES ───────────────────────────────────── -->
+<section id="what" aria-labelledby="what-h">
+  <div class="wrap">
+    <span class="tag rv">What it does</span>
+    <h2 class="rv" id="what-h">It answers, it asks the right things, and it tells you.</h2>
+    <p class="sub rv">
+      It's an AI assistant on the phone, set up on your business — your hours, your
+      service area, the jobs you take and the ones you don't, answered in words you
+      sign off on before it goes live.
+    </p>
+
+    <div class="grid g2" style="margin-top:50px">
+      <div class="panel rv"><span class="scan"></span>
+        <h3 style="font-size:17px;font-weight:600">Answers the everyday questions</h3>
+        <p style="margin-top:12px;font-size:14.5px">
+          Are you open Saturday? Do you come out to Cedar Park? Do you work on that
+          brand? It answers from what you told us about your business — and when it
+          doesn't know, it says so and takes a message instead of guessing.
+        </p>
+      </div>
+      <div class="panel rv"><span class="scan"></span>
+        <h3 style="font-size:17px;font-weight:600">Books the job</h3>
+        <p style="margin-top:12px;font-size:14.5px">
+          It offers real slots from your calendar and puts the appointment in, with
+          the caller's number attached. Someone ringing to ask when you're coming
+          gets told, without anyone having to look it up.
+        </p>
+      </div>
+      <div class="panel rv"><span class="scan"></span>
+        <h3 style="font-size:17px;font-weight:600">Passes emergencies to a person</h3>
+        <p style="margin-top:12px;font-size:14.5px">
+          Gas smell, water coming through a ceiling, no heat in a freeze — those don't
+          get a message taken. They go straight through to whoever is on call, with a
+          quick handover so they're not starting from nothing. You set what counts as
+          urgent.
+        </p>
+      </div>
+      <div class="panel rv"><span class="scan"></span>
+        <h3 style="font-size:17px;font-weight:600">Gets the details you actually need</h3>
+        <p style="margin-top:12px;font-size:14.5px">
+          Name, callback number, the address, what's wrong, how soon they need you, and
+          whether they're already a customer. The things that decide whether a job is
+          worth driving to — captured the same way every time.
+        </p>
+      </div>
+      <div class="panel rv"><span class="scan"></span>
+        <h3 style="font-size:17px;font-weight:600">Texts or emails you a summary</h3>
+        <p style="margin-top:12px;font-size:14.5px">
+          After every call, a short write-up of who rang and what they wanted. You can
+          read it between jobs and decide what needs you tonight and what can wait
+          until the morning.
+        </p>
+      </div>
+      <div class="panel rv"><span class="scan"></span>
+        <h3 style="font-size:17px;font-weight:600">English and Spanish</h3>
+        <p style="margin-top:12px;font-size:14.5px">
+          If your area needs it, callers get handled in either language rather than
+          hanging up. Optional — we turn it on if it's useful where you work.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ───────────────────────────────────── -->
+<section id="how" aria-labelledby="how-h" style="background:var(--bg-2)">
+  <div class="wrap">
+    <span class="tag rv">How it works</span>
+    <h2 class="rv" id="how-h">Four steps, and none of them are your job.</h2>
+
+    <div class="grid g4" style="margin-top:50px">
+      <div class="panel step rv"><span class="scan"></span>
+        <div class="num">Step 1 · Talk</div>
+        <h3>A 15-minute call</h3>
+        <p>
+          How many calls you get, when you miss them, who's on call, what counts as an
+          emergency in your trade. If it isn't worth doing for you, we'll say so on
+          that call.
+        </p>
+      </div>
+      <div class="panel step rv"><span class="scan"></span>
+        <div class="num">Step 2 · Build</div>
+        <h3>We set it up on your business</h3>
+        <p>
+          Your hours, your area, what you will and won't quote over the phone, your
+          on-call numbers. Then we test
+          it hard — including the awkward calls — and you listen to it before anything
+          goes live.
+        </p>
+      </div>
+      <div class="panel step rv"><span class="scan"></span>
+        <div class="num">Step 3 · Switch on</div>
+        <h3>You forward the calls you'd miss</h3>
+        <p>
+          Your phone rings first, exactly as it does now. Only what goes unanswered —
+          or comes in after hours — rolls over. Your number doesn't change, and it's
+          reversible in a minute.
+        </p>
+      </div>
+      <div class="panel step rv"><span class="scan"></span>
+        <div class="num">Step 4 · Tune</div>
+        <h3>We watch it and report</h3>
+        <p>
+          For the first two weeks we read every call. After that you get a monthly
+          rundown: what came in, what got booked, what got passed to a person.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── COVERAGE ───────────────────────────────────────── -->
+<section id="coverage" aria-labelledby="coverage-h">
+  <div class="wrap">
+    <span class="tag rv">How much of the phone</span>
+    <h2 class="rv" id="coverage-h">You decide which calls it takes.</h2>
+    <p class="sub rv">
+      Most people start with the first one and stay there. You can move between them
+      whenever you like — it's a forwarding setting, not a rebuild.
+    </p>
+
+    <div class="grid g3">
+      <div class="panel rv"><span class="scan"></span>
+        <div class="tag" style="color:var(--am)">Start here</div>
+        <h3 style="margin-top:18px;font-size:18px;font-weight:600">After hours and weekends</h3>
+        <p style="margin-top:12px;font-size:14.5px">
+          Your team takes everything during the day. Evenings, weekends and holidays
+          roll over instead of going to voicemail. The lowest-risk way to find out
+          what you've been missing.
+        </p>
+      </div>
+      <div class="panel rv"><span class="scan"></span>
+        <div class="tag">Most common add-on</div>
+        <h3 style="margin-top:18px;font-size:18px;font-weight:600">When the line's busy, and at lunch</h3>
+        <p style="margin-top:12px;font-size:14.5px">
+          The second and third callers stop hitting a busy tone. Lunch stops being an
+          hour of the day where nobody picks up. Your front desk keeps every call it
+          can actually get to.
+        </p>
+      </div>
+      <div class="panel rv"><span class="scan"></span>
+        <div class="tag">If you want it</div>
+        <h3 style="margin-top:18px;font-size:18px;font-weight:600">The whole phone</h3>
+        <p style="margin-top:12px;font-size:14.5px">
+          Everything gets answered first and anything that needs a person gets passed
+          to one. For shops with no front desk, or where the phone is pulling someone
+          off the tools all day.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TRUST ──────────────────────────────────────────── -->
+<section id="trust" aria-labelledby="trust-h" style="background:var(--bg-2)">
+  <div class="wrap">
+    <div class="grid g2" style="margin-top:0;align-items:start;gap:56px">
+      <div>
+        <span class="tag rv">Straight answers</span>
+        <h2 class="rv" id="trust-h">What we'll tell your customers, and what we won't do.</h2>
+        <p class="sub rv">
+          It's your name on the phone. We'd rather you knew exactly how this behaves
+          before you put your reputation behind it.
+        </p>
+      </div>
+      <div class="panel rv"><span class="scan"></span>
+        <ul class="ticks">
+          <li>
+            <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>
+            <span><b>Callers are told.</b> It says it's an assistant and that the call is
+            recorded, in the greeting, before anything else. We don't pretend it's a
+            person, and we won't set it up to.</span>
+          </li>
+          <li>
+            <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>
+            <span><b>"Let me speak to someone" works.</b> Ask for a person and you get put
+            through, first time, without having to argue with it.</span>
+          </li>
+          <li>
+            <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>
+            <span><b>Urgent calls go to a human.</b> You define what urgent means in your
+            trade. Those get transferred, not summarised and sent on.</span>
+          </li>
+          <li>
+            <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>
+            <span><b>It never takes a card number.</b> Not over the phone, not ever. If
+            someone tries to pay, it takes a message for you.</span>
+          </li>
+          <li>
+            <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>
+            <span><b>It only calls people back, never out.</b> No cold calling, no
+            outbound dialling. It answers your phone, and that's all.</span>
+          </li>
+          <li>
+            <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>
+            <span><b>Your customers are your customers.</b> The call records are yours,
+            we keep them only as long as you want them kept, and we don't sell or share
+            them with anybody.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note rv">
+      <h3>Where it's genuinely not the right answer</h3>
+      <p>
+        Some people hang up the moment they realise it isn't a person — not many, but
+        it happens, and anyone who tells you it never does is selling. That's exactly
+        why we start at after-hours: those calls were going to voicemail anyway, so the
+        worst case is where you already were.
+      </p>
+      <p style="margin-top:14px">
+        Doctors' and dentists' offices are a different job, with rules around patient
+        information that this setup isn't built for. If that's you, say so on the call
+        and we'll point you at someone who does it properly rather than take the work.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ── WHERE IT FITS ──────────────────────────────────── -->
+<section id="fits" aria-labelledby="fits-h">
+  <div class="wrap">
+    <span class="tag rv">Where this fits</span>
+    <h2 class="rv" id="fits-h">Each step earns the next one.</h2>
+    <p class="sub rv">
+      You don't have to start here. Most people find us because their ads aren't
+      landing anywhere, and answering the phone only matters once the phone is
+      ringing.
+    </p>
+
+    <div class="grid" style="margin-top:52px">
+      <div class="panel rv"><span class="scan"></span>
+        <div class="rung">
+          <div class="idx">01</div>
+          <div>
+            <h3>Free ad check</h3>
+            <div class="role">Start here · costs nothing</div>
+            <p>We click your ads the way a customer would and tell you where they land.</p>
+            <div><a class="more" href="/#contact">Get yours
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </a></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel rv"><span class="scan"></span>
+        <div class="rung">
+          <div class="idx">02</div>
+          <div>
+            <h3>Fix the page</h3>
+            <div class="role">One job · small on purpose</div>
+            <p>One page built to turn clicks into phone calls, with a form we test in front of you.</p>
+            <div class="gtee">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
+              Live in 14 days or you don't pay
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel hl rv"><span class="scan"></span>
+        <div class="rung">
+          <div class="idx">03</div>
+          <div>
+            <h3>Answer every call &nbsp;<span class="tag" style="color:var(--am);vertical-align:middle">You're here</span></h3>
+            <div class="role">Monthly · the one that pays for itself</div>
+            <p>Everything on this page. The 8pm Saturday call you'd normally lose becomes Monday's work.</p>
+            <div class="gtee">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
+              Every call answered in 60 seconds, day or night — or that month is free
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel rv"><span class="scan"></span>
+        <div class="rung">
+          <div class="idx">04</div>
+          <div>
+            <h3>Run the whole thing</h3>
+            <div class="role">Monthly · where people go next</div>
+            <p>We run the ads, keep the page working, and answer the calls that come in.</p>
+            <p class="after">
+              Not a starting point. This one opens up once we've already done something
+              smaller for you — taking over ads we've never seen isn't fair to either of us.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ────────────────────────────────────────────── -->
+<section id="faq" aria-labelledby="faq-h" style="background:var(--bg-2)">
+  <div class="wrap">
+    <span class="tag rv">Questions people ask</span>
+    <h2 class="rv" id="faq-h">The five we get every time.</h2>
+
+    <div class="faq rv">
+      <details>
+        <summary>Does this replace my receptionist?</summary>
+        <div class="a">
+          <p>
+            No, and we'd talk you out of using it that way. Your front desk knows your
+            customers, reads a room and handles the ones that need handling. What they
+            can't do is be there at 9pm, or be on two calls at once.
+          </p>
+          <p>
+            This picks up what falls off the edges — after hours, at lunch, when the line
+            is already busy — so nothing lands in voicemail. Most people find it makes
+            the front desk's day quieter, not shorter.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary>Can callers still reach a real person?</summary>
+        <div class="a">
+          <p>
+            Yes, and it's the first thing we test. Ask for a person and you get
+            transferred straight away — you don't have to say it three times or wait for
+            it to finish a sentence.
+          </p>
+          <p>
+            Anything you've told us counts as an emergency skips the conversation
+            entirely and rings your on-call number, whether the caller asks or not.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary>Do I keep my number?</summary>
+        <div class="a">
+          <p>
+            Yes. Your number stays exactly where it is, with the same carrier. Nothing
+            gets ported and nothing on your van, your truck or your Google listing has
+            to change.
+          </p>
+          <p>
+            All that changes is a forwarding setting on your line: calls you don't answer,
+            or calls outside your hours, roll over to us instead of to voicemail. You can
+            switch it off yourself in about a minute.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary>Does it work with the software I already use?</summary>
+        <div class="a">
+          <p>
+            Google Calendar and Cal.com it books into directly. Several common CRMs
+            connect too, and we'll tell you on the first call whether yours is one of
+            them — before you've paid for anything.
+          </p>
+          <p>
+            Some field-service systems need custom work, and a few don't let anyone in at
+            all. We'll say which yours is straight, rather than promising an integration
+            and discovering the problem later. Worst case it still answers, books into a
+            calendar and emails you the details — you just copy it across.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary>How long does setup take?</summary>
+        <div class="a">
+          <p>
+            Usually one to two weeks from the kickoff call. Most of that is us building it
+            on your business and testing it, not you doing paperwork — you're looking at
+            about an hour of your time in total.
+          </p>
+          <p>
+            Nothing goes live until you've listened to it handle your own awkward calls
+            and told us you're happy.
+          </p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ── CONTACT ────────────────────────────────────────── -->
+<section id="contact" aria-labelledby="cta-h">
+  <div class="wrap">
+    <div class="panel rv"><span class="scan"></span>
+      <span class="tag" style="justify-content:center">Next step</span>
+      <h2 id="cta-h">Find out what you're missing.</h2>
+      <p class="sub">
+        Fifteen minutes on the phone. We'll work out roughly how many calls go unanswered
+        in a normal week for a shop your size, and whether this is worth doing for you.
+        If it isn't, we'll tell you on that call.
+      </p>
+      <div class="cta-row">
+        <a class="btn pri" href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Book a 15-min call</a>
+        <a class="btn ghost" href="/#contact">Get a free ad check</a>
+      </div>
+      <p class="hero-note" style="text-align:center">
+        Or email <a href="mailto:hassan@forgelaboratory.net" style="color:var(--cy)">hassan@forgelaboratory.net</a>
+        &nbsp;·&nbsp; <a href="tel:+12067241071" style="color:var(--cy)">206-724-1071</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <a href="/">Home</a>
+    <a href="tel:+12067241071">206-724-1071</a>
+    <a href="mailto:hassan@forgelaboratory.net">hassan@forgelaboratory.net</a>
+    <a href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Book a call</a>
+    <span class="sp">ForgeLabs AI · AI implementation &amp; lead generation</span>
+  </div>
+</footer>
+
+<script src="/assets/forge.js" defer></script>
+</body>
+</html>
