@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ForgeLabs AI — social card source</title>
+<!-- SOURCE FILE, NOT A PUBLISHED PAGE.
+     Export this at exactly 1200x630 and save the result as /assets/og.png, which
+     is what the og:image tags on every page point at. That PNG is checked in;
+     re-export it after any change here.
+       npx: not available on this machine (npm is TLS-blocked)
+       Edge/Chrome: msedge --headless=new --screenshot=og.png
+                    --window-size=1200,630 assets/og.html
+     Keep the dimensions exact; social scrapers crop rather than scale. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&family=Inter:wght@400;500;600&display=swap">
+<style>
+  *{box-sizing:border-box;margin:0}
+  body{width:1200px;height:630px;overflow:hidden;background:#F7F3EC;
+       font:400 16px Inter,sans-serif;color:#4A443C;position:relative}
+  .glow{position:absolute;inset:0;
+        background:radial-gradient(ellipse 60% 60% at 88% 20%,rgba(217,74,10,.16),transparent 70%)}
+  .in{position:relative;padding:76px 80px;height:100%;display:flex;flex-direction:column}
+  .brand{display:flex;align-items:center;gap:14px;font:700 26px Archivo,sans-serif;
+         font-variation-settings:"wdth" 112;letter-spacing:-.02em;color:#14110E}
+  .brand i{width:16px;height:16px;border-radius:50%;background:#D94A0A;
+           box-shadow:0 0 0 5px rgba(217,74,10,.16)}
+  .eyebrow{margin-top:auto;font:600 17px Archivo,sans-serif;letter-spacing:.16em;
+           text-transform:uppercase;color:#B83D06;display:flex;align-items:center;gap:14px}
+  .eyebrow::before{content:"";width:34px;height:3px;background:#D94A0A}
+  h1{margin-top:26px;font:700 82px/1.02 Archivo,sans-serif;font-variation-settings:"wdth" 110;
+     letter-spacing:-.03em;color:#14110E;max-width:17ch}
+  h1 em{font-style:normal;color:#B83D06}
+  .rule{margin-top:40px;height:1px;background:rgba(20,17,14,.14)}
+  .figs{margin-top:34px;display:flex;gap:64px;align-items:flex-end}
+  .fig b{display:block;font:700 62px/1 Archivo,sans-serif;font-variation-settings:"wdth" 112;
+         letter-spacing:-.04em;color:#D94A0A}
+  .fig span{display:block;margin-top:10px;font-size:17px;max-width:24ch;line-height:1.45}
+  .fig.alt b{color:#5A6472}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="in">
+  <div class="brand"><i></i>ForgeLabs AI</div>
+  <div class="eyebrow">We checked 73 local businesses</div>
+  <h1>Where do your ad clicks <em>actually go?</em></h1>
+  <div class="rule"></div>
+  <div class="figs">
+    <div class="fig"><b>73</b><span>Businesses audited, all running Meta ads that day</span></div>
+    <div class="fig"><b>43</b><span>Had no page of their own for the click to land on</span></div>
+    <div class="fig alt"><b>0</b><span>Businesses we named, here or anywhere else</span></div>
+  </div>
+</div>
+</body>
+</html>

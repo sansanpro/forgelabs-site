@@ -1,0 +1,317 @@
+/* ForgeLabs AI — motion layer.
+   Pairs with /assets/motion.js. Kept separate from forge.css so the base design
+   system stays readable on its own and this can be dropped without touching it.
+
+   Everything here is enhancement. With the script absent, or with
+   prefers-reduced-motion set, each block falls back to a finished, readable
+   state — never a hidden or empty one. */
+
+/* ── grain + the ember light ───────────────────────────────────────────────
+   The light uses multiply, so it tints the paper and whatever it crosses rather
+   than sitting on top as a glow. That interaction between layers is the point of
+   blend modes, and the main thing taken from the reference work. */
+.grain{
+  position:fixed; inset:0; z-index:90; pointer-events:none; opacity:.20;
+  /* overlay, not multiply: multiplying noise into near-black removes it. */
+  mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");
+}
+.emberlight{
+  position:fixed; top:0; left:0; width:640px; height:640px; z-index:1;
+  pointer-events:none; will-change:transform;
+  /* screen, not multiply: on dark the pointer light has to add. Kept low so it
+     reads as the room being lit from somewhere, not as a torch. */
+  mix-blend-mode:screen; opacity:.5;
+  background:radial-gradient(circle closest-side,
+    rgba(255,138,61,.30) 0%, rgba(255,110,40,.17) 36%,
+    rgba(200,80,30,.08) 58%, rgba(0,0,0,0) 74%);
+}
+
+/* ── cursor ring ──────────────────────────────────────────────────────────── */
+.has-ring,
+.has-ring a,
+.has-ring button,
+.has-ring summary{cursor:none}
+.ring{
+  position:fixed; top:0; left:0; width:26px; height:26px; z-index:120;
+  border:1.5px solid var(--ember); border-radius:50%; pointer-events:none;
+  mix-blend-mode:screen; will-change:transform;
+  transition:width .22s cubic-bezier(.2,.7,.3,1),
+             height .22s cubic-bezier(.2,.7,.3,1),
+             background .22s;
+}
+.ring.big{width:58px; height:58px; background:var(--ember-wash)}
+@media(pointer:coarse){.ring,.emberlight{display:none}}
+
+/* ── word-mask reveal ─────────────────────────────────────────────────────
+   Words are only hidden once the script has wrapped them. Unsplit markup — no
+   JS, a script error, reduced motion — is simply visible. */
+.wm{display:inline-block; overflow:hidden; vertical-align:bottom; padding-bottom:.06em}
+.wi{
+  display:inline-block; transform:translateY(105%); opacity:0;
+  transition:transform .86s cubic-bezier(.16,1,.3,1), opacity .6s ease;
+}
+.shown .wi{transform:none; opacity:1}
+[data-reveal]:not([data-split]) .wi{transform:none; opacity:1}
+
+/* ── marquee ──────────────────────────────────────────────────────────────── */
+.marquee{
+  display:flex; overflow:hidden; white-space:nowrap; user-select:none;
+  border-block:1px solid var(--line); background:var(--card);
+  padding:16px 0; position:relative; z-index:2;
+}
+.mq-track{display:flex; flex:none; will-change:transform}
+.mq-track span{
+  font-family:Archivo,Inter,sans-serif; font-variation-settings:"wdth" 112;
+  font-weight:700; font-size:clamp(24px,3.8vw,46px); letter-spacing:-.02em;
+  color:var(--ink); display:inline-flex; align-items:center; gap:40px;
+  padding-right:40px;
+}
+.mq-track span::after{
+  content:""; width:12px; height:12px; border-radius:50%;
+  background:var(--ember); flex:none;
+}
+.mq-track span.hollow{color:transparent; -webkit-text-stroke:1.3px var(--ink)}
+
+/* ── the journey chapter ──────────────────────────────────────────────────
+   Sequential by default: every stage laid out in order. That is the state with
+   no JS, with reduced motion, on a phone, and on the live site.
+
+   The pinned variant is opt-in via ?journey=pin, which motion.js turns into a
+   .pinned class. It is not the default because sticky scroll behaviour could not
+   be verified in a headless browser, and an effect that cannot be checked should
+   not ship unattended. Inverting the cascade this way means the fallback is what
+   the markup already produces, rather than something a script has to undo. */
+/* Was var(--ink). With the palette inverted that token is now near-white, which
+   would have turned the whole chapter into a white slab. It takes an explicit
+   value: a shade deeper than the page, so it reads as its own chapter without
+   breaking the continuity of the scroll. */
+#journey{padding:0; background:#070403; color:#E9E2D7; position:relative; z-index:2}
+#journey .pin{
+  position:static; height:auto; display:grid; grid-template-columns:1fr;
+  gap:30px; max-width:var(--max); margin:0 auto; padding:84px 24px;
+}
+#journey .jhead{
+  font-family:Archivo,Inter,sans-serif; font-weight:600; font-size:11.5px;
+  letter-spacing:.15em; text-transform:uppercase; color:rgba(233,226,215,.5);
+  display:flex; gap:12px; align-items:center; margin-bottom:6px;
+}
+#journey .jhead::before{content:""; width:20px; height:2px; background:var(--ember)}
+#journey h2{color:#FBF7F0; font-size:clamp(29px,3.7vw,50px); max-width:18ch; margin-bottom:38px}
+#journey h2 em{font-style:normal; color:#FF8A3D}
+.jsteps{position:relative}
+.jstep{position:relative; opacity:1; transform:none; margin-bottom:40px}
+.jstep .jnum{
+  font-family:Archivo,Inter,sans-serif; font-variation-settings:"wdth" 116;
+  font-weight:700; font-size:64px; line-height:.9; letter-spacing:-.05em;
+  color:rgba(255,138,61,.28);
+}
+.jstep p{margin-top:16px; font-size:17px; max-width:46ch; color:rgba(233,226,215,.82)}
+.jstage{position:relative; height:auto}
+.jframe{
+  position:relative; opacity:1; transform:none; margin-bottom:28px;
+  display:flex; align-items:center; justify-content:center;
+}
+.jframe svg{width:100%; height:auto; max-height:400px; overflow:visible}
+.jbar{display:none}
+
+/* Sequential pairing. The markup keeps all three steps in .jsteps and all three
+   diagrams in .jstage, which the pinned variant needs — but laid out in order
+   that put every paragraph first and every picture after, divorcing each step
+   from its own illustration. display:contents promotes the six children to grid
+   items of .pin so they can be interleaved step/frame, step/frame. */
+#journey:not(.pinned) .jsteps,
+#journey:not(.pinned) .jstage{display:contents}
+#journey:not(.pinned) .jhead{order:1}
+#journey:not(.pinned) h2{order:2}
+#journey:not(.pinned) .jstep:nth-of-type(1){order:3}
+#journey:not(.pinned) .jframe:nth-of-type(1){order:4}
+#journey:not(.pinned) .jstep:nth-of-type(2){order:5}
+#journey:not(.pinned) .jframe:nth-of-type(2){order:6}
+#journey:not(.pinned) .jstep:nth-of-type(3){order:7}
+#journey:not(.pinned) .jframe:nth-of-type(3){order:8}
+#journey:not(.pinned) .jstep,
+#journey:not(.pinned) .jframe{margin-bottom:0}
+@media(min-width:901px){
+  #journey:not(.pinned) .pin{
+    grid-template-columns:minmax(0,.92fr) minmax(0,1fr);
+    gap:60px 56px; align-items:center;
+  }
+  #journey:not(.pinned) .jhead,
+  #journey:not(.pinned) h2{grid-column:1 / -1}
+  /* the diagram leads on the middle step, so the eye is not walked down one rail */
+  #journey:not(.pinned) .jstep:nth-of-type(2){order:6}
+  #journey:not(.pinned) .jframe:nth-of-type(2){order:5}
+}
+@media(max-width:900px){
+  #journey:not(.pinned) .pin{gap:26px}
+  #journey:not(.pinned) .jstep{margin-top:14px}
+}
+
+/* ── opt-in pinned variant (?journey=pin) ────────────────────────────────── */
+@media(min-width:901px){
+  /* A sticky child only has travel if its parent is taller than the viewport.
+     One viewport per stage, plus a little to land on the last. */
+  #journey.pinned{height:340vh}
+  #journey.pinned .pin{
+    position:sticky; top:0; height:100vh; align-items:center;
+    grid-template-columns:minmax(0,.86fr) minmax(0,1fr); gap:60px; padding:0 24px;
+  }
+  #journey.pinned .jhead{
+    position:absolute; top:42px; left:24px; right:24px; margin-bottom:0;
+  }
+  #journey.pinned .jstep{
+    position:absolute; inset:auto 0 auto 0; margin-bottom:0; pointer-events:none;
+    opacity:0; transform:translateY(26px);
+    transition:opacity .5s, transform .6s cubic-bezier(.16,1,.3,1);
+  }
+  #journey.pinned .jstep.on{position:relative; opacity:1; transform:none; pointer-events:auto}
+  #journey.pinned .jstage{height:400px}
+  #journey.pinned .jframe{
+    position:absolute; inset:0; margin-bottom:0; opacity:0; transform:scale(.97);
+    transition:opacity .5s, transform .7s cubic-bezier(.16,1,.3,1);
+  }
+  #journey.pinned .jframe.on{opacity:1; transform:none}
+  #journey.pinned .jbar{
+    display:block; position:absolute; right:22px; top:50%; transform:translateY(-50%);
+    width:2px; height:170px; background:rgba(233,226,215,.16);
+  }
+  #journey.pinned .jbar i{
+    display:block; width:100%; height:100%; background:var(--ember);
+    transform:scaleY(0); transform-origin:top;
+  }
+}
+
+/* ── tile wall ────────────────────────────────────────────────────────────
+   Scrubbed by scroll. .scrub holds the failing tiles back; without it they are
+   already marked, which is exactly the no-JS state. */
+.tiles.scrub i.f{background:var(--paper-2); border-color:var(--line-2)}
+.tiles.scrub i.f::before,
+.tiles.scrub i.f::after{opacity:0}
+.tiles.scrub i.f.lit{background:var(--ember-wash); border-color:var(--ember-line)}
+.tiles.scrub i.f.lit::before,
+.tiles.scrub i.f.lit::after{opacity:1; transition:opacity .25s}
+.tile-wall .head{align-items:flex-end; gap:22px}
+.tile-wall .cnt{font-size:clamp(56px,9vw,124px); line-height:.84}
+.tile-wall .cap{font-size:clamp(15px,1.5vw,19px); max-width:26ch; padding-bottom:12px}
+
+/* ── ladder ───────────────────────────────────────────────────────────────
+   This was a horizontally-scrolling rail pinned to the viewport. It was removed:
+   these four cards carry a paragraph and a guarantee each, and at a fixed card
+   width and 100vh they overflowed and left dead space either side of the pin.
+   Sideways travel suits short, image-led cards — not this. */
+.rail{display:grid; gap:20px; margin-top:44px}
+
+/* ── the self-check ───────────────────────────────────────────────────────── */
+.sc{max-width:840px; margin-inline:auto}
+.sc-opts{display:grid; gap:14px; margin-top:34px}
+.sc-opt{
+  display:grid; grid-template-columns:28px 1fr; gap:16px; align-items:start;
+  width:100%; text-align:left; padding:22px 24px; border-radius:4px;
+  border:1px solid var(--line); background:var(--card); cursor:pointer;
+  font:400 15.5px/1.55 Inter,sans-serif; color:var(--body);
+  transition:border-color .22s, background .22s, transform .18s;
+}
+.sc-opt:hover{border-color:var(--ember-line); transform:translateY(-2px)}
+.sc-opt b{display:block; color:var(--ink); font-weight:600; font-size:17px; margin-bottom:5px}
+.sc-box{
+  width:26px; height:26px; border:1.5px solid var(--line); border-radius:3px;
+  margin-top:2px; position:relative; transition:background .2s, border-color .2s;
+}
+.sc-opt[aria-pressed="true"]{border-color:var(--ember-line); background:var(--ember-wash)}
+.sc-opt[aria-pressed="true"] .sc-box{background:var(--ember-tx); border-color:var(--ember-tx)}
+.sc-opt[aria-pressed="true"] .sc-box::after{
+  content:""; position:absolute; left:8px; top:3px; width:6px; height:12px;
+  border:solid var(--ember-lb); border-width:0 2px 2px 0; transform:rotate(43deg);
+}
+.sc-out{
+  margin-top:26px; padding:26px 28px; border-radius:4px;
+  border:1px solid var(--line); border-left:3px solid var(--ember);
+  background:var(--card); opacity:0; transform:translateY(10px);
+  transition:opacity .4s, transform .4s;
+}
+.sc-out.on{opacity:1; transform:none}
+.sc-verdict{font-size:16px}
+.sc-verdict b{
+  font-family:Archivo,Inter,sans-serif; font-size:19px; color:var(--ink);
+  display:block; margin-bottom:7px;
+}
+
+/* ── the journey frames ───────────────────────────────────────────────────
+   Drawn on the dark stage, so these are the inverse of the light-page diagram
+   classes in index.html rather than a reuse of them. */
+.jc{fill:#201913; stroke:rgba(233,226,215,.20); stroke-width:1}
+.jc.live{fill:#241B13; stroke:rgba(255,138,61,.45)}
+.jc.dead{fill:#1C1713; stroke:rgba(233,226,215,.12)}
+.jl{font:600 8px Archivo,Inter,sans-serif; letter-spacing:.12em; fill:rgba(233,226,215,.5)}
+.jl.em{fill:#FF8A3D}
+.jh{font:600 10.5px Inter,sans-serif; fill:rgba(233,226,215,.9)}
+.jbar2{fill:rgba(233,226,215,.18)}
+.jfield{fill:#2C211A; stroke:rgba(233,226,215,.16); stroke-width:1}
+.jbtn{fill:#FF7A2E}
+.jbt{font:600 9px Inter,sans-serif; fill:#FFF3E6}
+.jghost{fill:rgba(233,226,215,.10); stroke:rgba(233,226,215,.16); stroke-width:1}
+.jpath{fill:none; stroke:rgba(233,226,215,.32); stroke-width:1.6; stroke-dasharray:5 5}
+.jpath.live{stroke:#FF8A3D; stroke-dasharray:none}
+.jdead{opacity:.55}
+.jx circle{fill:none; stroke:#FF8A3D; stroke-width:1.6}
+.jx path{fill:none; stroke:#FF8A3D; stroke-width:1.9; stroke-linecap:round}
+/* the inspection marker that replaced the cross */
+.jq circle{fill:none; stroke:#FF8A3D; stroke-width:1.6}
+.jq text{font:700 13px Archivo,Inter,sans-serif; fill:#FF8A3D}
+.jcap{font:600 12px Inter,sans-serif; fill:rgba(233,226,215,.62)}
+.jcap.on{fill:#FF8A3D}
+.jsub{font:400 11px Inter,sans-serif; fill:rgba(233,226,215,.5)}
+/* the ringing phone */
+.jcore{fill:#FF7A2E}
+.jphone{fill:#FFF3E6}
+.jring{fill:none; stroke:#FF8A3D; opacity:0}
+.jframe.on .jring{animation:ring 2.1s ease-out infinite}
+.jframe.on .jring.r2{animation-delay:.42s}
+@keyframes ring{
+  0%  {opacity:.55; transform:scale(.62)}
+  70% {opacity:0;   transform:scale(1.12)}
+  100%{opacity:0;   transform:scale(1.12)}
+}
+.jring{transform-origin:300px 130px}
+
+/* visually hidden, still read aloud — the marquee and the stage captions carry
+   real figures, and a screen reader should get them in sentence form */
+.sr-only{
+  position:absolute!important; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+
+/* ── oversized ghost numeral behind a section heading ─────────────────────── */
+.ghost-n{
+  position:absolute; right:2vw; top:-.2em; z-index:0; pointer-events:none;
+  font-family:Archivo,Inter,sans-serif; font-variation-settings:"wdth" 120;
+  font-weight:700; font-size:min(26vw,320px); line-height:.8; letter-spacing:-.06em;
+  color:var(--ember); opacity:.10; mix-blend-mode:screen;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .wi{transform:none!important; opacity:1!important}
+  .jstep,.jframe{opacity:1!important; transform:none!important; position:relative!important}
+  .grain{display:none}
+}
+
+/* ── continuity ───────────────────────────────────────────────────────────
+   The request was that scrolling down should not fall out of the hero's space.
+   Two things do that. The sections are all within a few points of each other in
+   value, so no boundary announces itself; and this fixed wash sits behind
+   everything, a constant warm cast from the direction the hole occupies. It is
+   fixed rather than scrolled on purpose: the hole stays in the hero, but the
+   light it throws stays with you. */
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 110% 62% at 78% -8%, rgba(255,122,46,.11), transparent 62%),
+    radial-gradient(ellipse 90% 50% at 12% 108%, rgba(255,122,46,.05), transparent 66%);
+}
+/* every section already carries position:relative + z-index:1, so they sit above
+   the wash rather than under it */
+
+/* A single remaining card should not sit in a three-column grid looking like two
+   are missing. Two findings were withdrawn on 2026-10-10; this is what is left. */
+.grid.single{grid-template-columns:1fr; max-width:620px}

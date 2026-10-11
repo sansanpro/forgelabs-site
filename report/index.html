@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Where the Clicks Go — An Audit of 73 Texas Home-Service Businesses | ForgeLabs AI</title>
+<meta name="description" content="We followed the ad clicks of 73 Texas home-service businesses paying for Meta ads. 43 of them had no page of their own to land on. The full findings, the method, and what the numbers cannot tell you.">
+<meta name="theme-color" content="#0C0806">
+<meta property="og:title" content="Where the Clicks Go — an audit of 73 businesses paying for Meta ads">
+<meta property="og:description" content="43 of 73 were paying for clicks that never reached a page they own. Published figures, method, and limitations in full. No business named.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://forgelaboratory.net/report/">
+<meta property="og:image" content="https://forgelaboratory.net/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://forgelaboratory.net/report/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/assets/forge.css">
+</head>
+<body>
+<script>
+/* Set before first paint so reveal-hidden elements never flash visible.
+   Also the switch that keeps the page readable when scripting is off. */
+document.documentElement.className += " js";
+addEventListener("error", function(){
+  document.documentElement.classList.remove("js");
+}, true);
+setTimeout(function(){
+  if(!window.__forge) document.documentElement.classList.remove("js");
+}, 2500);
+</script>
+
+<nav id="nav">
+  <div class="nav-in">
+    <a class="brand" href="/"><i></i>ForgeLabs AI</a>
+    <div class="nav-links">
+      <a href="/report/" aria-current="page">The Research</a>
+      <a href="/#ladder">What We Do</a>
+      <a href="/ai-receptionist/">Answer Every Call</a>
+      <a class="btn pri" href="/#contact">Check my ads</a>
+    </div>
+    <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="menu" id="menu" aria-hidden="true">
+  <a href="/#report">What We Found</a>
+  <a href="/#ladder">What We Do</a>
+  <a href="/ai-receptionist/">Answer Every Call</a>
+  <a href="/report/">The Research</a>
+  <a class="btn pri" href="/#contact">Check my ads — it's free</a>
+</div>
+
+<!-- ── HERO ───────────────────────────────────────────── -->
+<section class="phero">
+  <div class="wrap rpt">
+    <p class="crumb"><a href="/">ForgeLabs AI</a> &nbsp;/&nbsp; The research</p>
+    <h1>Where the clicks <em>go</em></h1>
+    <p class="lede">
+      An audit of 73 Texas home-service businesses currently paying for Meta ads.
+    </p>
+    <p class="meta">
+      Published by ForgeLabs AI &nbsp;·&nbsp; Fieldwork August–September 2026 &nbsp;·&nbsp;
+      Public sources only, inspection only
+    </p>
+  </div>
+</section>
+
+<!-- ── THE FINDING ────────────────────────────────────── -->
+<section id="finding">
+  <div class="wrap rpt">
+    <span class="tag rv">The finding</span>
+    <div class="pull rv">
+      Nearly three in five were paying for clicks that never reached a page they own.
+    </div>
+    <p class="rv">
+      Not a page that converts badly — no page at all. The click ended in a chat inbox,
+      on a social profile, or nowhere. Every one of these businesses had ads
+      <strong>running live</strong> on the day we looked.
+    </p>
+
+    <div class="readout rv" id="readout">
+      <div class="stat">
+        <div class="n" data-to="73">73</div>
+        <div class="k">Businesses audited, all with ads running live</div>
+        <div class="s">The sample</div>
+      </div>
+      <div class="stat">
+        <div class="n" data-to="43">43</div>
+        <div class="k">Never reached a page the business owns</div>
+        <div class="s">59% of the sample</div>
+      </div>
+      <div class="stat">
+        <div class="n" data-to="17">17</div>
+        <div class="k">Of the 30 with a page had no Meta Pixel</div>
+        <div class="s">57% of those</div>
+      </div>
+      <div class="stat">
+        <div class="n alt" data-to="0">0</div>
+        <div class="k">Businesses named, here or anywhere else</div>
+        <div class="s">Our rule</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WHAT WE FOUND ──────────────────────────────────── -->
+<section id="found" class="section-alt">
+  <div class="wrap rpt">
+    <span class="tag rv">What we found</span>
+    <h2 class="rv">Across 73 home-service businesses with active Meta ads.</h2>
+
+    <table class="tbl rv">
+      <caption>Where the ad click actually landed</caption>
+      <thead>
+        <tr>
+          <th scope="col">Destination</th>
+          <th scope="col" class="num">Businesses</th>
+          <th scope="col" class="num">Share</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">A page the business owns (form, booking, or phone)</th>
+          <td class="num">30</td>
+          <td class="num">41%</td>
+        </tr>
+        <tr>
+          <th scope="row">A Messenger chat thread</th>
+          <td class="num">21</td>
+          <td class="num">29%</td>
+        </tr>
+        <tr>
+          <th scope="row">Nowhere — no destination on the ad at all</th>
+          <td class="num">21</td>
+          <td class="num">29%</td>
+        </tr>
+        <tr>
+          <th scope="row">A social profile rather than a site</th>
+          <td class="num">1</td>
+          <td class="num">1%</td>
+        </tr>
+        <tr class="tot">
+          <th scope="row">No owned destination in the funnel</th>
+          <td class="num">43</td>
+          <td class="num">59%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="rv">Among the 41% that did have a page</h3>
+    <table class="tbl rv">
+      <caption>Measured on the 30 businesses with a page of their own</caption>
+      <thead>
+        <tr>
+          <th scope="col">Finding</th>
+          <th scope="col" class="num">Businesses</th>
+          <th scope="col" class="num">Share of those with a page</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">No Meta Pixel installed</th>
+          <td class="num">17</td>
+          <td class="num">57%</td>
+        </tr>
+        <tr>
+          <th scope="row">No form and no booking widget — phone call only</th>
+          <td class="num">5</td>
+          <td class="num">17%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="rv">
+      More than half of the businesses that had built a landing page <strong>could not tell
+      which ad produced a job</strong>, because nothing was measuring it.
+    </p>
+  </div>
+</section>
+
+<!-- ── MESSENGER ──────────────────────────────────────── -->
+<section id="messenger">
+  <div class="wrap rpt">
+    <span class="tag rv">Worth being fair about</span>
+    <h2 class="rv">Why a Messenger destination is not automatically a mistake.</h2>
+    <p class="rv">
+      Click-to-Message is a legitimate Meta objective and for some businesses it is the
+      right one. <strong>We do not count it as a broken funnel.</strong> Two things are
+      worth knowing about it anyway.
+    </p>
+
+    <div class="grid g2 tight">
+      <div class="panel panel-sm rv">
+        <h3>Withdrawn: the sign-in wall count</h3>
+        <p>
+          This panel carried a count of Messenger destinations that present a sign-in wall
+          when logged out. It has been withdrawn. An <code>fb.me</code> destination is not
+          necessarily a chat thread — paired with a "Get quote" button it is an Instant
+          Form, which works as designed. Reclassifying on the button moved 70 rows out of
+          the Messenger bucket, so the count is not sound and is not being restated until
+          the re-audit finishes.
+        </p>
+      </div>
+      <div class="panel panel-sm rv">
+        <h3>There is nothing to measure</h3>
+        <p>
+          No owned page means no conversion event, no cost per lead, and no audience to
+          rebuild later. The spend produces conversations that live inside someone else's
+          platform and disappear from your reporting.
+        </p>
+      </div>
+    </div>
+
+    <p class="rv">
+      The sharper problem is a mismatch: an ad whose button says <em>Get a quote</em>
+      leading to an unmonitored chat thread is promising a process the destination cannot
+      deliver.
+    </p>
+  </div>
+</section>
+
+<!-- ── METHOD ─────────────────────────────────────────── -->
+<section id="method" class="section-alt">
+  <div class="wrap rpt">
+    <span class="tag rv">How this was done</span>
+    <h2 class="rv">Public sources only, inspection only.</h2>
+    <p class="rv">
+      Everything here came from the Meta Ad Library and from loading pages the way a
+      customer would.
+    </p>
+
+    <div class="steps four">
+      <div class="step rv">
+        <div class="num">Step 1 · Find</div>
+        <h3>Active ads only</h3>
+        <p>
+          Businesses were found by searching the Meta Ad Library for active ads by trade
+          and metro. Only ads running at the time of the audit were included.
+        </p>
+      </div>
+      <div class="step rv">
+        <div class="num">Step 2 · Follow</div>
+        <h3>To the true endpoint</h3>
+        <p>
+          Every click path was followed all the way through link shorteners, tracking
+          redirects, and landing-page redirects.
+        </p>
+      </div>
+      <div class="step rv">
+        <div class="num">Step 3 · Inspect</div>
+        <h3>Does it actually work</h3>
+        <p>
+          Does it load, is a form wired to send anywhere, does a booking widget render, is
+          there a call-to-action visible at a phone-sized screen, is a tracking pixel present.
+        </p>
+      </div>
+      <div class="step rv">
+        <div class="num">Step 4 · Record</div>
+        <h3>Against the specific ad</h3>
+        <p>
+          Each finding was recorded against the ad it came from, so any individual result
+          can be re-checked.
+        </p>
+      </div>
+    </div>
+
+    <div class="note rv">
+      <h3>Where this method was wrong, and what changed</h3>
+      <p>
+        Two early findings were false. The Ad Library results page lazy-renders each ad's
+        link card, so an ad whose destination had not loaded looked identical to one with
+        no destination — that produced two bogus "goes nowhere" results, both caught by
+        hand. A third came from reading links across a permalink page that renders several
+        ads at once, attributing a sibling ad's landing page to the wrong ad.
+      </p>
+      <p>
+        Both are now method rules: destinations are only ever read from an ad's own
+        permalink, scoped to its own Library ID block. The figures above were re-derived
+        afterwards. We would rather publish the correction than the cleaner story.
+      </p>
+    </div>
+
+    <div class="note rv">
+      <h3>What we deliberately did not do</h3>
+      <p>
+        No forms submitted, no appointments booked, no messages sent, no calls made. No
+        business was contacted to produce this, and no private, purchased or scraped
+        personal data was used.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ── NOT PUBLISHING ─────────────────────────────────── -->
+<section id="anonymity">
+  <div class="wrap rpt">
+    <span class="tag rv">What we are not publishing, and why</span>
+    <div class="pull rv">
+      No business is named in this report, and none will be.
+    </div>
+    <p class="rv">
+      Naming them — or publishing the ad identifiers that would let anyone look them up —
+      would mean labelling real local businesses as having a marketing problem, in a
+      document written by the company that wants to sell them the fix.
+    </p>
+    <p class="rv">
+      So this report gives percentages and patterns only. Trade categories with fewer
+      than five businesses in the sample are folded into the totals rather than broken
+      out, because a category of two is a category that identifies its members.
+    </p>
+    <p class="rv">
+      Business owners who want to know what their own funnel does can ask us. That answer
+      belongs to them, not to a public document.
+    </p>
+  </div>
+</section>
+
+<!-- ── LIMITATIONS ────────────────────────────────────── -->
+<section id="limits" class="section-alt">
+  <div class="wrap rpt">
+    <span class="tag rv">Sample and limitations</span>
+    <h2 class="rv">Stated plainly, because a number without its limits is a marketing claim rather than a finding.</h2>
+
+    <table class="tbl rv">
+      <caption>Trades represented in the sample</caption>
+      <thead>
+        <tr>
+          <th scope="col">Trade</th>
+          <th scope="col" class="num">Businesses</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">HVAC</th><td class="num">14</td></tr>
+        <tr><th scope="row">Landscaping and tree care</th><td class="num">11</td></tr>
+        <tr><th scope="row">Roofing</th><td class="num">9</td></tr>
+        <tr><th scope="row">Pest control</th><td class="num">8</td></tr>
+        <tr><th scope="row">Plumbing</th><td class="num">7</td></tr>
+        <tr><th scope="row">Foundation repair</th><td class="num">5</td></tr>
+        <tr><th scope="row">Garage doors, cleaning, painting, electrical, pool service, fencing, gutters, remodelling</th><td class="num">19</td></tr>
+        <tr class="tot"><th scope="row">Total</th><td class="num">73</td></tr>
+      </tbody>
+    </table>
+    <p class="rv">
+      Only trades with at least five businesses are broken out. Everything below five is
+      folded into the combined row, for the reason given above.
+    </p>
+
+    <ul class="rv">
+      <li>
+        <strong>73 home-service businesses</strong>, all with Meta ads running live during
+        the audit window of August–September 2026.
+      </li>
+      <li>
+        <strong>Geography: Texas metros, predominantly greater Austin</strong>, with a
+        smaller number from Dallas and Houston. This is an Austin-weighted sample and
+        should not be read as representative of Texas as a whole.
+      </li>
+      <li>
+        <strong>Not a random sample.</strong> These businesses were found by searching for
+        active ads in specific trades. They represent businesses that advertise on Meta,
+        not home-service businesses generally.
+      </li>
+      <li>
+        <strong>A point-in-time snapshot.</strong> Ad campaigns change weekly. A business
+        that had no destination in September may have one now.
+      </li>
+      <li>
+        <strong>Absence is harder to prove than presence.</strong> Where a check could not
+        see something, we recorded it as unverified rather than as a defect. Findings that
+        depended on a method we could not confirm were excluded from these totals entirely.
+      </li>
+      <li>
+        <strong>What we could not measure:</strong> whether anyone was actually answering
+        the Messenger inboxes, what any of these businesses pay per lead, and whether their
+        ads were profitable regardless. Those answers require access we did not have and
+        did not ask for.
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── WHAT IT MEANS ──────────────────────────────────── -->
+<section id="means">
+  <div class="wrap rpt">
+    <span class="tag rv">What it means if you are running ads</span>
+    <h2 class="rv">Three questions worth answering about your own funnel. None of them require us.</h2>
+
+    <div class="steps">
+      <div class="step rv">
+        <div class="num">One</div>
+        <h3>Open your own ad on a phone, signed out of Facebook</h3>
+        <p>
+          Where does it land? That is what a stranger sees — and a stranger is who you are
+          paying to reach.
+        </p>
+      </div>
+      <div class="step rv">
+        <div class="num">Two</div>
+        <h3>If it lands on a page: is there a pixel on it?</h3>
+        <p>
+          If not, every optimisation decision you or your agency makes is being made blind.
+        </p>
+      </div>
+      <div class="step rv">
+        <div class="num">Three</div>
+        <h3>If it lands in a chat: who reads that inbox at 8pm on a Saturday?</h3>
+        <p>
+          That is when a homeowner notices the AC has failed and starts working down the list.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CONTACT ────────────────────────────────────────── -->
+<section id="contact" class="section-alt">
+  <div class="wrap">
+    <div class="panel flat center rv">
+      <span class="tag">Your own funnel</span>
+      <h2>We'll tell you what your ads currently do.</h2>
+      <p class="sub">
+        ForgeLabs AI builds and fixes funnels for home-service businesses. If you want to
+        know what your own ads currently do, we will tell you — no charge, and without
+        needing access to any of your accounts.
+      </p>
+      <div class="cta-row">
+        <a class="btn pri" href="/#contact">Check my ads — it's free</a>
+        <a class="btn ghost" href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Or book a 15-min call</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <a href="/">Home</a>
+    <a href="tel:+12067241071">206-724-1071</a>
+    <a href="mailto:hassan@forgelaboratory.net">hassan@forgelaboratory.net</a>
+    <a href="/ai-receptionist/">Answer every call</a>
+    <a href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Book a call</a>
+    <span class="sp">ForgeLabs AI · AI implementation &amp; lead generation</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* Counters. Same rule as the landing page: the true values are in the HTML and
+     a settle timer independent of requestAnimationFrame guarantees they land, so
+     a stalled frame loop can never leave a published figure reading 0. On a page
+     whose entire purpose is that the numbers are trustworthy, this matters more
+     here than anywhere else on the site. */
+  var readout = document.getElementById("readout");
+  function runCounters(){
+    readout.querySelectorAll(".n").forEach(function(el){
+      var to = parseInt(el.dataset.to, 10), suf = el.dataset.suf || "";
+      if(reduce || to === 0){ el.textContent = to + suf; return; }
+      el.textContent = "0" + suf;
+      var t0 = null, dur = 1250, done = false;
+      function settle(){ if(!done){ done = true; el.textContent = to + suf; } }
+      function tick(ts){
+        if(done) return;
+        if(t0 === null) t0 = ts;
+        var p = Math.min((ts - t0) / dur, 1);
+        var e = 1 - Math.pow(1 - p, 3);
+        if(p < 1){ el.textContent = Math.round(to * e) + suf; requestAnimationFrame(tick); }
+        else settle();
+      }
+      requestAnimationFrame(tick);
+      setTimeout(settle, dur + 450);
+    });
+  }
+  if(readout){
+    if(reduce || !("IntersectionObserver" in window)) runCounters();
+    else {
+      var co = new IntersectionObserver(function(es){
+        if(es[0].isIntersecting){ runCounters(); co.disconnect(); }
+      }, {threshold:.35});
+      co.observe(readout);
+    }
+  }
+})();
+</script>
+<script src="/assets/forge.js" defer></script>
+</body>
+</html>

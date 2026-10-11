@@ -4,23 +4,189 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ForgeLabs AI — Where Do Your Ad Clicks Go?</title>
-<meta name="description" content="We checked 73 Texas home service businesses paying for Facebook ads. For most, the click never reached a real page. Find out what happens to yours — free, and we don't need access to any of your accounts.">
-<meta name="theme-color" content="#0a0e14">
+<meta name="description" content="We followed the ads of 73 Texas home-service businesses to where the click actually lands. 43 never reached a page the business owns. Find out what yours does — free, and we need no access to your accounts.">
+<meta name="theme-color" content="#0C0806">
 <meta property="og:title" content="ForgeLabs AI — Where Do Your Ad Clicks Go?">
 <meta property="og:description" content="Most local businesses pay for ads that lead nowhere. We'll check yours free.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://forgelaboratory.net/">
+<!-- og.png is rendered from /assets/og.html at exactly 1200x630. Re-export it
+     after any change to that file; social scrapers crop rather than scale. -->
+<meta property="og:image" content="https://forgelaboratory.net/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://forgelaboratory.net/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&family=Inter:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/assets/forge.css">
+<link rel="stylesheet" href="/assets/motion.css">
+<style>
+/* Page-specific: the hero mechanism. Only this page has one, so it lives here
+   rather than in the shared stylesheet. */
+
+/* Which variant is shown is decided by data-hero on <body>, set before first
+   paint by the script below. All three are in the markup so none of them flash. */
+body[data-hero="path"]  .fig-ember,
+body[data-hero="path"]  .fig-hole {display:none}
+body[data-hero="ember"] .fig-path,
+body[data-hero="ember"] .fig-hole {display:none}
+body[data-hero="hole"]  .fig-path,
+body[data-hero="hole"]  .fig-ember{display:none}
+
+/* ── variant C: the ember black hole, full bleed ────────────
+   The hole is the hero's whole background, so the hero inverts to dark and the
+   type sits on top of it. Everything below the hero stays on paper — a fixed
+   black hole behind the entire site would force every section dark and undo the
+   light direction the rest of the page is built on.
+
+   The gradient on .fig-hole is the fallback: if WebGL is missing or the shader
+   fails, the hero is still a deep ember well rather than an empty black box. */
+body[data-hero="hole"] #hero{
+  /* exactly the page background: the hero does not end, it just stops having a
+     black hole in it */
+  background:var(--paper);
+  min-height:100svh;
+  display:flex; align-items:center;
+  padding:150px 0 110px;
+}
+/* As a flex item .wrap shrinks to its content, which pulled the copy into the
+   middle of the viewport and straight onto the disk. It has to stay full width. */
+body[data-hero="hole"] #hero > .wrap{width:100%}
+.fig-hole{
+  position:absolute; inset:0; z-index:0; overflow:hidden;
+  background:radial-gradient(ellipse 54% 50% at 72% 50%,
+      #2A1206 0%, #170D06 48%, #0C0806 100%);
+}
+.fig-hole canvas{display:block; width:100%; height:100%}
+@media(max-width:959px){
+  .fig-hole{background-position:center;
+    background:radial-gradient(ellipse 80% 38% at 50% 44%, #2A1206 0%, #170D06 50%, #0C0806 100%);}
+}
+
+/* Scrim. The disk is bright and moves, so the headline cannot rely on the
+   backdrop staying dark where it happens to sit. */
+body[data-hero="hole"] #hero::before{
+  content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:linear-gradient(97deg,
+    rgba(12,8,6,.96) 0%, rgba(12,8,6,.92) 30%,
+    rgba(12,8,6,.72) 44%, rgba(12,8,6,.28) 60%, rgba(12,8,6,0) 76%);
+}
+/* A long fade from transparent to the page colour. The disk reaches the lower
+   edge of the hero, and this is what stops it being cut off by a hard line —
+   the gas thins out into the page instead. */
+body[data-hero="hole"] #hero::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:260px; z-index:1;
+  pointer-events:none;
+  background:linear-gradient(rgba(12,8,6,0), rgba(12,8,6,.72) 62%, var(--paper));
+}
+@media(max-width:959px){
+  body[data-hero="hole"] #hero::before{
+    background:linear-gradient(180deg,
+      rgba(12,8,6,.52) 0%, rgba(12,8,6,.74) 30%, rgba(12,8,6,.90) 58%, rgba(12,8,6,.96) 100%);
+  }
+}
+
+/* the hero inverts: one column, light type, no right-hand figure */
+body[data-hero="hole"] .hero-in{grid-template-columns:1fr; position:relative; z-index:2}
+body[data-hero="hole"] .hero-fig{display:none}
+/* Sized in px, not ch: `ch` resolves against the body font, which made the
+   column far narrower than intended and pushed the headline to five lines with
+   "go?" stranded on its own. The cap keeps the copy clear of the disk. */
+body[data-hero="hole"] .hero-copy{max-width:min(640px, 46%)}
+body[data-hero="hole"] h1{font-size:clamp(32px,3.5vw,46px); max-width:none}
+@media(max-width:959px){
+  body[data-hero="hole"] .hero-copy{max-width:none}
+  body[data-hero="hole"] h1{font-size:clamp(32px,6.4vw,44px)}
+}
+body[data-hero="hole"] h1{color:#FBF7F0}
+body[data-hero="hole"] h1 em{color:#FF8A3D}
+body[data-hero="hole"] .lede{color:rgba(233,226,215,.84)}
+body[data-hero="hole"] .hero-note{color:rgba(233,226,215,.58)}
+body[data-hero="hole"] .tag{color:#FF8A3D}
+body[data-hero="hole"] .tag::before{background:#FF8A3D}
+body[data-hero="hole"] .btn.ghost{
+  border-color:rgba(233,226,215,.34); color:#F0E9DE; background:rgba(255,255,255,.04);
+}
+body[data-hero="hole"] .btn.ghost:hover{
+  border-color:#FF8A3D; color:#FF8A3D; background:rgba(255,138,61,.10);
+}
+
+/* The nav floats over the dark hero until the page scrolls, then returns to
+   paper. nav.on is already toggled by forge.js at 12px of scroll. */
+body[data-hero="hole"] nav:not(.on){background:transparent; backdrop-filter:none}
+body[data-hero="hole"] nav:not(.on) .brand{color:#FBF7F0}
+body[data-hero="hole"] nav:not(.on) .nav-links a{color:rgba(233,226,215,.84)}
+body[data-hero="hole"] nav:not(.on) .nav-links a:hover{color:#FF8A3D}
+body[data-hero="hole"] nav:not(.on) .burger{border-color:rgba(233,226,215,.34); color:#FBF7F0}
+
+/* The pointer light multiplies, which does nothing over near-black and only
+   muddies the disk. It belongs on the paper sections. */
+body[data-hero="hole"] #hero .emberlight{display:none}
+
+/* ── variant A: the click path ──────────────────────────────
+   Authored as inline SVG on purpose. The diagram is the argument, so it has to
+   survive with scripting off — hero.js only adds the travelling dot. */
+.fig-path{width:100%}
+.fig-path svg{width:100%; height:auto; display:block; overflow:visible}
+.cp-card{fill:#17100A; stroke:rgba(233,226,215,.18); stroke-width:1}
+.cp-row-lbl{font:600 8.5px Archivo,Inter,sans-serif; letter-spacing:.14em; fill:#9A9084}
+.cp-lbl{font:600 7.5px Archivo,Inter,sans-serif; letter-spacing:.1em; fill:#9A9084}
+.cp-lbl.em{fill:#FF8A3D}
+.cp-h{font:600 10px Inter,sans-serif; fill:#FBF7F0}
+.cp-bar{fill:rgba(233,226,215,.20)}
+.cp-bar.lite{fill:rgba(233,226,215,.10)}
+.cp-field{fill:#241A12; stroke:rgba(233,226,215,.16); stroke-width:1}
+.cp-btn{fill:#FF7A2E}
+.cp-btn-t{font:600 8.5px Inter,sans-serif; fill:#1A0D05; letter-spacing:.02em}
+.cp-ghost{fill:rgba(155,165,180,.14); stroke:rgba(233,226,215,.16); stroke-width:1}
+.cp-ghost-t{font:600 8.5px Inter,sans-serif; fill:#9BA5B4}
+.cp-path{fill:none; stroke:#9BA5B4; stroke-width:1.5; stroke-dasharray:4 4; opacity:.45}
+.cp-div{stroke:rgba(233,226,215,.12); stroke-width:1}
+.cp-tip{fill:none; stroke:#9BA5B4; stroke-width:1.5; opacity:.45; stroke-linecap:round; stroke-linejoin:round}
+/* the travelling dot */
+.dot{opacity:0; transition:opacity .2s}
+.dot.vis{opacity:1}
+.dot .halo{fill:rgba(255,122,46,.26)}
+.dot .core{fill:#FF7A2E}
+/* The outcome under each route. Always legible, and brought up to full strength
+   as the dot lands — hiding it outright meant that for most of the loop, and in
+   any screenshot, the diagram showed two routes and neither conclusion. */
+.end{opacity:.34; transition:opacity .35s}
+.end.on{opacity:1}
+.end circle{fill:none; stroke:#FF8A3D; stroke-width:1.6}
+.end .gl{fill:none; stroke:#FF8A3D; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+.end text{font:600 11.5px Inter,sans-serif; fill:#FF8A3D}
+@media(prefers-reduced-motion:reduce){
+  /* both outcomes simply shown — the diagram has to read standing still */
+  .dot{opacity:1}
+  .end{opacity:1}
+}
+
+/* ── variant B: forge and ember ─────────────────────────────
+   The CSS gradient is the fallback: canvas needs scripting, and a blocked
+   script should leave a warm panel rather than a hole. */
+.fig-ember{
+  width:100%; height:430px; border-radius:6px; overflow:hidden;
+  background:linear-gradient(#1A1512 0%,#241A14 55%,#3A1C0C 100%);
+  box-shadow:0 26px 60px -24px rgba(255,122,46,.34);
+}
+.fig-ember canvas{display:block; width:100%; height:100%}
+@media(max-width:959px){.fig-ember{height:260px}}
+</style>
 </head>
-<body>
+<body data-hero="hole">
 <script>
 /* Set before first paint so reveal-hidden elements never flash visible.
    Also the switch that keeps the page readable when scripting is off. */
 document.documentElement.className += " js";
+/* Hero variant, also before first paint so neither variant flashes. Local
+   review control only — ?hero=ember. The default lives on the <body> tag so a
+   no-JS visitor still gets the click path. */
+try{
+  var __m = /[?&]hero=(path|ember|hole)/.exec(location.search);
+  if(__m) document.body.setAttribute("data-hero", __m[1]);
+}catch(e){}
 /* Safety net: if anything below throws, un-hide everything rather than
    leaving the visitor with a blank page. Capture phase on purpose — a
    <script src> that 404s fires an error event that does NOT bubble, and
@@ -43,88 +209,183 @@ setTimeout(function(){
       <a href="#report">What We Found</a>
       <a href="#ladder">What We Do</a>
       <a href="/ai-receptionist/">Answer Every Call</a>
-      <a href="#how">How It Works</a>
-      <a href="#why">Why Us</a>
-      <a href="#contact">Check My Ads</a>
+      <a class="btn pri" href="#contact">Check my ads</a>
     </div>
+    <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
 
+<!-- Mobile navigation. Before this existed the nav links were simply hidden
+     below the breakpoint and nothing replaced them. -->
+<div class="menu" id="menu" aria-hidden="true">
+  <a href="#report">What We Found</a>
+  <a href="#ladder">What We Do</a>
+  <a href="/ai-receptionist/">Answer Every Call</a>
+  <a href="/report/">The Research</a>
+  <a class="btn pri" href="#contact">Check my ads — it's free</a>
+</div>
+
 <!-- ── HERO ───────────────────────────────────────────── -->
 <section id="hero">
-  <canvas id="field" aria-hidden="true"></canvas>
-  <div class="wrap">
-    <span class="tag">We checked 73 local businesses</span>
-    <h1>Your ads are running. But where do the clicks <em>actually go?</em></h1>
-    <p class="lede">
-      We checked 73 Texas home service businesses paying for Facebook ads right now.
-      For most of them, the click never reached a real page. It opened a chat nobody
-      was reading — or went nowhere at all.
-    </p>
-    <div class="cta-row">
-      <a class="btn pri" href="#contact">Check my ads — it's free</a>
-      <a class="btn ghost" href="#report">See what we found</a>
+  <!-- Variant C is the hero's background: a direct child of the section so it
+       bleeds the full viewport width, and first in the DOM so the copy paints
+       over it rather than under it. -->
+  <div class="fig-hole" aria-hidden="true"><canvas id="hole" data-full="1"></canvas></div>
+
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <span class="tag">We checked 73 local businesses</span>
+      <h1 data-reveal>Your ads are running. But where do the clicks <em>actually go?</em></h1>
+      <p class="lede">
+        We followed the ads of 73 Texas home-service businesses to where the click
+        actually lands. 43 of them never reached a page the business owns.
+      </p>
+      <div class="cta-row">
+        <a class="btn pri" href="#contact">Check my ads — it's free</a>
+        <a class="btn ghost" href="#report">See what we found</a>
+      </div>
+      <p class="hero-note">We don't need your passwords or access to your ad account.</p>
     </div>
-    <p class="hero-note">We don't need your passwords or access to your ad account.</p>
+
+    <div class="hero-fig">
+      <!-- Variant A. Every element of the diagram is here in the markup; the
+           script adds only the moving dot. -->
+      <div class="fig-path">
+        <svg viewBox="0 0 440 332" role="img"
+             aria-label="Diagram. An ad reading Get a quote sends the click to a Messenger log-in screen, where a signed-out visitor hits a login wall. The same ad pointed at a real page with a quote form and a Call Now button makes the phone ring instead.">
+          <!-- ── route 1: what the audit kept finding ── -->
+          <text class="cp-row-lbl" x="0" y="12">WHAT HAPPENS NOW</text>
+          <g>
+            <rect class="cp-card" x="0.5" y="24.5" width="145" height="91" rx="4"/>
+            <text class="cp-lbl" x="12" y="41">SPONSORED</text>
+            <rect class="cp-bar" x="12" y="48" width="110" height="5" rx="2.5"/>
+            <rect class="cp-bar lite" x="12" y="57" width="78" height="5" rx="2.5"/>
+            <rect class="cp-btn" x="12" y="70" width="96" height="24" rx="3"/>
+            <text class="cp-btn-t" x="60" y="85.5" text-anchor="middle">Get a quote</text>
+          </g>
+          <path class="cp-path" id="cp1" d="M148 70 H250"/>
+          <path class="cp-tip" d="M245 66 l4.5 4 -4.5 4"/>
+          <g>
+            <rect class="cp-card" x="254.5" y="24.5" width="185" height="91" rx="4"/>
+            <text class="cp-lbl" x="267" y="41">MESSENGER</text>
+            <text class="cp-h" x="267" y="62">Log in to continue</text>
+            <rect class="cp-ghost" x="266.5" y="70.5" width="88" height="21" rx="3"/>
+            <text class="cp-ghost-t" x="310" y="84.5" text-anchor="middle">Log in</text>
+            <rect class="cp-bar lite" x="267" y="100" width="104" height="5" rx="2.5"/>
+          </g>
+          <g class="dot" id="dot1"><circle class="halo" r="9"/><circle class="core" r="4"/></g>
+          <g class="end" id="end1">
+            <circle cx="9" cy="132" r="9"/>
+            <path class="gl" d="M5.5 128.5l7 7M12.5 128.5l-7 7"/>
+            <text x="26" y="136">Signed out, this is a login wall.</text>
+          </g>
+
+          <line class="cp-div" x1="0" y1="166" x2="440" y2="166"/>
+
+          <!-- ── route 2: what we build instead ── -->
+          <text class="cp-row-lbl" x="0" y="192">WHAT WE BUILD</text>
+          <g>
+            <rect class="cp-card" x="0.5" y="204.5" width="145" height="91" rx="4"/>
+            <text class="cp-lbl" x="12" y="221">SPONSORED</text>
+            <rect class="cp-bar" x="12" y="228" width="110" height="5" rx="2.5"/>
+            <rect class="cp-bar lite" x="12" y="237" width="78" height="5" rx="2.5"/>
+            <rect class="cp-btn" x="12" y="250" width="96" height="24" rx="3"/>
+            <text class="cp-btn-t" x="60" y="265.5" text-anchor="middle">Get a quote</text>
+          </g>
+          <path class="cp-path" id="cp2" d="M148 250 H250"/>
+          <path class="cp-tip" d="M245 246 l4.5 4 -4.5 4"/>
+          <g>
+            <rect class="cp-card" x="254.5" y="204.5" width="185" height="91" rx="4"/>
+            <text class="cp-lbl em" x="267" y="221">YOUR PAGE</text>
+            <rect class="cp-field" x="266.5" y="228.5" width="120" height="12" rx="2"/>
+            <rect class="cp-field" x="266.5" y="245.5" width="120" height="12" rx="2"/>
+            <rect class="cp-btn" x="267" y="264" width="100" height="22" rx="3"/>
+            <text class="cp-btn-t" x="317" y="278.5" text-anchor="middle">CALL NOW</text>
+          </g>
+          <g class="dot" id="dot2"><circle class="halo" r="9"/><circle class="core" r="4"/></g>
+          <g class="end" id="end2">
+            <circle cx="9" cy="312" r="9"/>
+            <path class="gl" d="M4.8 312l3 3 5.4-6.2"/>
+            <text x="26" y="316">The phone rings.</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Variant B. -->
+      <div class="fig-ember" aria-hidden="true"><canvas id="forge"></canvas></div>
+    </div>
   </div>
 </section>
+
+
+<!-- Data ticker. Every figure traces to proof/meta-ads-funnel-report-2026.md. -->
+<div class="marquee" aria-hidden="true">
+  <div class="mq-track">
+    <span>73 BUSINESSES CHECKED</span><span class="hollow">43 WITH NO PAGE OF THEIR OWN</span><span class="hollow">17 WITH NO PIXEL</span><span>0 NAMED</span>
+  </div>
+</div>
+<p class="sr-only">We audited 73 businesses. 43 never reached a page of their own, 17 had no tracking pixel, and we named none of them.</p>
 
 <!-- ── REPORT ─────────────────────────────────────────── -->
 <section id="report">
   <div class="wrap">
     <span class="tag rv">What we found</span>
-    <h2 class="rv">We clicked their ads, the same way a customer would.</h2>
+    <h2 class="rv" data-reveal>We clicked their ads, the same way a customer would.</h2>
     <p class="sub rv">
-      Every business we checked had ads <strong style="color:var(--ink)">running that day</strong>.
-      They were spending real money. We clicked each ad and followed it all the way
-      through to see where it ended up — and what was waiting there.
+      Every one had ads <strong>running that day</strong>. We followed each click
+      through every redirect to wherever it actually ended up.
     </p>
 
-    <div class="readout rv" id="readout" style="margin-top:52px">
+    <div class="readout rv" id="readout">
       <div class="stat">
         <div class="n" data-to="73">73</div>
-        <div class="k">Businesses we checked, all running ads that day</div>
-        <div class="s">What we looked at</div>
+        <div class="k">Businesses audited, all with ads running that day</div>
+        <div class="s">The sample</div>
       </div>
       <div class="stat">
-        <div class="n" data-to="59" data-suf="%">59%</div>
-        <div class="k">Sent people somewhere that couldn't take a booking</div>
-        <div class="s">The main problem</div>
+        <div class="n" data-to="43">43</div>
+        <div class="k">Never reached a page the business owns</div>
+        <div class="s">59% of the sample</div>
       </div>
       <div class="stat">
-        <div class="n" data-to="57" data-suf="%">57%</div>
-        <div class="k">Of those with a real page, couldn't tell which ad brought in work</div>
-        <div class="s">Spending blind</div>
+        <div class="n" data-to="17">17</div>
+        <div class="k">Of the 30 with a page had no tracking on it</div>
+        <div class="s">57% of those</div>
       </div>
       <div class="stat">
-        <div class="n am" data-to="0">0</div>
+        <div class="n alt" data-to="0">0</div>
         <div class="k">Businesses we named. We don't do that.</div>
         <div class="s">Our rule</div>
       </div>
     </div>
 
-    <div class="grid g3">
-      <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">Ads that open a chat box</h3>
-        <p style="margin-top:12px;font-size:14.5px">
-          Plenty of ads open a Facebook message instead of a web page. We tried it ourselves:
-          if the person isn't already logged into Facebook, they get a login screen instead
-          of you. Most of them give up there.
-        </p>
+    <!-- The one other thing on this page that moves. 43 of the 73 tiles carry
+         .f, so the true finding is in the markup and a visitor never reads 0. -->
+    <div class="scan73 tile-wall rv" id="scan73">
+      <div class="head">
+        <span class="cnt">43</span>
+        <span class="cap">of 73 never reached a page the business owns.</span>
       </div>
-      <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">No idea what's working</h3>
-        <p style="margin-top:12px;font-size:14.5px">
-          Over half of the ones with a real page had no tracking on it. So there's no way to
-          know which ads actually bring in jobs and which ones just burn money — including
-          for whoever they're paying to run them.
-        </p>
-      </div>
-      <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">The ad promises what the page can't do</h3>
-        <p style="margin-top:12px;font-size:14.5px">
-          The button says <em>Get a quote</em>. It opens a chat nobody's watching. That person
-          was ready to book you right then — and there was nobody there to take it.
+      <div class="tiles" aria-hidden="true"><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i></i><i class="f"></i></div>
+      <p class="legend">
+        <span><b class="f"></b> No page of their own — 43</span>
+        <span><b></b> A page they own — 30</span>
+      </p>
+    </div>
+
+    <!-- Two further cards were removed on 2026-10-10. Both rested on findings the
+         pipeline has since overturned: an fb.me destination with a "Get quote" button
+         is an Instant Form, not a Messenger thread (70 rows were reclassified), and a
+         per-ad "no website" claim is refuted by the advertiser's sibling ads. Nothing
+         replaces them until the re-audit produces a finding that holds. -->
+    <div class="grid single">
+      <div class="panel panel-sm rv">
+        <h3>Spending blind</h3>
+        <p>
+          17 of the 30 with a real page had no tracking on it. Nobody can say which ad
+          produced a booked job — including whoever they are paying to run them.
         </p>
       </div>
     </div>
@@ -132,92 +393,87 @@ setTimeout(function(){
     <div class="note rv">
       <h3>Being straight about what this is</h3>
       <p>
-        Most of these businesses are around Austin, so it's not a picture of all of Texas.
-        We found them by searching for ads that were running, which means they're businesses
-        that advertise — not every home service business. And it's one day's snapshot; ads
-        change every week. We also couldn't tell whether anyone was reading those chat
-        inboxes, or whether the ads were making money anyway. That would need access to
-        their accounts, which we didn't have and didn't ask for.
+        Austin-weighted, found by searching for ads that were running, and one day's
+        snapshot. We can't see who reads a chat inbox, so we don't claim to — and a chat
+        destination is a real Meta objective, not automatically a mistake.
       </p>
-      <p style="margin-top:14px">
-        <strong style="color:var(--am)">We don't name any of them, and we won't.</strong>
-        Publicly pointing at a local business and saying their ads are broken — in a document
-        written by the people who'd like to sell them the fix — isn't something we're willing
-        to do. So you get the numbers and the patterns, nothing that identifies anyone.
+      <p>
+        <strong>We don't name any of them, and we won't.</strong> You get the patterns,
+        nothing that identifies a business.
       </p>
     </div>
 
-    <div class="cta-row rv" style="margin-top:34px">
-      <a class="btn" href="#contact">Get the full write-up</a>
+    <div class="cta-row rv">
+      <a class="btn" href="/report/">Read the full write-up</a>
+      <a class="btn ghost" href="#contact">Check my ads instead</a>
     </div>
   </div>
 </section>
 
 <!-- ── LADDER ─────────────────────────────────────────── -->
-<section id="ladder" style="background:var(--bg-2)">
+<section id="ladder" class="section-alt">
   <div class="wrap">
-    <span class="tag rv">What we do</span>
-    <h2 class="rv">Each step earns the next one.</h2>
-    <p class="sub rv">
-      This isn't a menu to pick from. We start by showing you what's wrong, free. If that's
-      useful, we fix one thing, fast. Anything after that is your call — and by then you've
-      already seen how we work.
-    </p>
+    <div>
+      <span class="tag rv">What we do</span>
+      <h2 class="rv" data-reveal>Each step earns the next one.</h2>
+      <p class="sub rv">
+        We show you what's wrong, free. If that's useful, we fix one thing, fast.
+        Anything after that is your call.
+      </p>
+    </div>
 
-    <div class="grid" style="margin-top:56px">
-      <div class="panel rv"><span class="scan"></span>
+    <div class="rail">
+      <div class="panel rv">
         <div class="rung">
           <div class="idx">01</div>
           <div>
             <h3>Free ad check</h3>
             <div class="role">Start here · costs nothing</div>
             <p>
-              We click your ads the way a customer would and see where they land. Then we
-              send you a short write-up: what's losing you calls, and what we'd do about it.
-              Your ads are already public, so we don't need anything from you to do this.
+              We follow your ads to where they actually land, then send you the write-up:
+              what's losing you calls and what we'd do about it. Your ads are public, so we
+              need nothing from you.
             </p>
             <div class="gtee">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
               Yours to keep, either way
             </div>
           </div>
         </div>
       </div>
 
-      <div class="panel rv"><span class="scan"></span>
+      <div class="panel rv">
         <div class="rung">
           <div class="idx">02</div>
           <div>
             <h3>Fix the page</h3>
             <div class="role">One job · small on purpose</div>
             <p>
-              One page built to turn clicks into phone calls. A quote form that actually
-              reaches your inbox — we test it and show you. A button to call you straight
-              from a phone. Built for phones first, because that's where people see your ads.
-              Small on purpose: you get to see how we work before anything bigger.
+              One page built to turn clicks into calls. A quote form we test in front of
+              you, and tap-to-call. Phone-first, because that's where your ads get seen.
+              Small on purpose: you see how we work before anything bigger.
             </p>
             <div class="gtee">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
               Live in 14 days or you don't pay
             </div>
           </div>
         </div>
       </div>
 
-      <div class="panel rv"><span class="scan"></span>
+      <div class="panel rv">
         <div class="rung">
           <div class="idx">03</div>
           <div>
             <h3>Answer every call</h3>
             <div class="role">Monthly · the one that pays for itself</div>
             <p>
-              Every call gets answered, day or night. The caller is asked what the job is,
-              where it is and how soon — in words you approve — and it goes straight into
-              your calendar. You get a summary before you've put your tools down. The 8pm
-              Saturday call you'd normally lose becomes Monday's work.
+              Every call answered, day or night. The job, the address, how soon — in words
+              you approve — straight into your calendar, with a summary before you've put
+              your tools down. The 8pm Saturday call becomes Monday's work.
             </p>
             <div class="gtee">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
               Every call answered in 60 seconds, day or night — or that month is free
             </div>
             <div><a class="more" href="/ai-receptionist/">See exactly how this works
@@ -227,20 +483,19 @@ setTimeout(function(){
         </div>
       </div>
 
-      <div class="panel rv"><span class="scan"></span>
+      <div class="panel rv">
         <div class="rung">
           <div class="idx">04</div>
           <div>
             <h3>Run the whole thing</h3>
             <div class="role">Monthly · where people go next</div>
             <p>
-              We run your ads, keep the page working, and answer the calls that come in.
-              Every week you get one number that matters: what each new customer cost you.
-              Not "impressions". One team for the whole job, so nobody gets to point at
-              anybody else when it isn't working.
+              We run the ads, keep the page working, and answer the calls. One number every
+              week: what each new customer cost you. Not impressions. One team, so nobody
+              gets to point at anybody else.
             </p>
             <div class="gtee">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 1.5l5.5 2.4v4.3c0 3.2-2.3 5.6-5.5 6.3-3.2-.7-5.5-3.1-5.5-6.3V3.9L8 1.5z"/></svg>
               30 new enquiries in 30 days, or we keep working free until you get them
             </div>
             <p class="after">
@@ -254,76 +509,185 @@ setTimeout(function(){
   </div>
 </section>
 
-<!-- ── HOW ────────────────────────────────────────────── -->
-<section id="how">
-  <div class="wrap">
-    <span class="tag rv">How it works</span>
-    <h2 class="rv">Find the problem. Fix it. Answer the phone.</h2>
+<!-- ── JOURNEY ────────────────────────────────────────
+     The pinned chapter. position:sticky holds the stage while scroll advances
+     three states; motion.js only toggles a class. Below 900px, with no JS, or
+     under prefers-reduced-motion the CSS lays all three out in sequence, so the
+     argument survives without the animation. -->
+<section id="journey" aria-labelledby="journey-h" data-stage="0">
+  <div class="pin">
+    <p class="jhead">How it works</p>
 
-    <div class="grid g3">
-      <div class="panel step rv"><span class="scan"></span>
-        <div class="num">Step 1 · We look</div>
-        <h3>Before you've even spoken to us</h3>
+    <div class="jsteps">
+      <h2 id="journey-h" data-reveal>Find the problem. Fix it. <em>Answer the phone.</em></h2>
+
+      <div class="jstep on">
+        <div class="jnum">01</div>
+        <h3 class="sr-only">We look</h3>
         <p>
-          Your ads are public, so we can just click them. Does the page load? Does the form
-          actually reach you? Can someone call you with one tap on a phone? We don't fill
-          anything in, we don't ring anyone, and we don't need your login.
+          Your ads are public, so we just click them. Does the page load? Does the form
+          actually reach you? Can someone call you in one tap? We submit nothing and we
+          don't need your login.
         </p>
       </div>
-      <div class="panel step rv"><span class="scan"></span>
-        <div class="num">Step 2 · We fix one thing</div>
-        <h3>Small, fast, and easy to judge</h3>
+
+      <div class="jstep">
+        <div class="jnum">02</div>
+        <h3 class="sr-only">We fix one thing</h3>
         <p>
-          One page, done properly, live within two weeks. Deliberately small: you find out
-          whether we do what we say long before you've committed to anything that matters.
+          One page, done properly, live within two weeks. Small on purpose: you find out
+          whether we do what we say before committing to anything bigger.
         </p>
       </div>
-      <div class="panel step rv"><span class="scan"></span>
-        <div class="num">Step 3 · We pick up the phone</div>
-        <h3>Where the money actually shows up</h3>
+
+      <div class="jstep">
+        <div class="jnum">03</div>
+        <h3 class="sr-only">We pick up the phone</h3>
         <p>
-          A page that works means more calls — at 7pm, mid-job, on a Sunday. We make sure
-          every one of them gets answered and booked, instead of going to voicemail while
-          the caller rings the next company on the list.
+          A page that works means more calls — 7pm, mid-job, Sunday. We make sure every one
+          gets answered and booked instead of going to voicemail.
         </p>
+      </div>
+    </div>
+
+    <div class="jstage" aria-hidden="true">
+      <!-- 01 — the click dies -->
+      <div class="jframe on">
+        <svg viewBox="0 0 420 260">
+          <rect class="jc" x="8" y="86" width="132" height="88" rx="5"/>
+          <text class="jl" x="24" y="112">SPONSORED</text>
+          <rect class="jbar2" x="24" y="120" width="98" height="5" rx="2.5"/>
+          <rect class="jbtn" x="24" y="138" width="86" height="22" rx="3"/>
+          <text class="jbt" x="67" y="152.5" text-anchor="middle">Get a quote</text>
+          <path class="jpath" d="M146 130 H250"/>
+          <g class="jdead">
+            <rect class="jc dead" x="258" y="86" width="150" height="88" rx="5"/>
+            <text class="jl" x="274" y="112">ENDPOINT</text>
+            <text class="jh" x="274" y="134">Where does it land?</text>
+            <rect class="jghost" x="273.5" y="142.5" width="72" height="20" rx="3"/>
+          </g>
+          <g class="jq">
+            <circle cx="333" cy="208" r="11"/>
+            <text x="333" y="213" text-anchor="middle">?</text>
+          </g>
+          <text class="jcap" x="333" y="243" text-anchor="middle">We follow it to the end</text>
+        </svg>
+      </div>
+
+      <!-- 02 — the page catches it -->
+      <div class="jframe">
+        <svg viewBox="0 0 420 260">
+          <rect class="jc" x="8" y="86" width="132" height="88" rx="5"/>
+          <text class="jl" x="24" y="112">SPONSORED</text>
+          <rect class="jbar2" x="24" y="120" width="98" height="5" rx="2.5"/>
+          <rect class="jbtn" x="24" y="138" width="86" height="22" rx="3"/>
+          <text class="jbt" x="67" y="152.5" text-anchor="middle">Get a quote</text>
+          <path class="jpath live" d="M146 130 H250"/>
+          <rect class="jc live" x="258" y="70" width="150" height="120" rx="5"/>
+          <text class="jl em" x="274" y="96">YOUR PAGE</text>
+          <rect class="jfield" x="273.5" y="104.5" width="106" height="13" rx="2"/>
+          <rect class="jfield" x="273.5" y="124.5" width="106" height="13" rx="2"/>
+          <rect class="jbtn" x="274" y="148" width="92" height="22" rx="3"/>
+          <text class="jbt" x="320" y="162.5" text-anchor="middle">CALL NOW</text>
+          <text class="jcap on" x="333" y="223" text-anchor="middle">It lands somewhere real</text>
+        </svg>
+      </div>
+
+      <!-- 03 — the call gets answered -->
+      <div class="jframe">
+        <svg viewBox="0 0 420 260">
+          <rect class="jc live" x="8" y="70" width="150" height="120" rx="5"/>
+          <text class="jl em" x="24" y="96">YOUR PAGE</text>
+          <rect class="jbtn" x="24" y="110" width="92" height="22" rx="3"/>
+          <text class="jbt" x="70" y="124.5" text-anchor="middle">CALL NOW</text>
+          <text class="jh" x="24" y="156">8:41pm, Saturday</text>
+          <path class="jpath live" d="M164 130 H248"/>
+          <circle class="jring r1" cx="300" cy="130" r="30"/>
+          <circle class="jring r2" cx="300" cy="130" r="44"/>
+          <circle class="jcore" cx="300" cy="130" r="19"/>
+          <path class="jphone" d="M294 124c-.5 3 1 6.8 3.8 9.6s6.6 4.3 9.6 3.8l1-3-4.1-2.2-2 1.7a12 12 0 0 1-4-4l1.7-2-2.2-4.1-3 1z"/>
+          <text class="jcap on" x="300" y="206" text-anchor="middle">Answered in 4 seconds</text>
+          <text class="jsub" x="300" y="228" text-anchor="middle">Booked before you put your tools down</text>
+        </svg>
+      </div>
+
+      <div class="jbar" aria-hidden="true"><i></i></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SELF CHECK ─────────────────────────────────────
+     The interactive beat. Three questions lifted verbatim from the report's
+     closing section, so it tells the visitor something true about their own
+     funnel before it asks them for anything. -->
+<section id="selfcheck">
+  <div class="wrap sc">
+    <span class="tag rv">Check your own funnel</span>
+    <h2 class="rv" data-reveal>Three questions. None of them need us.</h2>
+    <p class="sub rv">
+      Open your own ad on a phone, signed out of Facebook. Tick what's true. Nothing is
+      sent anywhere — this runs in your browser.
+    </p>
+
+    <div class="sc-opts">
+      <button class="sc-opt" type="button" aria-pressed="false">
+        <span class="sc-box" aria-hidden="true"></span>
+        <span><b>You don't know where your own ad lands.</b> Open it on a phone, signed out, and follow it to the end. That is what a stranger gets.</span>
+      </button>
+      <button class="sc-opt" type="button" aria-pressed="false">
+        <span class="sc-box" aria-hidden="true"></span>
+        <span><b>There's no tracking on the page.</b> Nobody can tell you which ad produced a booked job last month.</span>
+      </button>
+      <button class="sc-opt" type="button" aria-pressed="false">
+        <span class="sc-box" aria-hidden="true"></span>
+        <span><b>Nobody is watching it after hours.</b> A message arriving at 8pm on a Saturday sits until Monday.</span>
+      </button>
+    </div>
+
+    <div class="sc-out" role="status" aria-live="polite">
+      <p class="sc-verdict"><b>Tick what applies.</b> We will tell you what each one costs you, and what we would do about it.</p>
+      <div class="cta-row">
+        <a class="btn pri sc-cta" href="#contact">Check my ads — it's free</a>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ── WHY ────────────────────────────────────────────── -->
-<section id="why" style="background:var(--bg-2)">
+<section id="why" class="section-alt">
   <div class="wrap">
-    <div class="grid g2" style="margin-top:0;align-items:center;gap:56px">
+    <div class="split">
       <div>
         <span class="tag rv">Why ForgeLabs AI</span>
-        <h2 class="rv">We build the thing. We don't just run the ads.</h2>
+        <h2 class="rv" data-reveal>We build the thing. We don't just run the ads.</h2>
         <p class="sub rv">
-          Most marketing agencies hire someone else to build the actual pages. That's how so
-          many of the ones we checked ended up broken without anyone noticing — a form that
-          quietly goes nowhere looks exactly like a form that works, unless somebody opens it
-          up and checks.
+          Most agencies hire someone else to build the page. That's how so many of the ones
+          we checked ended up broken without anyone noticing — a form that quietly goes
+          nowhere looks exactly like one that works.
         </p>
         <p class="sub rv">
-          ForgeLabs is run by a software engineer — Microsoft-certified, with a background
-          building and securing systems that businesses depend on. The check behind the
-          numbers above wasn't bought in from anyone. We built the tool that did it.
+          ForgeLabs is run by a software engineer — Microsoft-certified. The audit behind
+          those numbers wasn't bought in from anyone. We built the tool that did it.
         </p>
       </div>
-      <div class="panel rv"><span class="scan"></span>
-        <div class="tag" style="color:var(--am)">What that means for you</div>
-        <div style="margin-top:22px;display:grid;gap:18px">
-          <div>
-            <h3 style="font-size:15.5px;font-weight:600">We check, we don't guess</h3>
-            <p style="margin-top:7px;font-size:14px">Every number above came from opening the real page and looking at what's actually on it.</p>
+      <div class="panel rv">
+        <div class="tag steel">What that means for you</div>
+        <div class="stack">
+          <div class="mini">
+            <h3>We check, we don't guess</h3>
+            <p>Every number above came from opening the real page and looking at what's actually on it.</p>
           </div>
-          <div>
-            <h3 style="font-size:15.5px;font-weight:600">We tell you what we don't know</h3>
-            <p style="margin-top:7px;font-size:14px">If we couldn't confirm something, we say so, instead of counting it against you to pad a number.</p>
+          <div class="mini">
+            <h3>We publish our own corrections</h3>
+            <p>Two early findings of ours were wrong. We caught them, fixed the method, and wrote down why.</p>
           </div>
-          <div>
-            <h3 style="font-size:15.5px;font-weight:600">We only promise what we control</h3>
-            <p style="margin-top:7px;font-size:14px">How fast we build, how fast we answer, how many enquiries come in. We won't promise to close sales for you — that's your job, and you're better at it.</p>
+          <div class="mini">
+            <h3>We tell you what we don't know</h3>
+            <p>If we couldn't confirm it, we say so, instead of counting it against you to pad a number.</p>
+          </div>
+          <div class="mini">
+            <h3>We only promise what we control</h3>
+            <p>How fast we build, how fast we answer, how many enquiries come in. We won't promise to close sales for you — that's your job, and you're better at it.</p>
           </div>
         </div>
       </div>
@@ -334,9 +698,9 @@ setTimeout(function(){
 <!-- ── CONTACT ────────────────────────────────────────── -->
 <section id="contact">
   <div class="wrap">
-    <div class="panel rv"><span class="scan"></span>
-      <span class="tag" style="justify-content:center">Start here</span>
-      <h2>Find out where your ad clicks actually go.</h2>
+    <div class="panel flat center rv">
+      <span class="tag">Start here</span>
+      <h2 data-reveal>Find out where your ad clicks actually go.</h2>
       <p class="sub">
         Tell us your business name and how to reach you. We'll check your ads and send you
         what we find — free, and yours to keep whether we ever work together or not.
@@ -354,14 +718,14 @@ setTimeout(function(){
                  placeholder="How should we get back to you?" required>
         </div>
         <div>
-          <label for="f-note">Anything else? <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+          <label for="f-note">Anything else? <span class="opt">(optional)</span></label>
           <textarea id="f-note" name="note" placeholder="Where you work, what you'd want more of, anything useful."></textarea>
         </div>
         <div class="hp" aria-hidden="true">
           <label for="f-cw">Leave this empty</label>
           <input id="f-cw" name="company_website" type="text" tabindex="-1" autocomplete="off">
         </div>
-        <div class="cta-row" style="margin-top:6px;justify-content:center">
+        <div class="cta-row">
           <button class="btn pri" id="f-submit" type="submit">Check my ads — it's free</button>
           <a class="btn ghost" href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Or book a 15-min call</a>
         </div>
@@ -375,6 +739,7 @@ setTimeout(function(){
   <div class="wrap foot">
     <a href="tel:+12067241071">206-724-1071</a>
     <a href="mailto:hassan@forgelaboratory.net">hassan@forgelaboratory.net</a>
+    <a href="/report/">The research</a>
     <a href="/ai-receptionist/">Answer every call</a>
     <a href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Book a call</a>
     <span class="sp">ForgeLabs AI · AI implementation &amp; lead generation</span>
@@ -386,9 +751,10 @@ setTimeout(function(){
   "use strict";
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* The nav border and the scroll reveals moved to /assets/forge.js — both
-     pages need them, and two copies is how they end up different. Everything
-     left in this file is specific to the landing page. */
+  /* The nav border, the mobile menu, the scroll reveals and the 73-tile scan
+     live in /assets/forge.js — more than one page needs them, and two copies is
+     how they end up different. Everything left in this file is specific to the
+     landing page. The hero mechanisms are in /assets/hero.js. */
 
   /* Lead form.
      This replaced two mailto: links. A mailto: does nothing at all on a machine
@@ -451,104 +817,15 @@ setTimeout(function(){
     });
   }
 
-  /* Animated counters. These are the report's real numbers, so correctness beats
-     the effect: the true values are in the HTML, and the animation only ever
-     runs *down to zero and back up* once we know it will complete. If this
-     script never runs, the observer never fires, or the browser is old, the
-     visitor still reads 73 / 59% / 57% — never a fabricated 0%. */
-  var readout = document.getElementById("readout");
-  function runCounters(){
-    readout.querySelectorAll(".n").forEach(function(el){
-      var to = parseInt(el.dataset.to, 10), suf = el.dataset.suf || "";
-      if(reduce || to === 0){ el.textContent = to + suf; return; }
-      el.textContent = "0" + suf;
-      var t0 = null, dur = 1250, done = false;
-      function settle(){ if(!done){ done = true; el.textContent = to + suf; } }
-      function tick(ts){
-        if(done) return;
-        if(t0 === null) t0 = ts;
-        var p = Math.min((ts - t0) / dur, 1);
-        var e = 1 - Math.pow(1 - p, 3);                 // easeOutCubic
-        if(p < 1){ el.textContent = Math.round(to * e) + suf; requestAnimationFrame(tick); }
-        else settle();                                  // never end on a rounding artefact
-      }
-      requestAnimationFrame(tick);
-      /* rAF is not guaranteed to run to completion — a backgrounded tab, a
-         throttled frame loop or low-power mode can stall it mid-count, which
-         would leave the headline statistic reading 0%. This timer is not tied
-         to frame production, so the true value always lands within ~1.7s
-         whatever the animation did. */
-      setTimeout(settle, dur + 450);
-    });
-  }
-  if(readout){
-    if(reduce || !("IntersectionObserver" in window)) runCounters();
-    else {
-      var co = new IntersectionObserver(function(es){
-        if(es[0].isIntersecting){ runCounters(); co.disconnect(); }
-      }, {threshold:.35});
-      co.observe(readout);
-    }
-  }
-
-  /* hero particle field — connected nodes, circuit-ish.
-     Paused when off-screen or the tab is hidden so it costs nothing while unread. */
-  var cv = document.getElementById("field");
-  if(cv && !reduce){
-    var ctx = cv.getContext("2d", {alpha:true}), W=0, H=0, dpr=1, pts=[], raf=null, vis=true;
-    function size(){
-      var host = cv.parentElement;
-      dpr = Math.min(devicePixelRatio || 1, 2);
-      W = host.offsetWidth; H = host.offsetHeight;
-      cv.width = W * dpr; cv.height = H * dpr;
-      cv.style.width = W + "px"; cv.style.height = H + "px";
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      // fewer nodes on small screens; this is the main perf lever
-      var n = Math.round(Math.min(Math.max(W / 22, 26), innerWidth < 760 ? 40 : 88));
-      pts = [];
-      for(var i=0;i<n;i++) pts.push({
-        x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-.5)*.26, vy:(Math.random()-.5)*.26,
-        r:Math.random()*1.5+.6
-      });
-    }
-    var LINK = innerWidth < 760 ? 92 : 132;
-    function draw(){
-      ctx.clearRect(0,0,W,H);
-      for(var i=0;i<pts.length;i++){
-        var p = pts[i];
-        p.x += p.vx; p.y += p.vy;
-        if(p.x < 0 || p.x > W) p.vx *= -1;
-        if(p.y < 0 || p.y > H) p.vy *= -1;
-        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832);
-        ctx.fillStyle = "rgba(0,212,255,.55)"; ctx.fill();
-        for(var j=i+1;j<pts.length;j++){
-          var q = pts[j], dx = p.x-q.x, dy = p.y-q.y, d = Math.sqrt(dx*dx+dy*dy);
-          if(d < LINK){
-            ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
-            ctx.strokeStyle = "rgba(0,212,255," + (.16 * (1 - d/LINK)).toFixed(3) + ")";
-            ctx.lineWidth = 1; ctx.stroke();
-          }
-        }
-      }
-      raf = requestAnimationFrame(draw);
-    }
-    function start(){ if(raf === null && vis){ raf = requestAnimationFrame(draw); } }
-    function stop(){ if(raf !== null){ cancelAnimationFrame(raf); raf = null; } }
-    size(); start();
-    addEventListener("resize", function(){ stop(); size(); start(); }, {passive:true});
-    document.addEventListener("visibilitychange", function(){
-      vis = !document.hidden; vis ? start() : stop();
-    });
-    if("IntersectionObserver" in window){
-      new IntersectionObserver(function(es){
-        vis = es[0].isIntersecting && !document.hidden;
-        vis ? start() : stop();
-      }, {threshold:0}).observe(cv);
-    }
-  }
+  /* The stat counters moved to /assets/motion.js so one system owns them. Two
+     animators on the same elements fought over textContent. The correctness rule
+     travelled with them: the true values live in the HTML and a settle timer
+     independent of the frame loop guarantees they land. */
 })();
 </script>
 <script src="/assets/forge.js" defer></script>
+<script src="/assets/blackhole.js" defer></script>
+<script src="/assets/hero.js" defer></script>
+<script src="/assets/motion.js" defer></script>
 </body>
 </html>

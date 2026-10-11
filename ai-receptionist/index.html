@@ -5,18 +5,20 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI Receptionist for Local Service Businesses | ForgeLabs AI</title>
 <meta name="description" content="Every call answered — after hours, at lunch, and when your line is already busy. An AI assistant takes the details, books the job and hands urgent calls to your on-call person. It works alongside your front desk, not instead of it.">
-<meta name="theme-color" content="#0a0e14">
+<meta name="theme-color" content="#0C0806">
 <meta property="og:title" content="Never miss another call — ForgeLabs AI">
 <meta property="og:description" content="After-hours, lunch-hour and busy-line call answering for home service businesses. Books the job, texts you the summary, passes emergencies to a person.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://forgelaboratory.net/ai-receptionist/">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://forgelaboratory.net/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Never miss another call — ForgeLabs AI">
 <meta name="twitter:description" content="After-hours, lunch-hour and busy-line call answering for home service businesses.">
 <link rel="canonical" href="https://forgelaboratory.net/ai-receptionist/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&family=Inter:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/assets/forge.css">
 <script type="application/ld+json">
 {
@@ -68,12 +70,21 @@ setTimeout(function(){
       <a href="/#report">What We Found</a>
       <a href="/#ladder">What We Do</a>
       <a href="/ai-receptionist/" aria-current="page">Answer Every Call</a>
-      <a href="/#how">How It Works</a>
-      <a href="/#why">Why Us</a>
-      <a href="/#contact">Check My Ads</a>
+      <a class="btn pri" href="/#contact">Check my ads</a>
     </div>
+    <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+
+<div class="menu" id="menu" aria-hidden="true">
+  <a href="/#report">What We Found</a>
+  <a href="/#ladder">What We Do</a>
+  <a href="/ai-receptionist/">Answer Every Call</a>
+  <a href="/report/">The Research</a>
+  <a class="btn pri" href="/#contact">Check my ads — it's free</a>
+</div>
 
 <!-- ── HERO ───────────────────────────────────────────── -->
 <section class="phero">
@@ -83,7 +94,7 @@ setTimeout(function(){
     <p class="lede">
       After six. At lunch. On a Sunday. When you're already on the other line and
       under a sink. Every one of those calls gets answered, the details get taken
-      down, and the job lands in your calendar — <strong style="color:var(--ink)">without
+      down, and the job lands in your calendar — <strong>without
       replacing the person who answers your phone today</strong>.
     </p>
     <div class="cta-row">
@@ -95,7 +106,7 @@ setTimeout(function(){
 </section>
 
 <!-- ── PROBLEM ────────────────────────────────────────── -->
-<section id="problem" aria-labelledby="problem-h" style="background:var(--bg-2)">
+<section id="problem" class="section-alt" aria-labelledby="problem-h">
   <div class="wrap">
     <span class="tag rv">The problem</span>
     <h2 class="rv" id="problem-h">A missed call doesn't wait for you.</h2>
@@ -124,51 +135,51 @@ setTimeout(function(){
       sign off on before it goes live.
     </p>
 
-    <div class="grid g2" style="margin-top:50px">
-      <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">Answers the everyday questions</h3>
-        <p style="margin-top:12px;font-size:14.5px">
+    <div class="grid g2">
+      <div class="panel panel-sm rv">
+        <h3>Answers the everyday questions</h3>
+        <p>
           Are you open Saturday? Do you come out to Cedar Park? Do you work on that
           brand? It answers from what you told us about your business — and when it
           doesn't know, it says so and takes a message instead of guessing.
         </p>
       </div>
-      <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">Books the job</h3>
-        <p style="margin-top:12px;font-size:14.5px">
+      <div class="panel panel-sm rv">
+        <h3>Books the job</h3>
+        <p>
           It offers real slots from your calendar and puts the appointment in, with
           the caller's number attached. Someone ringing to ask when you're coming
           gets told, without anyone having to look it up.
         </p>
       </div>
-      <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">Passes emergencies to a person</h3>
-        <p style="margin-top:12px;font-size:14.5px">
+      <div class="panel panel-sm rv">
+        <h3>Passes emergencies to a person</h3>
+        <p>
           Gas smell, water coming through a ceiling, no heat in a freeze — those don't
           get a message taken. They go straight through to whoever is on call, with a
           quick handover so they're not starting from nothing. You set what counts as
           urgent.
         </p>
       </div>
-      <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">Gets the details you actually need</h3>
-        <p style="margin-top:12px;font-size:14.5px">
+      <div class="panel panel-sm rv">
+        <h3>Gets the details you actually need</h3>
+        <p>
           Name, callback number, the address, what's wrong, how soon they need you, and
           whether they're already a customer. The things that decide whether a job is
           worth driving to — captured the same way every time.
         </p>
       </div>
-      <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">Texts or emails you a summary</h3>
-        <p style="margin-top:12px;font-size:14.5px">
+      <div class="panel panel-sm rv">
+        <h3>Texts or emails you a summary</h3>
+        <p>
           After every call, a short write-up of who rang and what they wanted. You can
           read it between jobs and decide what needs you tonight and what can wait
           until the morning.
         </p>
       </div>
-      <div class="panel rv"><span class="scan"></span>
-        <h3 style="font-size:17px;font-weight:600">English and Spanish</h3>
-        <p style="margin-top:12px;font-size:14.5px">
+      <div class="panel panel-sm rv">
+        <h3>English and Spanish</h3>
+        <p>
           If your area needs it, callers get handled in either language rather than
           hanging up. Optional — we turn it on if it's useful where you work.
         </p>
@@ -178,13 +189,13 @@ setTimeout(function(){
 </section>
 
 <!-- ── HOW IT WORKS ───────────────────────────────────── -->
-<section id="how" aria-labelledby="how-h" style="background:var(--bg-2)">
+<section id="how" class="section-alt" aria-labelledby="how-h">
   <div class="wrap">
     <span class="tag rv">How it works</span>
     <h2 class="rv" id="how-h">Four steps, and none of them are your job.</h2>
 
-    <div class="grid g4" style="margin-top:50px">
-      <div class="panel step rv"><span class="scan"></span>
+    <div class="steps four">
+      <div class="step rv">
         <div class="num">Step 1 · Talk</div>
         <h3>A 15-minute call</h3>
         <p>
@@ -193,17 +204,16 @@ setTimeout(function(){
           that call.
         </p>
       </div>
-      <div class="panel step rv"><span class="scan"></span>
+      <div class="step rv">
         <div class="num">Step 2 · Build</div>
         <h3>We set it up on your business</h3>
         <p>
           Your hours, your area, what you will and won't quote over the phone, your
-          on-call numbers. Then we test
-          it hard — including the awkward calls — and you listen to it before anything
-          goes live.
+          on-call numbers. Then we test it hard — including the awkward calls — and you
+          listen to it before anything goes live.
         </p>
       </div>
-      <div class="panel step rv"><span class="scan"></span>
+      <div class="step rv">
         <div class="num">Step 3 · Switch on</div>
         <h3>You forward the calls you'd miss</h3>
         <p>
@@ -212,7 +222,7 @@ setTimeout(function(){
           reversible in a minute.
         </p>
       </div>
-      <div class="panel step rv"><span class="scan"></span>
+      <div class="step rv">
         <div class="num">Step 4 · Tune</div>
         <h3>We watch it and report</h3>
         <p>
@@ -235,28 +245,28 @@ setTimeout(function(){
     </p>
 
     <div class="grid g3">
-      <div class="panel rv"><span class="scan"></span>
-        <div class="tag" style="color:var(--am)">Start here</div>
-        <h3 style="margin-top:18px;font-size:18px;font-weight:600">After hours and weekends</h3>
-        <p style="margin-top:12px;font-size:14.5px">
+      <div class="panel panel-sm rv">
+        <div class="tag">Start here</div>
+        <h3>After hours and weekends</h3>
+        <p>
           Your team takes everything during the day. Evenings, weekends and holidays
           roll over instead of going to voicemail. The lowest-risk way to find out
           what you've been missing.
         </p>
       </div>
-      <div class="panel rv"><span class="scan"></span>
-        <div class="tag">Most common add-on</div>
-        <h3 style="margin-top:18px;font-size:18px;font-weight:600">When the line's busy, and at lunch</h3>
-        <p style="margin-top:12px;font-size:14.5px">
+      <div class="panel panel-sm rv">
+        <div class="tag steel">Most common add-on</div>
+        <h3>When the line's busy, and at lunch</h3>
+        <p>
           The second and third callers stop hitting a busy tone. Lunch stops being an
           hour of the day where nobody picks up. Your front desk keeps every call it
           can actually get to.
         </p>
       </div>
-      <div class="panel rv"><span class="scan"></span>
-        <div class="tag">If you want it</div>
-        <h3 style="margin-top:18px;font-size:18px;font-weight:600">The whole phone</h3>
-        <p style="margin-top:12px;font-size:14.5px">
+      <div class="panel panel-sm rv">
+        <div class="tag steel">If you want it</div>
+        <h3>The whole phone</h3>
+        <p>
           Everything gets answered first and anything that needs a person gets passed
           to one. For shops with no front desk, or where the phone is pulling someone
           off the tools all day.
@@ -267,9 +277,9 @@ setTimeout(function(){
 </section>
 
 <!-- ── TRUST ──────────────────────────────────────────── -->
-<section id="trust" aria-labelledby="trust-h" style="background:var(--bg-2)">
+<section id="trust" class="section-alt" aria-labelledby="trust-h">
   <div class="wrap">
-    <div class="grid g2" style="margin-top:0;align-items:start;gap:56px">
+    <div class="split top">
       <div>
         <span class="tag rv">Straight answers</span>
         <h2 class="rv" id="trust-h">What we'll tell your customers, and what we won't do.</h2>
@@ -278,7 +288,7 @@ setTimeout(function(){
           before you put your reputation behind it.
         </p>
       </div>
-      <div class="panel rv"><span class="scan"></span>
+      <div class="panel rv">
         <ul class="ticks">
           <li>
             <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>
@@ -324,7 +334,7 @@ setTimeout(function(){
         why we start at after-hours: those calls were going to voicemail anyway, so the
         worst case is where you already were.
       </p>
-      <p style="margin-top:14px">
+      <p>
         Doctors' and dentists' offices are a different job, with rules around patient
         information that this setup isn't built for. If that's you, say so on the call
         and we'll point you at someone who does it properly rather than take the work.
@@ -344,8 +354,8 @@ setTimeout(function(){
       ringing.
     </p>
 
-    <div class="grid" style="margin-top:52px">
-      <div class="panel rv"><span class="scan"></span>
+    <div class="grid">
+      <div class="panel rv">
         <div class="rung">
           <div class="idx">01</div>
           <div>
@@ -359,7 +369,7 @@ setTimeout(function(){
         </div>
       </div>
 
-      <div class="panel rv"><span class="scan"></span>
+      <div class="panel rv">
         <div class="rung">
           <div class="idx">02</div>
           <div>
@@ -374,11 +384,11 @@ setTimeout(function(){
         </div>
       </div>
 
-      <div class="panel hl rv"><span class="scan"></span>
+      <div class="panel hl rv">
         <div class="rung">
           <div class="idx">03</div>
           <div>
-            <h3>Answer every call &nbsp;<span class="tag" style="color:var(--am);vertical-align:middle">You're here</span></h3>
+            <h3>Answer every call <span class="here">You're here</span></h3>
             <div class="role">Monthly · the one that pays for itself</div>
             <p>Everything on this page. The 8pm Saturday call you'd normally lose becomes Monday's work.</p>
             <div class="gtee">
@@ -389,7 +399,7 @@ setTimeout(function(){
         </div>
       </div>
 
-      <div class="panel rv"><span class="scan"></span>
+      <div class="panel rv">
         <div class="rung">
           <div class="idx">04</div>
           <div>
@@ -408,7 +418,7 @@ setTimeout(function(){
 </section>
 
 <!-- ── FAQ ────────────────────────────────────────────── -->
-<section id="faq" aria-labelledby="faq-h" style="background:var(--bg-2)">
+<section id="faq" class="section-alt" aria-labelledby="faq-h">
   <div class="wrap">
     <span class="tag rv">Questions people ask</span>
     <h2 class="rv" id="faq-h">The five we get every time.</h2>
@@ -495,8 +505,8 @@ setTimeout(function(){
 <!-- ── CONTACT ────────────────────────────────────────── -->
 <section id="contact" aria-labelledby="cta-h">
   <div class="wrap">
-    <div class="panel rv"><span class="scan"></span>
-      <span class="tag" style="justify-content:center">Next step</span>
+    <div class="panel flat center rv">
+      <span class="tag">Next step</span>
       <h2 id="cta-h">Find out what you're missing.</h2>
       <p class="sub">
         Fifteen minutes on the phone. We'll work out roughly how many calls go unanswered
@@ -507,9 +517,9 @@ setTimeout(function(){
         <a class="btn pri" href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Book a 15-min call</a>
         <a class="btn ghost" href="/#contact">Get a free ad check</a>
       </div>
-      <p class="hero-note" style="text-align:center">
-        Or email <a href="mailto:hassan@forgelaboratory.net" style="color:var(--cy)">hassan@forgelaboratory.net</a>
-        &nbsp;·&nbsp; <a href="tel:+12067241071" style="color:var(--cy)">206-724-1071</a>
+      <p class="hero-note">
+        Or email <a href="mailto:hassan@forgelaboratory.net">hassan@forgelaboratory.net</a>
+        &nbsp;·&nbsp; <a href="tel:+12067241071">206-724-1071</a>
       </p>
     </div>
   </div>
@@ -520,6 +530,7 @@ setTimeout(function(){
     <a href="/">Home</a>
     <a href="tel:+12067241071">206-724-1071</a>
     <a href="mailto:hassan@forgelaboratory.net">hassan@forgelaboratory.net</a>
+    <a href="/report/">The research</a>
     <a href="https://cal.com/hassan-omar-k7qsvr/15min" target="_blank" rel="noopener">Book a call</a>
     <span class="sp">ForgeLabs AI · AI implementation &amp; lead generation</span>
   </div>
