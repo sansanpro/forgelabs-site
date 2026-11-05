@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /app/
+Disallow: /unsubscribe/
 
 Sitemap: https://forgelaboratory.net/sitemap.xml

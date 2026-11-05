@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Remove My Business | ForgeLabs</title>
+<meta name="theme-color" content="#0C0806">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/assets/app.css">
+<style>
+main{max-width:720px}
+h1{font-size:30px; margin-bottom:6px}
+h2{margin:26px 0 8px}
+p,li{font-size:15px}
+.top .spacer{flex:1}
+</style>
+</head>
+<body>
+<header class="top"><a class="brand" href="/"><i></i>ForgeLabs</a><span class="spacer"></span><a class="tab" href="/app/">Sign in</a></header>
+<main><h1>Remove my business</h1>
+<p>ForgeLabs is software that reports on businesses running public ads. Tell us what to leave out and it won't appear in future searches. Fill in at least one field.</p>
+<form id="rf" class="card" novalidate style="margin-top:18px">
+<div class="field"><label for="r-b">Business name</label><input id="r-b" maxlength="200" autocomplete="organization"></div>
+<div class="field"><label for="r-d">Website</label><input id="r-d" maxlength="200" placeholder="yourbusiness.com"></div>
+<div class="field"><label for="r-e">Email address</label><input id="r-e" type="email" maxlength="200" autocomplete="email"></div>
+<button class="btn pri" type="submit">Remove from future searches</button>
+<div class="err" id="r-msg" role="status" aria-live="polite"></div>
+</form>
+<p class="small muted">Customers who already downloaded a lead keep their copy. To stop email from one of them, use the unsubscribe link in that email.</p></main>
+<script>
+document.getElementById("rf").onsubmit = function(e){
+  e.preventDefault();
+  var msg = document.getElementById("r-msg"), b = e.target.querySelector("button");
+  var v = function(id){ return document.getElementById(id).value.trim(); };
+  var domain = v("r-d").replace(/^https?:\/\//i,"").replace(/^www\./i,"").split("/")[0];
+  if(!v("r-b") && !domain && !v("r-e")){ msg.className="err"; msg.textContent="Fill in at least one field."; return; }
+  b.disabled = true;
+  fetch("https://xhtwtnsvdmabfvewjgwz.supabase.co/rest/v1/rpc/request_removal", {method:"POST",
+    headers:{apikey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodHd0bnN2ZG1hYmZ2ZXdqZ3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4NzU5NDEsImV4cCI6MjEwOTQ1MTk0MX0.Zgurc8l1LXPRFqtfNgUNShBQLGJUWpsg-sQ-FOcr-t4","Content-Type":"application/json"},
+    body:JSON.stringify({p_email:v("r-e"), p_domain:domain, p_business:v("r-b")})
+  }).then(function(r){
+    if(!r.ok) throw 0;
+    e.target.innerHTML = '<h2 style="margin:0">Done</h2><p style="margin-bottom:0">It will be left out of future searches.</p>';
+  }).catch(function(){
+    b.disabled = false; msg.className="err";
+    msg.textContent = "That didn't go through. Try again, or email hassan@forgelaboratory.net.";
+  });
+};
+</script>
+</body>
+</html>
