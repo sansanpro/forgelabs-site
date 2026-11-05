@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unsubscribe | ForgeLabs</title>
+<meta name="theme-color" content="#0C0806">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/assets/app.css">
+<style>
+main{max-width:720px}
+h1{font-size:30px; margin-bottom:6px}
+h2{margin:26px 0 8px}
+p,li{font-size:15px}
+.top .spacer{flex:1}
+</style>
+</head>
+<body>
+<header class="top"><a class="brand" href="/"><i></i>ForgeLabs</a><span class="spacer"></span><a class="tab" href="/app/">Sign in</a></header>
+<main><h1>Unsubscribe</h1><div class="card" style="margin-top:18px"><p id="u-msg" style="margin:0">Confirm you don't want any more emails from this sender.</p>
+<button class="btn pri" id="u-go" type="button" style="margin-top:14px">Unsubscribe me</button></div>
+<p class="small muted">This stops email from the sender whose message you clicked from. To be left out of future searches altogether, use the <a href="/remove/">removal form</a>.</p></main>
+<script>
+(function(){
+  var t = new URLSearchParams(location.search).get("t");
+  var msg = document.getElementById("u-msg"), go = document.getElementById("u-go");
+  if(!t){ msg.textContent = "This link is missing its code. Use the unsubscribe link in the email you received."; go.remove(); return; }
+  go.onclick = function(){
+    go.disabled = true;
+    fetch("https://xhtwtnsvdmabfvewjgwz.supabase.co/functions/v1/unsubscribe", {method:"POST",
+      headers:{apikey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodHd0bnN2ZG1hYmZ2ZXdqZ3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4NzU5NDEsImV4cCI6MjEwOTQ1MTk0MX0.Zgurc8l1LXPRFqtfNgUNShBQLGJUWpsg-sQ-FOcr-t4","Content-Type":"application/json"}, body:JSON.stringify({t:t})
+    }).then(function(r){
+      if(!r.ok) throw 0;
+      msg.textContent = "You're unsubscribed. This sender can't email you through ForgeLabs again.";
+      go.remove();
+    }).catch(function(){
+      go.disabled = false;
+      msg.textContent = "That didn't go through. Try again, or email hassan@forgelaboratory.net.";
+    });
+  };
+})();
+</script>
+</body>
+</html>
