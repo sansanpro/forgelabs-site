@@ -494,7 +494,7 @@
       '<div class="field"><label for="s-v">Vertical</label><select id="s-v">' + VERTICALS.map(function (v) { return opt(v[0], v[1], "roofing"); }).join("") + "</select></div>" +
       '<div class="field"><label for="s-city">City</label><input id="s-city" placeholder="Denver" maxlength="60"></div>' +
       '<div class="field"><label for="s-st">State</label><select id="s-st"><option value="">Choose</option>' + STATES.map(function (x) { return opt(x, x, ""); }).join("") + "</select></div>" +
-      '<div class="field"><label for="s-max">Leads wanted</label><input id="s-max" type="number" min="1" max="' + Math.max(1, u.left) + '" value="' + Math.min(50, Math.max(1, u.left)) + '"></div>' +
+      '<div class="field"><label for="s-max">Leads wanted</label><input id="s-max" type="number" min="1" max="' + Math.max(1, u.left) + '" value="' + Math.min(25, Math.max(1, u.left)) + '"></div>' +
       "</div>" +
       '<div class="field"><label for="s-kw">Extra keyword <span class="muted">(optional, or required for "something else")</span></label><input id="s-kw" maxlength="60" placeholder="metal roofing"></div>' +
       '<div class="row"><button class="btn pri" type="submit"' + (planActive() ? "" : " disabled") + ">Run search</button>" +
