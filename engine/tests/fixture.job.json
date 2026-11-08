@@ -1,0 +1,23 @@
+{
+  "brand": {"name": "Habitly", "icon": "icon", "theme": {"style": "light", "accent": "#3B82F6"}},
+  "screens": {
+    "today": {"path": "fixture/today.png"},
+    "done": {"path": "fixture/done.png"},
+    "stats": {"path": "fixture/stats.png"},
+    "friends": {"path": "fixture/friends.png"},
+    "scroll": {"path": "fixture/scroll.mp4"},
+    "icon": {"path": "fixture/icon.png", "kind": "icon"}
+  },
+  "hooks": [
+    {"id": "h1-comparison", "say": "It's like Duolingo, but for your habits.", "benefit": "Tick off a habit, keep the streak alive."},
+    {"id": "h2-callout", "say": "You've restarted the same habit five times this year.", "benefit": "Streaks you can see make it stick.", "accent_from": 4}
+  ],
+  "opening": {"style": "phone", "motion": "page", "screens": ["today", "done", "stats"]},
+  "body": [
+    {"say": "Tick off a habit and watch your day fill up.", "head": "Tap to tick it off", "screen": "scroll", "motion": "play"},
+    {"say": "Every streak shows how far you've come.", "head": "See your streaks", "screen": "stats", "motion": "page"},
+    {"say": "Friends keep you honest.", "head": "Bring a friend", "screen": "friends", "motion": "page"},
+    {"say": "Your best week, in one chart.", "head": "Your best week", "screen": "stats", "motion": "zoom", "zoom": [0.12, 0.5]}
+  ],
+  "cta": {"say": "Download Habitly free on the App Store.", "lines": ["Build habits that stick."]}
+}

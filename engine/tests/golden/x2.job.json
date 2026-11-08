@@ -1,0 +1,34 @@
+{
+  "brand": {
+    "name": "StockMatcherAI",
+    "spoken_name": "Stock Matcher A.I.",
+    "theme": {"style": "dark", "bg": [26, 15, 21], "glow": [90, 34, 40], "text": [250, 240, 236],
+              "accent": [255, 155, 118], "on": [38, 18, 26], "highlight": [255, 178, 140]}
+  },
+  "screens": {
+    "deck-2": {"path": "shots/deck-2-masked.png", "status_bar": false},
+    "deck-3": {"path": "shots/deck-3-masked.png", "status_bar": false},
+    "card-1": {"path": "shots/card-1-masked.png", "kind": "card"},
+    "card-2": {"path": "shots/card-2-masked.png", "kind": "card"},
+    "ask-ai": {"path": "shots/ask-ai.png", "status_bar": false},
+    "recap": {"path": "shots/recap-insight.png", "status_bar": false}
+  },
+  "hooks": [
+    {"id": "x2-revenue", "say": "It's Tinder, except the matches have revenue.", "screen": "deck-2",
+     "benefit": "Swipe right on real companies working on causes you pick.", "accent_from": 2,
+     "voice": {"audio": "vo/x2.mp3", "words": "vo/x2.json"}}
+  ],
+  "opening": {"style": "hand", "motion": "card", "screens": ["deck-2", "deck-3"], "cards": ["card-1", "card-2"]},
+  "body": [
+    {"say": "Swipe right on real companies working on causes you pick.", "head": "Swipe right to like",
+     "screen": "deck-2", "motion": "swipe", "card": "card-1", "dir": "right"},
+    {"say": "Every card shows what it does, the proof, and what to know.", "head": "Know what you're swiping on",
+     "screen": "deck-3", "motion": "zoom", "zoom": [0.0, 0.37, 1.0, 0.72]},
+    {"say": "Stuck on something? Ask A.I.", "head": "Stuck? Ask AI", "screen": "ask-ai", "motion": "rise"},
+    {"say": "Then see what your likes say about you.", "head": "What your likes say about you",
+     "screen": "recap", "motion": "zoom", "zoom": [0, 0.27, 1, 0.68], "zoom_w": 760}
+  ],
+  "cta": {"say": "Download Stock Matcher A.I. free on the App Store.", "button": "Download free on the App Store",
+          "lines": ["Matches built around your values,", "with AI to explain every company."]},
+  "voice": {"speed": 1.15}
+}

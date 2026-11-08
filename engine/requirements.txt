@@ -1,0 +1,6 @@
+Pillow>=11
+imageio-ffmpeg>=0.5
+requests>=2.31
+# tools/make_hand_asset.py only
+numpy
+scipy
