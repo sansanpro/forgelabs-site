@@ -1,0 +1,23 @@
+# Secrets: keys live here and are never committed
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Engine output and scratch
+engine/out/
+engine/tests/out/
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+
+# OS and editors
+.DS_Store
+.vscode/
+node_modules/
