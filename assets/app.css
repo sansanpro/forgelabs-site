@@ -1,4 +1,5 @@
-/* ForgeLabs app. Same palette as the marketing site, denser layout. */
+/* ForgeLabs App Ad Studio, plus the legal and opt-out pages. Same palette as the marketing site,
+   denser layout. */
 :root{
   --paper:#0C0806; --paper-2:#120C08; --card:#17100A; --card-2:#1E150E;
   --ink:#FBF7F0; --body:#CFC5B8; --muted:#9A9084; --steel:#9BA5B4;
@@ -84,7 +85,7 @@ td .name{color:var(--ink); font-weight:600}
   border:1px solid var(--line); color:var(--body); white-space:nowrap}
 .pill.a{color:var(--good); border-color:rgba(123,216,143,.4)}
 .pill.b{color:var(--steel)}
-.pill.queued,.pill.running{color:var(--ember-tx); border-color:var(--ember-line)}
+.pill.queued,.pill.running,.pill.draft{color:var(--ember-tx); border-color:var(--ember-line)}
 .pill.done{color:var(--good); border-color:rgba(123,216,143,.4)}
 .pill.failed{color:var(--bad); border-color:rgba(255,143,143,.4)}
 .meter{height:6px; background:var(--line-2); border-radius:9px; overflow:hidden; margin-top:6px}
@@ -116,6 +117,95 @@ code{font-family:var(--mono); font-size:12.5px; background:#100A06; border:1px s
   border-radius:4px; padding:1px 5px; color:var(--ink); word-break:break-all}
 pre{background:#100A06; border:1px solid var(--line-2); border-radius:6px; padding:10px; overflow:auto;
   font:12.5px var(--mono); color:var(--ink)}
+/* ── studio ─────────────────────────────────────────────────── */
+.brand{align-items:baseline}
+.brand i{align-self:center}
+.brand .sub{font:500 13px Inter,sans-serif; color:var(--muted); margin-left:2px}
+.packs{margin-right:8px}
+.apps{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px}
+.appcard{display:block; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px;
+  text-decoration:none; color:var(--body); transition:border-color .2s}
+.appcard:hover{border-color:var(--ember-line)}
+.appcard h2{margin-bottom:6px}
+.appcard p{margin:4px 0}
+.steps{display:flex; gap:6px; flex-wrap:wrap; margin:0 0 16px}
+.step{display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--line); border-radius:99px;
+  color:var(--body); text-decoration:none; font-weight:500; font-size:13.5px; background:var(--card)}
+.step b{display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%; font-size:11.5px;
+  background:var(--line-2); color:var(--muted)}
+.step.done b{background:rgba(123,216,143,.16); color:var(--good)}
+.step.on{border-color:var(--ember-line); color:var(--ember-tx); background:var(--ember-wash)}
+.step.on b{background:var(--ember); color:var(--ember-lb)}
+.cols2{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 14px}
+.cols3{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0 12px}
+.grow{flex:1; min-width:0}
+.check{display:inline-flex; align-items:center; gap:7px; font-weight:500; font-size:13.5px; margin:0 14px 0 0; cursor:pointer}
+.check.block{display:flex; margin:6px 0}
+.check.small{font-size:12.5px}
+.nowrap-row{flex-wrap:nowrap}
+.row.tight{gap:6px}
+.btn.small{padding:5px 9px; font-size:12.5px}
+.drop{display:flex; flex-direction:column; align-items:center; gap:4px; border:1.5px dashed var(--ember-line); border-radius:10px;
+  padding:26px; margin:14px 0 8px; cursor:pointer; text-align:center; background:var(--ember-wash); color:var(--ink); font-weight:600}
+.drop:hover{border-color:var(--ember-tx)}
+.drop input{position:absolute; width:1px; height:1px; opacity:0}
+.drop:focus-within{outline:2px solid var(--ember-tx); outline-offset:2px}
+.shots{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-top:12px}
+.shot{margin:0; background:var(--card-2); border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column}
+.shot img,.shot video{display:block; width:100%; aspect-ratio:9/19.5; object-fit:cover; object-position:top; background:#000}
+.shot figcaption{padding:8px; display:flex; flex-direction:column; gap:6px}
+.shot .lbl{padding:6px 8px; font-size:12.5px}
+.iconprev{width:64px; height:64px; border-radius:15px; object-fit:cover; border:1px solid var(--line)}
+.chip{display:inline-block; margin:2px 4px 2px 0; padding:3px 10px; border-radius:99px; border:1px solid var(--line);
+  background:var(--card-2); color:var(--body); font:500 12.5px Inter,sans-serif; cursor:pointer}
+.chip:hover{border-color:var(--ember-tx); color:var(--ember-tx)}
+.write{border-top:1px solid var(--line); margin-top:6px; padding-top:14px}
+.write .cols3{grid-template-columns:170px minmax(0,1.4fr) minmax(0,1fr)}
+.lint ul{list-style:none; margin:4px 0 0; padding:0}
+.lint li{font-size:12.5px; padding:2px 0 2px 18px; position:relative}
+.lint li::before{content:""; position:absolute; left:2px; top:8px; width:8px; height:8px; border-radius:50%}
+.lint li.block{color:var(--bad)} .lint li.block::before{background:var(--bad)}
+.lint li.warn{color:#F2C46D} .lint li.warn::before{background:#F2C46D}
+.lint li.info{color:var(--steel)} .lint li.info::before{background:var(--steel)}
+.lint-ok{font-size:12.5px; color:var(--good); margin:4px 0 0}
+#h-live{margin:-4px 0 10px}
+h3.cat{margin:16px 0 8px; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.08em}
+h3.cat:first-child{margin-top:0}
+.hook{display:flex; gap:12px; align-items:flex-start; padding:12px; border:1px solid var(--line-2); border-radius:8px; margin-bottom:8px; background:var(--card-2)}
+.hook.on{border-color:var(--ember-line); background:linear-gradient(var(--ember-wash),var(--ember-wash)),var(--card-2)}
+.hook .pick{margin:0; padding-top:8px}
+.hook .pick input{width:18px; height:18px}
+.htext{font-weight:600; font-size:15px; color:var(--ink); background:transparent; border-color:transparent; padding:6px 8px}
+.htext:hover,.htext:focus{border-color:var(--line); background:#100A06}
+.hben{margin-top:4px; font-size:13px; background:transparent; border-color:transparent; padding:5px 8px; color:var(--body)}
+.hben:hover,.hben:focus{border-color:var(--line); background:#100A06}
+.hmeta{display:flex; flex-direction:column; align-items:flex-end; gap:6px}
+.scene{border:1px solid var(--line-2); border-radius:8px; padding:12px; margin-bottom:10px; background:var(--card-2)}
+.scene .field:last-child{margin-bottom:0}
+.voices{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px}
+.voice{display:grid; grid-template-columns:auto 1fr auto; grid-template-rows:auto auto; column-gap:8px; align-items:center;
+  padding:10px; border:1px solid var(--line); border-radius:8px; margin:0; cursor:pointer; background:var(--card-2)}
+.voice input{grid-row:span 2}
+.voice b{color:var(--ink)}
+.voice .small{grid-column:2}
+.voice .btn{grid-column:3; grid-row:1 / span 2}
+.voice.on{border-color:var(--ember-line); background:var(--ember-wash)}
+.banner.warn{border-color:rgba(242,196,109,.45); background:rgba(242,196,109,.08)}
+.banner div+div{margin-top:4px}
+.sum{margin:6px 0 0; padding-left:18px}
+.sum li{margin-bottom:6px}
+.batch h3{margin:14px 0 8px}
+.batch .row .small{flex:1; min-width:200px}
+.spin{display:inline-block; width:11px; height:11px; border:2px solid var(--ember-line); border-top-color:var(--ember);
+  border-radius:50%; animation:spin 1s linear infinite; vertical-align:-1px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.strips{display:grid; gap:10px}
+.strips figure{margin:0}
+.strips img{display:block; width:100%; border-radius:8px; border:1px solid var(--line); background:#000}
+.vids{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px}
+.vid video{display:block; width:100%; aspect-ratio:9/16; border-radius:10px; background:#000; border:1px solid var(--line)}
+.vid p{margin:6px 0 0}
+@media(max-width:860px){.cols3,.write .cols3{grid-template-columns:1fr}.cols2{grid-template-columns:1fr}}
 @media(max-width:700px){
   .top{flex-wrap:wrap; padding:8px 12px}
   main{padding:18px 14px 70px}

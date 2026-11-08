@@ -26,11 +26,13 @@ create table if not exists public.studio_projects (
   id uuid primary key default gen_random_uuid(),
   owner uuid not null default auth.uid() references auth.users(id) on delete cascade,
   name text not null default 'Untitled app' check (char_length(name) between 1 and 80),
-  brief jsonb not null default '{}'::jsonb,
-  brand jsonb not null default '{}'::jsonb,
+  brief jsonb not null default '{}'::jsonb,   -- what the app is: the hook writer and claim check read this
+  brand jsonb not null default '{}'::jsonb,   -- colours, app icon
+  script jsonb not null default '{}'::jsonb,  -- body scenes, end card, voice, opening
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+alter table public.studio_projects add column if not exists script jsonb not null default '{}'::jsonb;
 create index if not exists studio_projects_owner on public.studio_projects (owner, updated_at desc);
 
 create table if not exists public.studio_assets (

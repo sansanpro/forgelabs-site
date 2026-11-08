@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ForgeLabs: Find Local Businesses With Broken Meta Ads</title>
-<meta name="description" content="Lead software for ad agencies. Pick a vertical and a city. ForgeLabs finds local businesses running Meta ads with a real problem, proves it, finds the contact and drafts the email. From $27 a month.">
+<title>ForgeLabs App Ad Studio: Video Ads for Your App</title>
+<meta name="description" content="Upload your app's screens and say what it does. ForgeLabs App Ad Studio turns them into a ready-to-test set of vertical video ads: hooks checked against your facts, a voiceover, captions, images and ad copy.">
 <meta name="theme-color" content="#0C0806">
-<meta property="og:title" content="ForgeLabs: Find Local Businesses With Broken Meta Ads">
-<meta property="og:description" content="Pick a vertical and a city. Get businesses running Meta ads with a real problem, the proof, the contact and the email.">
+<meta property="og:title" content="ForgeLabs App Ad Studio: video ads for your app">
+<meta property="og:description" content="Your real screens, hooks that pass a claim check, voiced and captioned. A ready-to-test pack of vertical video ads.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://forgelaboratory.net/">
 <!-- og.png is rendered from /assets/og.html at exactly 1200x630. Re-export it
@@ -22,112 +22,83 @@
 <link rel="stylesheet" href="/assets/forge.css">
 <link rel="stylesheet" href="/assets/motion.css">
 <style>
-/* ── variant C: the ember black hole, full bleed ────────────
-   The hole is the hero's whole background, so the hero inverts to dark and the
-   type sits on top of it. Everything below the hero stays on paper — a fixed
-   black hole behind the entire site would force every section dark and undo the
-   light direction the rest of the page is built on.
+/* ── the ember black hole, full bleed ───────────────────────
+   The hole is the hero's whole background; the copy sits on the left and a phone playing
+   a real ad sits over the disk on the right, as if it came out of the forge.
 
-   The gradient on .fig-hole is the fallback: if WebGL is missing or the shader
-   fails, the hero is still a deep ember well rather than an empty black box. */
+   The gradient on .fig-hole is the fallback: if WebGL is missing or the shader fails, the
+   hero is still a deep ember well rather than an empty black box. */
 body[data-hero="hole"] #hero{
-  /* exactly the page background: the hero does not end, it just stops having a
-     black hole in it */
-  background:var(--paper);
-  min-height:100svh;
-  display:flex; align-items:center;
-  padding:150px 0 110px;
+  background:var(--paper); min-height:100svh;
+  display:flex; align-items:center; padding:140px 0 110px;
 }
-/* As a flex item .wrap shrinks to its content, which pulled the copy into the
-   middle of the viewport and straight onto the disk. It has to stay full width. */
 body[data-hero="hole"] #hero > .wrap{width:100%}
 .fig-hole{
   position:absolute; inset:0; z-index:0; overflow:hidden;
-  background:radial-gradient(ellipse 54% 50% at 72% 50%,
-      #2A1206 0%, #170D06 48%, #0C0806 100%);
+  background:radial-gradient(ellipse 54% 50% at 72% 50%, #2A1206 0%, #170D06 48%, #0C0806 100%);
 }
 .fig-hole canvas{display:block; width:100%; height:100%}
 @media(max-width:959px){
-  .fig-hole{background-position:center;
-    background:radial-gradient(ellipse 80% 38% at 50% 44%, #2A1206 0%, #170D06 50%, #0C0806 100%);}
+  .fig-hole{background:radial-gradient(ellipse 80% 38% at 50% 44%, #2A1206 0%, #170D06 50%, #0C0806 100%);}
 }
-
-/* Scrim. The disk is bright and moves, so the headline cannot rely on the
-   backdrop staying dark where it happens to sit. */
+/* Scrim: the disk is bright and moves, so the headline can't rely on the backdrop staying dark */
 body[data-hero="hole"] #hero::before{
   content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
-  background:linear-gradient(97deg,
-    rgba(12,8,6,.96) 0%, rgba(12,8,6,.92) 30%,
+  background:linear-gradient(97deg, rgba(12,8,6,.96) 0%, rgba(12,8,6,.92) 30%,
     rgba(12,8,6,.72) 44%, rgba(12,8,6,.28) 60%, rgba(12,8,6,0) 76%);
 }
-/* A long fade from transparent to the page colour. The disk reaches the lower
-   edge of the hero, and this is what stops it being cut off by a hard line —
-   the gas thins out into the page instead. */
 body[data-hero="hole"] #hero::after{
-  content:""; position:absolute; left:0; right:0; bottom:0; height:260px; z-index:1;
-  pointer-events:none;
+  content:""; position:absolute; left:0; right:0; bottom:0; height:260px; z-index:1; pointer-events:none;
   background:linear-gradient(rgba(12,8,6,0), rgba(12,8,6,.72) 62%, var(--paper));
 }
 @media(max-width:959px){
   body[data-hero="hole"] #hero::before{
-    background:linear-gradient(180deg,
-      rgba(12,8,6,.52) 0%, rgba(12,8,6,.74) 30%, rgba(12,8,6,.90) 58%, rgba(12,8,6,.96) 100%);
+    background:linear-gradient(180deg, rgba(12,8,6,.52) 0%, rgba(12,8,6,.74) 30%, rgba(12,8,6,.90) 58%, rgba(12,8,6,.96) 100%);
   }
 }
-
-/* the hero inverts: one column, light type, no right-hand figure */
-body[data-hero="hole"] .hero-in{grid-template-columns:1fr; position:relative; z-index:2}
-body[data-hero="hole"] .hero-fig{display:none}
-/* Sized in px, not ch: `ch` resolves against the body font, which made the
-   column far narrower than intended and pushed the headline to five lines with
-   "go?" stranded on its own. The cap keeps the copy clear of the disk. */
-body[data-hero="hole"] .hero-copy{max-width:min(640px, 46%)}
-body[data-hero="hole"] h1{font-size:clamp(32px,3.5vw,46px); max-width:none}
-@media(max-width:959px){
-  body[data-hero="hole"] .hero-copy{max-width:none}
-  body[data-hero="hole"] h1{font-size:clamp(32px,6.4vw,44px)}
-}
-body[data-hero="hole"] h1{color:#FBF7F0}
+body[data-hero="hole"] .hero-in{grid-template-columns:minmax(0,1fr) auto; position:relative; z-index:2}
+body[data-hero="hole"] .hero-copy{max-width:600px}
+body[data-hero="hole"] h1{font-size:clamp(34px,4vw,52px); max-width:16ch; color:#FBF7F0}
 body[data-hero="hole"] h1 em{color:#FF8A3D}
 body[data-hero="hole"] .lede{color:rgba(233,226,215,.84)}
 body[data-hero="hole"] .hero-note{color:rgba(233,226,215,.58)}
 body[data-hero="hole"] .tag{color:#FF8A3D}
-body[data-hero="hole"] .tag::before{background:#FF8A3D}
-body[data-hero="hole"] .btn.ghost{
-  border-color:rgba(233,226,215,.34); color:#F0E9DE; background:rgba(255,255,255,.04);
-}
-body[data-hero="hole"] .btn.ghost:hover{
-  border-color:#FF8A3D; color:#FF8A3D; background:rgba(255,138,61,.10);
-}
-
-/* The nav floats over the dark hero until the page scrolls, then returns to
-   paper. nav.on is already toggled by forge.js at 12px of scroll. */
+body[data-hero="hole"] .btn.ghost{border-color:rgba(233,226,215,.34); color:#F0E9DE; background:rgba(255,255,255,.04)}
+body[data-hero="hole"] .btn.ghost:hover{border-color:#FF8A3D; color:#FF8A3D; background:rgba(255,138,61,.10)}
 body[data-hero="hole"] nav:not(.on){background:transparent; backdrop-filter:none}
-body[data-hero="hole"] nav:not(.on) .brand{color:#FBF7F0}
-body[data-hero="hole"] nav:not(.on) .nav-links a{color:rgba(233,226,215,.84)}
-body[data-hero="hole"] nav:not(.on) .nav-links a:hover{color:#FF8A3D}
-body[data-hero="hole"] nav:not(.on) .burger{border-color:rgba(233,226,215,.34); color:#FBF7F0}
-
-/* The pointer light multiplies, which does nothing over near-black and only
-   muddies the disk. It belongs on the paper sections. */
 body[data-hero="hole"] #hero .emberlight{display:none}
+@media(max-width:959px){
+  body[data-hero="hole"] .hero-in{grid-template-columns:1fr}
+}
 
+/* ── phones playing real ads ── */
+.phone{
+  position:relative; width:var(--pw,300px); border-radius:calc(var(--pw,300px) * .15);
+  background:#0A0608; padding:calc(var(--pw,300px) * .032); border:1.5px solid rgba(233,226,215,.22);
+  box-shadow:0 30px 80px -30px rgba(255,122,46,.45), 0 0 0 6px rgba(12,8,6,.6);
+}
+/* The screen is the ad's own 9:16, so nothing in the ad is cropped */
+.phone video,.phone img{display:block; width:100%; aspect-ratio:9/16; object-fit:cover; border-radius:calc(var(--pw,300px) * .125); background:#000}
+.phone::before{
+  content:""; position:absolute; top:calc(var(--pw,300px) * .06); left:50%; transform:translateX(-50%); z-index:2;
+  width:30%; height:calc(var(--pw,300px) * .085); border-radius:99px; background:#000;
+}
+.hero-phone{--pw:clamp(250px,22vw,320px); margin-right:4vw}
+.hero-phone .cap{margin-top:14px; font-size:12.5px; color:rgba(233,226,215,.6); text-align:center; max-width:var(--pw)}
+@media(max-width:959px){.hero-phone{margin:12px auto 0; --pw:min(68vw,290px)}}
+.sound{
+  position:absolute; right:calc(var(--pw,300px) * .07); bottom:calc(var(--pw,300px) * .1); z-index:3;
+  padding:7px 11px; border-radius:99px; border:1px solid rgba(255,255,255,.3); background:rgba(12,8,6,.7);
+  color:#FBF7F0; font:600 12px Inter,sans-serif; cursor:pointer;
+}
+.sound:hover{border-color:#FF8A3D; color:#FF8A3D}
 
-/* ── sample lead ── */
-.sample{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:26px;
-  box-shadow:var(--shadow)}
-.sample .sl-tag{font:600 11.5px Inter,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--steel)}
-.sample h3{margin-top:8px; font-size:22px}
-.sample .meta{font-size:13.5px; color:var(--muted); margin-top:4px}
-.sample h4{margin:18px 0 6px; font:600 12.5px Inter,sans-serif; color:var(--ember-tx); letter-spacing:.02em}
-.sample ul{margin:0; padding-left:18px; font-size:14.5px}
-.sample li{margin-bottom:5px}
-.sample .kv{display:grid; grid-template-columns:90px 1fr; gap:3px 12px; font-size:14.5px; color:var(--ink)}
-.sample .kv span{color:var(--muted)}
-.sample .mail{white-space:pre-wrap; background:var(--paper); border:1px solid var(--line-2); border-radius:6px;
-  padding:12px; font-size:13.5px; color:var(--body)}
-.pillg{display:inline-block; margin-left:8px; padding:1px 9px; border-radius:99px; font:600 11.5px Inter,sans-serif;
-  color:#7BD88F; border:1px solid rgba(123,216,143,.4); vertical-align:middle}
+.examples{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:34px; margin-top:52px; justify-items:center}
+.example{--pw:min(100%,280px); display:flex; flex-direction:column; align-items:center}
+.example .phone{width:var(--pw)}
+.example h3{margin-top:20px; font-size:17px; text-align:center; max-width:24ch}
+.example p{margin-top:6px; font-size:13.5px; color:var(--muted); text-align:center; max-width:30ch}
+@media(max-width:880px){.examples{grid-template-columns:1fr}}
 
 /* ── outputs ── */
 .fmt{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:44px}
@@ -136,6 +107,16 @@ body[data-hero="hole"] #hero .emberlight{display:none}
 .fmt span{display:block; margin-top:6px; font-size:14px}
 @media(max-width:800px){.fmt{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:480px){.fmt{grid-template-columns:1fr}}
+
+/* ── claim check sample ── */
+.check-demo{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:24px; box-shadow:var(--shadow)}
+.check-demo .h{font:600 16px Inter,sans-serif; color:var(--ink); padding:10px 12px; border:1px solid var(--line); border-radius:6px; background:var(--paper)}
+.check-demo ul{list-style:none; margin:10px 0 18px; padding:0}
+.check-demo li{font-size:13.5px; padding:3px 0 3px 18px; position:relative}
+.check-demo li::before{content:""; position:absolute; left:2px; top:10px; width:8px; height:8px; border-radius:50%}
+.check-demo li.block{color:#FF8F8F} .check-demo li.block::before{background:#FF8F8F}
+.check-demo li.warn{color:#F2C46D} .check-demo li.warn::before{background:#F2C46D}
+.check-demo li.ok{color:#7BD88F} .check-demo li.ok::before{background:#7BD88F}
 
 /* ── pricing ── */
 .prices{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; margin-top:48px; max-width:860px}
@@ -151,13 +132,14 @@ body[data-hero="hole"] #hero .emberlight{display:none}
   border-left:2px solid var(--ember-tx); border-bottom:2px solid var(--ember-tx); transform:rotate(-45deg)}
 @media(max-width:720px){.prices{grid-template-columns:1fr}}
 
-/* ── faq ── */
 .qa{margin-top:40px; max-width:780px}
 .qa details{border-top:1px solid var(--line); padding:16px 0}
 .qa details:last-child{border-bottom:1px solid var(--line)}
 .qa summary{cursor:pointer; font:600 16.5px Inter,sans-serif; color:var(--ink)}
 .qa p{margin:10px 0 0; font-size:15px}
-.navin{color:var(--body); text-decoration:none; font-size:14.5px}
+.brand{align-items:baseline}
+.brand i{align-self:center}
+.brand .sub{font:500 13px Inter,sans-serif; color:var(--muted); letter-spacing:0}
 </style>
 </head>
 <body data-hero="hole">
@@ -176,14 +158,14 @@ setTimeout(function(){
 
 <nav id="nav">
   <div class="nav-in">
-    <a class="brand" href="#hero"><i></i>ForgeLabs</a>
+    <a class="brand" href="#hero"><i></i>ForgeLabs <span class="sub">App Ad Studio</span></a>
     <div class="nav-links">
       <a href="#how">How it works</a>
-      <a href="#sample">Sample lead</a>
-      <a href="#outputs">Outputs</a>
+      <a href="#examples">Examples</a>
+      <a href="#pack">The pack</a>
       <a href="#pricing">Pricing</a>
       <a href="/app/">Sign in</a>
-      <a class="btn pri" href="/app/?new=1">Start now</a>
+      <a class="btn pri" href="/app/?new=1">Make your first ads</a>
     </div>
     <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu">
       <span></span><span></span><span></span>
@@ -193,174 +175,206 @@ setTimeout(function(){
 
 <div class="menu" id="menu" aria-hidden="true">
   <a href="#how">How it works</a>
-  <a href="#sample">Sample lead</a>
-  <a href="#outputs">Outputs</a>
+  <a href="#examples">Examples</a>
+  <a href="#pack">The pack</a>
   <a href="#pricing">Pricing</a>
   <a href="/app/">Sign in</a>
-  <a class="btn pri" href="/app/?new=1">Start now</a>
+  <a class="btn pri" href="/app/?new=1">Make your first ads</a>
 </div>
 
 <section id="hero">
   <div class="fig-hole" aria-hidden="true"><canvas id="hole" data-full="1"></canvas></div>
   <div class="wrap hero-in">
     <div class="hero-copy">
-      <span class="tag">Lead software for ad agencies</span>
-      <h1 data-reveal>Find local businesses with broken Meta ads, and <em>show them the proof.</em></h1>
+      <span class="tag">App Ad Studio</span>
+      <h1 data-reveal>Video ads for your app that <em>stop the scroll.</em></h1>
       <p class="lede">
-        Pick a vertical and a city. ForgeLabs finds who's advertising, follows each ad to
-        where it really goes, finds the contact details and drafts the email from what it found.
+        Upload your app's screens and say what it does. ForgeLabs turns them into a ready-to-test
+        set of vertical video ads: hooks checked against your facts, a voiceover, captions,
+        feed images and ad copy.
       </p>
       <div class="cta-row">
-        <a class="btn pri" href="/app/?new=1">Start for $27 a month</a>
-        <a class="btn ghost" href="#sample">See a sample lead</a>
+        <a class="btn pri" href="/app/?new=1">Make your first ads free</a>
+        <a class="btn ghost" href="#examples">See real examples</a>
       </div>
-      <p class="hero-note">Up to 200 leads a month. Cancel anytime.</p>
+      <p class="hero-note">Free during the beta. No card needed.</p>
+    </div>
+    <div class="hero-phone">
+      <div class="phone">
+        <video id="hero-video" src="/assets/demo/tinder-revenue.mp4" poster="/assets/demo/tinder-revenue.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Example ad: It's Tinder, except the matches have revenue"></video>
+        <button class="sound" type="button" data-sound="hero-video">Sound on</button>
+      </div>
+      <p class="cap">A real ad made with this engine for StockMatcherAI.</p>
     </div>
   </div>
 </section>
 
 <div class="marquee" aria-hidden="true">
   <div class="mq-track">
-    <span>EVERY AD CHECKED AT ITS OWN LINK</span><span class="hollow">PROOF YOU CAN OPEN</span><span>CONTACTS WITH SOURCES</span><span class="hollow">CSV · EXCEL · PDF · WORD · API</span>
+    <span>YOUR REAL SCREENS</span><span class="hollow">HOOKS THAT PASS A CLAIM CHECK</span><span>VOICED AND CAPTIONED</span><span class="hollow">SIZED FOR REELS · TIKTOK · SHORTS</span>
   </div>
 </div>
 
 <section id="how">
   <div class="wrap">
     <span class="tag rv">How it works</span>
-    <h2 class="rv" data-reveal>You pick the market. The engine does the digging.</h2>
-    <p class="sub rv">The work you'd do by hand in the Ad Library, for every advertiser in the city.</p>
+    <h2 class="rv" data-reveal>From screenshots to a test pack in four steps.</h2>
+    <p class="sub rv">No editor, no templates to fight. You bring the app; the Studio builds the ads the way they're tested.</p>
     <div class="steps four">
-      <div class="step rv"><div class="num">01</div><h3>Choose who to target</h3>
-        <p>A vertical and a city anywhere in the US. Sixteen verticals are built in, or type your own keyword.</p></div>
-      <div class="step rv"><div class="num">02</div><h3>It finds and filters</h3>
-        <p>It searches live ads, then drops franchises, nonprofits, recruiting ads, out-of-state advertisers and anyone selling to the trade.</p></div>
-      <div class="step rv"><div class="num">03</div><h3>It checks the funnel</h3>
-        <p>Each ad is opened at its own link and followed to where it goes. Landing pages get checked for a form, a phone number, a pixel and mobile setup.</p></div>
-      <div class="step rv"><div class="num">04</div><h3>You get the lead</h3>
-        <p>The finding, the proof, the published contact details and an email written from that finding. Take it in whatever format you work in.</p></div>
+      <div class="step rv"><div class="num">01</div><h3>Describe your app</h3>
+        <p>What it does, who it's for, and what it can't do. That last part keeps every claim in your ads true.</p></div>
+      <div class="step rv"><div class="num">02</div><h3>Upload your screens</h3>
+        <p>Screenshots from your phone or simulator, or a short screen recording. They go into the ad exactly as they are.</p></div>
+      <div class="step rv"><div class="num">03</div><h3>Pick your hooks</h3>
+        <p>Start from patterns that work: comparison, problem, callout and more. Each hook is checked against your facts before it can go in an ad.</p></div>
+      <div class="step rv"><div class="num">04</div><h3>Download the pack</h3>
+        <p>Three to five vertical videos that share one body, so your test compares only the hooks. Plus images, captions, ad copy and a test plan.</p></div>
     </div>
   </div>
 </section>
 
-<section id="sample" class="section-alt">
+<section id="examples" class="section-alt">
+  <div class="wrap">
+    <span class="tag rv">Examples</span>
+    <h2 class="rv" data-reveal>Real ads, made with the same engine.</h2>
+    <p class="sub rv">These were made for StockMatcherAI, an app on the App Store, and ran on Meta. Every frame is the real app; the voice and captions are timed word by word.</p>
+    <div class="examples">
+      <div class="example rv">
+        <div class="phone"><video id="ex1" src="/assets/demo/tinder-revenue.mp4" poster="/assets/demo/tinder-revenue.jpg" muted loop playsinline preload="none" aria-label="Example ad one"></video>
+          <button class="sound" type="button" data-sound="ex1">Play</button></div>
+        <h3>"It's Tinder, except the matches have revenue."</h3>
+        <p>Comparison hook. A hand already mid-swipe on frame one.</p>
+      </div>
+      <div class="example rv">
+        <div class="phone"><video id="ex2" src="/assets/demo/tinder-stocks.mp4" poster="/assets/demo/tinder-stocks.jpg" muted loop playsinline preload="none" aria-label="Example ad two"></video>
+          <button class="sound" type="button" data-sound="ex2">Play</button></div>
+        <h3>"It's like Tinder, but for stocks."</h3>
+        <p>The plainest hook in the set: it explains the whole app in six words.</p>
+      </div>
+      <div class="example rv">
+        <div class="phone"><video id="ex3" src="/assets/demo/donate.mp4" poster="/assets/demo/donate.jpg" muted loop playsinline preload="none" aria-label="Example ad three"></video>
+          <button class="sound" type="button" data-sound="ex3">Play</button></div>
+        <h3>"You'd donate to fight cancer. Could you name one company working on it?"</h3>
+        <p>Values hook, with the disclaimer that app's category needs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pack">
+  <div class="wrap">
+    <span class="tag rv">The pack</span>
+    <h2 class="rv" data-reveal>Everything you need to run a fair test.</h2>
+    <p class="sub rv">One zip. Upload it to Meta, TikTok, YouTube or Snap yourself; the Studio never touches your ad account.</p>
+    <div class="fmt">
+      <div class="rv"><b>Vertical videos</b><span>1080×1920, one per hook, voiced, with captions burned in for sound-off viewing.</span></div>
+      <div class="rv"><b>Feed images</b><span>A 4:5 and a 9:16 still for every hook, in the same style.</span></div>
+      <div class="rv"><b>Caption files</b><span>An .srt for every video, for platforms that take captions separately.</span></div>
+      <div class="rv"><b>Ad copy</b><span>Primary text and headline for each ad, ready to paste.</span></div>
+      <div class="rv"><b>A test plan</b><span>How to run the hooks against each other and read the result.</span></div>
+      <div class="rv"><b>Safe-zone layouts</b><span>Text stays clear of the buttons and captions the platforms draw on top.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="why" class="section-alt">
   <div class="wrap split top">
     <div>
-      <span class="tag rv">What you get</span>
-      <h2 class="rv" data-reveal>A reason to reach out, not just a name.</h2>
-      <p class="sub rv">Your email opens with something specific and true about their ads, and they can check it themselves.</p>
-      <div class="stack">
-        <div class="mini rv"><h3>Proof on every lead</h3><p>The Ad Library ID and link, what was found and the date it was checked.</p></div>
-        <div class="mini rv"><h3>A quality gate</h3><p>Grade A has email, phone and more than one finding. Grade B needs a look, and says why. A lead with no contact details, or nothing real to raise, is never delivered and never counted.</p></div>
-        <div class="mini rv"><h3>Your templates, your voice</h3><p>Each type of problem has its own template. Edit them, add your pitch and booking link, and the facts fill in.</p></div>
-      </div>
-    </div>
-    <div class="sample rv">
-      <div class="sl-tag">Sample. This business is made up.</div>
-      <h3>Ridgeline Plumbing Co.<span class="pillg">Grade A</span></h3>
-      <div class="meta">Plumbing · Denver, CO · checked today</div>
-      <h4>Where the ad goes</h4>
-      <p style="font-size:14.5px;margin:0">Ad has nothing to click: no destination, no form, no link anywhere in the ad.</p>
-      <h4>What was found</h4>
-      <ul>
-        <li>No website link anywhere in the ad or its assets.</li>
-        <li>Sustained spend: running 64 days, with 4 active ads on the Page.</li>
+      <span class="tag rv">Why it works</span>
+      <h2 class="rv" data-reveal>Built on how ads actually get tested.</h2>
+      <p class="sub rv">The Studio follows one method from the first frame to the test plan.</p>
+      <ul class="ticks rv" style="margin-top:26px">
+        <li><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/></svg><span><b>The hook does the work.</b> Most viewers decide in a second or two, so the first line gets the most care.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/></svg><span><b>Your real product.</b> Your actual screens, never a mock-up that promises more than the app does.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/></svg><span><b>One change at a time.</b> Every video shares the same body, so the result tells you which hook won.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/></svg><span><b>Motion on frame one.</b> The phone is already swiping when the ad starts, so the first second isn't wasted.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/></svg><span><b>Made for sound off.</b> Every word is on screen, highlighted as it's spoken.</span></li>
       </ul>
-      <h4>Contact</h4>
-      <div class="kv"><span>Email</span><div>office@ridgelineplumbing.example</div><span>Phone</span><div>(303) 555-0142</div><span>The ad</span><div>Ad Library ID, with a link</div></div>
-      <h4>Draft email, from your template</h4>
-      <div class="mail">Subject: Your plumbing ad has nothing to click
-
-I went through the plumbing ad you're running and there's no link on it: no website, no form, no call button. Someone who wants to hire you has to find your phone number themselves.
-
-That ad has been running 64 days, so this isn't a one-off test.</div>
+    </div>
+    <div class="check-demo rv">
+      <span class="tag steel">The claim check</span>
+      <p style="margin:14px 0 8px;font-size:14.5px">Every hook is checked against your brief before it can go in an ad:</p>
+      <div class="h">Track where your money's been going, 10x faster.</div>
+      <ul>
+        <li class="block">Uses a number ("10x") that isn't in your facts.</li>
+        <li class="warn">Sounds like the app sees the viewer's spending. Make sure it really does, or reword.</li>
+      </ul>
+      <div class="h">It's like Duolingo, but for your habits.</div>
+      <ul>
+        <li class="warn">Uses another brand's name. Fine as a comparison only: no logos or styling.</li>
+      </ul>
+      <div class="h">You've restarted the same habit five times this year.</div>
+      <ul style="margin-bottom:0">
+        <li class="ok">Passes, once "five" is in your facts.</li>
+      </ul>
     </div>
   </div>
 </section>
 
-<section id="outputs">
-  <div class="wrap">
-    <span class="tag rv">Outputs</span>
-    <h2 class="rv" data-reveal>It goes wherever you work.</h2>
-    <p class="sub rv">No new CRM to learn. Use the leads in the app, or send them straight to what you already run.</p>
-    <div class="fmt">
-      <div class="rv"><b>Excel</b><span>Every field, filterable, with the draft email in each row.</span></div>
-      <div class="rv"><b>CSV</b><span>For importing into any CRM or sending tool.</span></div>
-      <div class="rv"><b>PDF report</b><span>A findings report under your company name, ready to send a prospect.</span></div>
-      <div class="rv"><b>Word report</b><span>The same report, editable.</span></div>
-      <div class="rv"><b>Webhook</b><span>Push leads to your CRM, or through Zapier or Make, with one click.</span></div>
-      <div class="rv"><b>API</b><span>Pull leads into your own systems with an API key.</span></div>
-    </div>
-  </div>
-</section>
-
-<section id="pricing" class="section-alt">
+<section id="pricing">
   <div class="wrap">
     <span class="tag rv">Pricing</span>
-    <h2 class="rv" data-reveal>Two plans. Cancel anytime.</h2>
+    <h2 class="rv" data-reveal>Free while we're in beta.</h2>
     <div class="prices">
-      <div class="price rv">
-        <h3>Starter</h3>
-        <div class="amt">$27<small> /month</small></div>
-        <p class="for">Find the leads and send them from your own tools.</p>
-        <ul>
-          <li>Up to 200 verified leads a month</li>
-          <li>Audit and proof on every lead</li>
-          <li>Email templates you control</li>
-          <li>CSV, Excel, PDF and Word</li>
-          <li>Webhook and API</li>
-        </ul>
-        <a class="btn ghost" href="/app/?new=1">Choose Starter</a>
-      </div>
       <div class="price hl rv">
-        <h3>Outreach</h3>
-        <div class="amt">$97<small> /month</small></div>
-        <p class="for">Everything in Starter, and send from inside the app.</p>
+        <h3>Beta</h3>
+        <div class="amt">$0</div>
+        <p class="for">Make a full test pack for your app.</p>
         <ul>
-          <li>Send from your own mailbox</li>
-          <li>Up to 50 emails a day</li>
-          <li>Unsubscribes handled automatically</li>
-          <li>Send log and do-not-email list</li>
+          <li>One test pack: up to five videos</li>
+          <li>Images, captions, ad copy and test plan</li>
+          <li>Free previews before you render</li>
+          <li>Eight voices to choose from</li>
         </ul>
-        <a class="btn pri" href="/app/?new=1">Choose Outreach</a>
+        <a class="btn pri" href="/app/?new=1">Make your first ads</a>
+      </div>
+      <div class="price rv">
+        <h3>Paid plans</h3>
+        <div class="amt">Soon</div>
+        <p class="for">More packs every month, for apps that test often.</p>
+        <ul>
+          <li>Monthly pack allowance</li>
+          <li>Everything in the beta</li>
+        </ul>
+        <a class="btn ghost" href="mailto:hassan@forgelaboratory.net?subject=App%20Ad%20Studio%20plans">Tell me when it's ready</a>
       </div>
     </div>
   </div>
 </section>
 
-<section id="faq">
+<section id="faq" class="section-alt">
   <div class="wrap">
     <span class="tag rv">Questions</span>
-    <h2 class="rv" data-reveal>Before you sign up.</h2>
+    <h2 class="rv" data-reveal>Before you start.</h2>
     <div class="qa">
-      <details><summary>Will I always get 200 leads?</summary>
-        <p>No. 200 is the monthly limit, not a promise. One search looks through one city and trade, and can return just a handful of leads that pass the quality gate. Reaching 200 usually takes many searches across cities and verticals. Only delivered leads count toward your limit.</p></details>
-      <details><summary>Are the leads exclusive to me?</summary>
-        <p>No. It's software that searches public ads, so another customer searching the same city and vertical can find the same business.</p></details>
-      <details><summary>How long does a search take?</summary>
-        <p>A search usually starts within 30 minutes of queuing it, then takes a few minutes to around half an hour depending on size. It keeps running if you close the tab.</p></details>
-      <details><summary>Where does the data come from?</summary>
-        <p>The public Meta Ad Library, the advertiser's public Facebook Page, their website, and public search results. It only uses contact details the business published. The engine only looks: it never logs in, fills in a form, books, calls or messages anyone.</p></details>
-      <details><summary>How accurate is it?</summary>
-        <p>It checks every ad at its own link and shows you its evidence, and a filter removes findings it can't support. Automated checks can still be wrong, and ads change, so open the proof before you quote it to a prospect. You can mark any finding as wrong.</p></details>
-      <details><summary>Does it connect to my CRM?</summary>
-        <p>Through a webhook or our API. Anything that accepts a webhook works, including Zapier and Make, which connect to most CRMs. There are no one-click direct integrations yet.</p></details>
-      <details><summary>What about email rules?</summary>
-        <p>You're the sender, so following the law is on you. In the US, CAN-SPAM applies to business email too. The Outreach plan adds your postal address and an unsubscribe link to every message and stops you emailing anyone who opted out. Cold marketing texts aren't allowed under our <a href="/terms/">terms</a>.</p></details>
-      <details><summary>Are you connected to Meta?</summary>
-        <p>No. ForgeLabs isn't affiliated with or endorsed by Meta Platforms.</p></details>
+      <details><summary>Which apps does it work for?</summary>
+        <p>Phone apps (iPhone and Android), web apps and SaaS, anything you can show on a phone screen. Upload screenshots from a phone or simulator, or a short screen recording.</p></details>
+      <details><summary>Do you run the ads for me?</summary>
+        <p>No. The Studio makes the ads; you upload them to Meta, TikTok, YouTube or Snap yourself. It never asks for access to your ad accounts.</p></details>
+      <details><summary>Who owns the ads?</summary>
+        <p>You do. You're responsible for having the rights to the screens you upload and for what your ads claim.</p></details>
+      <details><summary>Is the voice AI?</summary>
+        <p>Yes. Voiceovers are generated with ElevenLabs, from a choice of eight voices. Each one is checked to make sure your app's name is said right, but listen to every ad before you run it.</p></details>
+      <details><summary>Will my ads be approved?</summary>
+        <p>The claim check catches common rejection reasons, such as invented numbers, implied access to the viewer's data and wording about personal attributes. But only the platform decides, and some categories (finance, health, dating, gambling, apps for children) have extra rules. The Studio flags those.</p></details>
+      <details><summary>Does it write the hooks for me?</summary>
+        <p>It gives you proven hook patterns and checks every hook you write. AI hook suggestions are being switched on during the beta.</p></details>
+      <details><summary>How long does it take?</summary>
+        <p>A preview of every scene takes seconds once it starts. A full pack takes a few minutes. During the beta, jobs can wait a few minutes in the queue; you can close the tab and come back.</p></details>
+      <details><summary>What happens to my screenshots?</summary>
+        <p>They're stored privately in your account, used only to make your ads, and deleted when you ask. See the <a href="/privacy/">privacy policy</a>.</p></details>
     </div>
   </div>
 </section>
 
-<section id="start" class="section-alt">
+<section id="start">
   <div class="wrap">
     <div class="panel flat center rv">
       <span class="tag">Start here</span>
-      <h2 data-reveal>Your next client is already running a broken ad.</h2>
-      <p class="sub">Create an account, pick a plan and run your first search today.</p>
+      <h2 data-reveal>Your app deserves ads people watch.</h2>
+      <p class="sub">Create an account, add your app and preview your first ads today.</p>
       <div class="cta-row" style="justify-content:center">
-        <a class="btn pri" href="/app/?new=1">Start for $27 a month</a>
+        <a class="btn pri" href="/app/?new=1">Make your first ads free</a>
         <a class="btn ghost" href="/app/">Sign in</a>
       </div>
     </div>
@@ -372,11 +386,34 @@ That ad has been running 64 days, so this isn't a one-off test.</div>
     <a href="mailto:hassan@forgelaboratory.net">hassan@forgelaboratory.net</a>
     <a href="/terms/">Terms</a>
     <a href="/privacy/">Privacy</a>
-    <a href="/remove/">Remove my business</a>
-    <span class="sp">ForgeLabs. Not affiliated with Meta Platforms.</span>
+    <span class="sp">ForgeLabs. Not affiliated with Meta, TikTok, Google, Snap or ElevenLabs.</span>
   </div>
 </footer>
 
+<script>
+/* Sound and play buttons on the example phones. Only one plays with sound at a time. */
+(function(){
+  var buttons = document.querySelectorAll("[data-sound]");
+  function quiet(except){
+    buttons.forEach(function(b){
+      var v = document.getElementById(b.getAttribute("data-sound"));
+      if(v === except) return;
+      v.muted = true;
+      if(v.id !== "hero-video") v.pause();
+      b.textContent = v.id === "hero-video" ? "Sound on" : "Play";
+    });
+  }
+  buttons.forEach(function(b){
+    b.addEventListener("click", function(){
+      var v = document.getElementById(b.getAttribute("data-sound"));
+      var on = v.muted || v.paused;
+      quiet(v);
+      if(on){ v.muted = false; v.currentTime = 0; v.play().catch(function(){}); b.textContent = "Mute"; }
+      else { v.muted = true; b.textContent = v.id === "hero-video" ? "Sound on" : "Play"; if(v.id !== "hero-video") v.pause(); }
+    });
+  });
+})();
+</script>
 <script src="/assets/forge.js" defer></script>
 <script src="/assets/blackhole.js" defer></script>
 <script src="/assets/hero.js" defer></script>

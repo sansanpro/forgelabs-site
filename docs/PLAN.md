@@ -32,7 +32,7 @@ It grew out of the ads made for StockMatcherAI. `docs/HOW-THE-ADS-ARE-MADE.md` i
 | Payments | **None in the MVP.** Each new account gets one free pack (up to 5 videos); the owner can grant more in the database. Stripe comes after the MVP works. | The owner's call: MVP first. |
 | Backend | The existing ForgeLabs Supabase project (`xhtwtnsvdmabfvewjgwz`): Auth, Postgres, Storage, Edge Functions. New tables are prefixed `studio_`, so the old lead tables are untouched. | One ForgeLabs backend. |
 | Renderer | A Python worker (Pillow + ffmpeg), the generalized StockMatcherAI renderer. It polls a jobs table. For the MVP it runs on the owner's Mac; the Dockerfile is ready for Fly.io, Render or Cloud Run. | Renders take minutes of CPU, too long for edge functions. Hosting costs money, so the owner chooses where. |
-| Hook writing and claim check | Claude via a Supabase Edge Function, with a deterministic "hook lint" in the browser that works without AI | **No Anthropic key yet** (2026-11-08). Until one is added, customers write hooks with templates and the lint. AI suggestions switch on when `ANTHROPIC_API_KEY` is set as a Supabase secret. |
+| Hook writing and claim check | Claude (`claude-opus-5-5` by default, `STUDIO_AI_MODEL` overrides it) via the `studio-ai` Supabase Edge Function. It uses the official SDK, structured JSON output and the server-side refusal fallback (`fallbacks: "default"`). A deterministic "hook lint" in the browser works without AI. | **No Anthropic key yet** (2026-11-08). Until one is added, customers write hooks from patterns, checked by the lint. AI suggestions switch on when `ANTHROPIC_API_KEY` is set as a Supabase secret; the landing page's FAQ says they're being switched on during the beta. |
 | Voice | ElevenLabs with word timestamps, plus a product-name pronunciation check. The MVP reuses the StockMatcherAI ElevenLabs key (owner approved). | Word timing drives the whole edit. |
 | Repo | Public (GitHub Pages). The engine, prompts and docs are visible to anyone. | Pages on a free GitHub plan needs a public repo. Moving the engine to a private repo is an option before launch. |
 
@@ -93,6 +93,17 @@ The engine is ported from `marketing/ads/scripts/render_videos.py`, `voiceover.m
   - the account has packs left
   - preview limits: 40 a day per user
   - only one open job per batch
+
+## Status (2026-11-08)
+
+| Part | State |
+|---|---|
+| Plan and docs | Done |
+| Engine and golden test | Done. The x2 re-render is within 1 point of the shipped video (limit 4); the fixture app covers status bars, recordings, page swipes, a light theme and an icon. |
+| Voice | The REST port works against ElevenLabs; there are eight curated voices with samples in `assets/voices/`. |
+| Migration, AI function, worker | Written. The function passes a type check. Deploying them is waiting on `SUPABASE_ACCESS_TOKEN`. |
+| App and landing page | Done and checked in a browser at desktop and phone sizes. |
+| End-to-end test | Waiting on the backend deploy. |
 
 ## MVP build order
 
