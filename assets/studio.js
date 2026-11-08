@@ -101,6 +101,15 @@
     return '<option value="' + esc(v) + '"' + (String(cur) === String(v) ? " selected" : "") + ">" + esc(label) + "</option>";
   }
   function words(s) { return String(s || "").trim().split(/\s+/).filter(Boolean); }
+  /* JSON with sorted keys: Postgres stores jsonb with its own key order, so compare like this */
+  function stable(v) {
+    if (Array.isArray(v)) return "[" + v.map(stable).join(",") + "]";
+    if (v && typeof v === "object") {
+      return "{" + Object.keys(v).filter(function (k) { return v[k] !== undefined; }).sort()
+        .map(function (k) { return JSON.stringify(k) + ":" + stable(v[k]); }).join(",") + "}";
+    }
+    return JSON.stringify(v);
+  }
   function brief() { return (S.project && S.project.brief) || {}; }
   function script() { return (S.project && S.project.script) || {}; }
 
@@ -903,7 +912,10 @@
       if (s.motion === "zoom") scene.zoom = (ZOOMS.filter(function (z) { return z[0] === (s.zoomAt || "middle"); })[0] || ZOOMS[1])[2];
       return scene;
     });
-    (sc.opening.screens || []).forEach(function (k) { used[k] = 1; });
+    /* The opening swipes across three different screens: the ones picked, then the uploads in order */
+    var opening = (sc.opening.screens || []).filter(function (k) { return find(k); });
+    shots().forEach(function (a) { if (opening.length < 3 && a.kind === "screen" && opening.indexOf(a.id) < 0) opening.push(a.id); });
+    opening.forEach(function (k) { used[k] = 1; });
     if (ic) used[ic.id] = 1;
     var screens = {};
     S.assets.forEach(function (a) {
@@ -914,7 +926,7 @@
       brand: { name: b.name || S.project.name, spoken_name: b.spoken_name || "", icon: ic ? ic.id : null,
                theme: { style: sc.theme.style, accent: sc.theme.accent, bg: sc.theme.bg } },
       screens: screens, hooks: hooks, body: body,
-      opening: { style: sc.opening.style || "hand", motion: "page", screens: sc.opening.screens || [] },
+      opening: { style: sc.opening.style || "hand", motion: "page", screens: opening },
       cta: { say: sc.cta_say || cta[0], button: sc.button || cta[1], lines: sc.end_line ? [sc.end_line] : [], headline: sc.headline || "" },
       voice: { id: sc.voice.id, speed: Number(sc.voice.speed) || 1 },
       disclaimer: sc.disclaimer || ""
@@ -929,9 +941,9 @@
     return out;
   }
   function batchFor(kind) {
-    var spec = buildSpec(), key = JSON.stringify(spec);
+    var spec = buildSpec(), key = stable(spec);
     var reuse = S.batches.filter(function (b) {
-      return b.status !== "queued" && b.status !== "running" && JSON.stringify(b.spec) === key && (kind === "preview" ? !b.preview : !b.result);
+      return b.status !== "queued" && b.status !== "running" && stable(b.spec) === key && (kind === "preview" ? !b.preview : !b.result);
     })[0];
     if (reuse) return Promise.resolve(reuse);
     return insert("studio_batches", { project_id: S.project.id, spec: spec }).then(function (b) { S.batches.unshift(b); return b; });

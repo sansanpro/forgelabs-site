@@ -95,9 +95,14 @@ def name_check(mp3, words, spoken, display, key):
     return ok, heard
 
 
-def make(text, cfg, base, spoken, display, key=None, tries=2, log=print):
+def make(text, cfg, base, spoken, display, key=None, tries=1, log=print):
     """Writes base.mp3 and base.json (word timings). Keeps existing files, so a re-run spends
-    nothing. Returns (mp3 path, words, name check result)."""
+    nothing. Returns (mp3 path, words, name check result).
+
+    One take by default: for an invented name, speech-to-text writes the nearest real word
+    ("Habitly" comes back as "habitually"), so a second take fails the same way and only spends
+    credits. The result is reported instead, and the app asks the customer to listen. Raise
+    `tries` (voice.tries in the job) for a name a voice is known to misread, as "A.I." was."""
     if os.path.exists(base + '.json') and os.path.exists(base + '.mp3'):
         with open(base + '.json') as f:
             saved = json.load(f)

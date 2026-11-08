@@ -81,7 +81,7 @@ def voice_for(job, hook, workdir, log=print):
     if hook.get('voice'):
         return voice.load_prerecorded(hook['voice']['audio'], hook['voice']['words'])
     base = os.path.join(workdir, 'vo', slug(hook['id']))
-    return voice.make(job.script(hook), job.voice, base, job.spoken_name, job.name, log=log)
+    return voice.make(job.script(hook), job.voice, base, job.spoken_name, job.name, tries=job.voice.get('tries', 1), log=log)
 
 
 def make_preview(job, out, hooks=None, log=print):

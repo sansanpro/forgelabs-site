@@ -16,7 +16,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIX = ROOT + '/engine/tests/fixture';
 const OUT = ROOT + '/tests/out';
 mkdirSync(OUT, { recursive: true });
-const SB = 'https://xhtwtnsvdmabfvewjgwz.supabase.co';
+// The backend the app talks to, read from the app so this always fakes the right one
+const SB = readFileSync(ROOT + '/assets/studio.js', 'utf8').match(/var URL_ = "([^"]+)"/)[1];
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg' };
 const USER = { id: randomUUID(), email: 'founder@example.com' };
 const db = { studio_accounts: [{ id: USER.id, email: USER.email, free_packs: 1, packs_used: 0, is_admin: false }],
@@ -37,6 +38,12 @@ function filter(rows, params) {
   }
   if (params.get('limit')) rows = rows.slice(0, Number(params.get('limit')));
   return rows;
+}
+// Postgres stores jsonb with its own key order (shorter keys first); mimic it so the app can't rely on order
+function reorder(v) {
+  if (Array.isArray(v)) return v.map(reorder);
+  if (v && typeof v === 'object') return Object.fromEntries(Object.keys(v).sort((a, b) => a.length - b.length || (a < b ? -1 : 1)).map(k => [k, reorder(v[k])]));
+  return v;
 }
 const json = (route, status, body) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
@@ -72,7 +79,7 @@ async function api(route) {
   if (method === 'GET') return json(route, 200, filter(db[table], params));
   if (method === 'POST') {
     const row = { id: randomUUID(), owner: USER.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), ...JSON.parse(body) };
-    if (table === 'studio_batches') row.status = 'draft';
+    if (table === 'studio_batches') { row.status = 'draft'; row.spec = reorder(row.spec); }
     if (table === 'studio_hooks') { row.selected = row.selected || false; row.checks = []; }
     if (table === 'studio_projects') { row.brief = row.brief || {}; row.brand = {}; }
     db[table].push(row);
@@ -211,6 +218,10 @@ await page.waitForTimeout(1500);
 await shot('07b-pack');
 const links = await page.$$eval('[data-dl]', els => els.map(e => e.getAttribute('href')));
 console.log('download links:', links.length, links.slice(0, 3));
+console.log('batches:', db.studio_batches.length, '(preview and pack should share one)');
+if (db.studio_batches.length !== 1) errors.push('the pack did not reuse the preview batch');
+console.log('opening screens:', batch.spec.opening.screens.length);
+if (batch.spec.opening.screens.length !== 3) errors.push('the opening should have three screens');
 console.log('packs used:', db.studio_accounts[0].packs_used, 'hooks:', db.studio_hooks.map(h => h.text + (h.selected ? ' [picked]' : '')));
 console.log('spec hooks:', JSON.stringify(batch.spec.hooks));
 console.log('spec body:', JSON.stringify(batch.spec.body));
