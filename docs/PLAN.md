@@ -99,11 +99,18 @@ The engine is ported from `marketing/ads/scripts/render_videos.py`, `voiceover.m
 | Part | State |
 |---|---|
 | Plan and docs | Done |
-| Engine and golden test | Done. The x2 re-render is within 1 point of the shipped video (limit 4); the fixture app covers status bars, recordings, page swipes, a light theme and an icon. |
-| Voice | The REST port works against ElevenLabs; there are eight curated voices with samples in `assets/voices/`. |
-| Migration, AI function, worker | Written. The function passes a type check. Deploying them is waiting on `SUPABASE_ACCESS_TOKEN`. |
-| App and landing page | Done and checked in a browser at desktop and phone sizes. |
-| End-to-end test | Waiting on the backend deploy. |
+| Engine and golden test | Done. The x2 re-render is within 2 points of the shipped video (limit 4). |
+| Voice | Works against ElevenLabs. One take per ad, with the name check reported. |
+| Backend | Live on project `cuijqoorjgvlyiyizgxi`: migration applied, `studio-ai` deployed, storage buckets created. Sign-in sends people to forgelaboratory.net/app/ with a 10-character password minimum; email confirmation is on (see the open items). |
+| App and landing page | Live on forgelaboratory.net |
+| End-to-end test | **Passed on the live site** with `tests/live-flow.mjs`: sign-in, uploads, hooks, script, preview ready 16 s after queueing, pack 61 s after, and the zip downloaded with every file. |
+| Worker | Runs on the owner's Mac (`engine/.venv/bin/python worker.py`); packs only render while it runs. |
+
+**Open items for the owner:**
+- **Email confirmation:** the project's built-in mailer sends only 2 emails an hour, so new sign-ups will stall. Either add custom SMTP (for example Resend or Postmark) under Authentication → Emails, or turn off "Confirm email" while in beta. Turning it off was left to the owner, since it lowers security.
+- **Hosting the worker** (Fly.io, Render, Cloud Run or a VPS), so renders don't depend on the Mac.
+- **The Anthropic key**, to switch on AI suggestions.
+- **Third-party terms:** ElevenLabs' commercial terms and the licence of the Canva hand photo.
 
 ## MVP build order
 
