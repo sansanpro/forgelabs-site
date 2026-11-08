@@ -21,3 +21,6 @@ supabase/.branches/
 .DS_Store
 .vscode/
 node_modules/
+
+# UI test output
+tests/out/

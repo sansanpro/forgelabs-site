@@ -429,12 +429,12 @@
       var tiles = list.map(function (a, i) {
         var u = link("studio-uploads", a.path);
         var media = a.kind === "recording"
-          ? '<video src="' + esc(u) + '" muted playsinline loop preload="metadata"></video>'
+          ? '<video src="' + esc(u ? u + "#t=0.1" : "") + '" muted playsinline loop preload="metadata"></video>'
           : '<img src="' + esc(u) + '" alt="" loading="lazy">';
         var portrait = !a.width || a.height > a.width;
         return '<figure class="shot" data-id="' + esc(a.id) + '">' + media +
           '<figcaption><input class="lbl" data-label="' + esc(a.id) + '" value="' + esc(a.label) + '" placeholder="What this shows" aria-label="Label">' +
-          (a.kind === "screen" ? '<label class="check small"><input type="checkbox" data-bar="' + esc(a.id) + '"' + (a.status_bar ? " checked" : "") + "> Has the phone's status bar</label>" : '<span class="small muted">Screen recording</span>') +
+          (a.kind === "screen" ? '<label class="check small" title="Tick if the screenshot shows the time and battery at the top"><input type="checkbox" data-bar="' + esc(a.id) + '"' + (a.status_bar ? " checked" : "") + "> Shows the status bar</label>" : '<span class="small muted">Screen recording</span>') +
           (portrait ? "" : '<span class="small bad">Landscape: phone screenshots work best</span>') +
           '<span class="row tight"><button class="btn small" data-up="' + i + '" type="button" aria-label="Move earlier"' + (i ? "" : " disabled") + ">↑</button>" +
           '<button class="btn small" data-down="' + i + '" type="button" aria-label="Move later"' + (i < list.length - 1 ? "" : " disabled") + ">↓</button>" +
@@ -611,8 +611,8 @@
     pane('<div class="card"><div class="row"><h2>Hooks</h2><span class="spacer"></span><span class="small ' + (sel ? "good" : "muted") + '">' + sel + " of " + MAX_HOOKS + " picked</span></div>" +
       '<p class="muted small">The hook is the first line of each video: the only thing that changes between your ads. Pick three to five. ' +
       "A good hook passes the two-second test: a stranger can picture your app, or feel the problem, almost instantly.</p>" +
-      '<div class="row" style="margin:14px 0"><button class="btn pri" id="h-ai" type="button">Suggest hooks with AI</button>' +
-      '<button class="btn" id="h-check" type="button"' + (S.hooks.length ? "" : " disabled") + ">Check claims with AI</button>" +
+      '<div class="row" style="margin:14px 0"><button class="btn' + (S.ai === false ? "" : " pri") + '" id="h-ai" type="button"' + (S.ai === false ? " disabled" : "") + ">Suggest hooks with AI</button>" +
+      '<button class="btn" id="h-check" type="button"' + (S.hooks.length && S.ai !== false ? "" : " disabled") + ">Check claims with AI</button>" +
       '<span class="small muted" id="h-status" role="status">' + (S.ai === false ? esc(ERRORS.ai_unavailable) : "") + "</span></div>" +
       '<div class="write"><h3>Write a hook</h3><div class="small muted" style="margin:4px 0 8px">Start from a pattern: ' + tmpl + "</div>" +
       '<div class="cols3"><div class="field"><label for="h-cat">Category</label><select id="h-cat">' +
@@ -768,7 +768,7 @@
         "<b>" + v[1] + '</b><span class="small muted">' + v[2] + '</span><button class="btn small" type="button" data-play="' + v[3] + '" aria-label="Play ' + v[1] + '">Play</button></label>';
     }).join("");
     var op = sc.opening, th = sc.theme;
-    pane('<div class="card"><div class="row"><h2>The script</h2><span class="spacer"></span><button class="btn" id="sc-ai" type="button">Draft with AI</button></div>' +
+    pane('<div class="card"><div class="row"><h2>The script</h2><span class="spacer"></span><button class="btn" id="sc-ai" type="button"' + (S.ai === false ? " disabled title=\"" + esc(ERRORS.ai_unavailable) + "\"" : "") + ">Draft with AI</button></div>" +
       '<p class="muted small">Every video shares this part, so your test compares only the hooks. Show the app solving the problem the moment the hook ends: 3 or 4 short scenes, each a concrete feature.</p>' +
       '<div class="small muted" id="sc-status" role="status"></div>' + scenes +
       '<button class="btn" id="sc-add" type="button"' + (sc.body.length >= 5 ? " disabled" : "") + ">Add a scene</button></div>" +
@@ -895,7 +895,7 @@
   function buildSpec() {
     var b = brief(), sc = script(), ic = icon(), used = {};
     var hooks = selectedHooks().map(function (h, i) {
-      return { id: "h" + (i + 1) + "-" + (slug(h.category) || "hook"), say: h.text, benefit: h.benefit || sc.benefit || "", accent_from: accentFrom(h.text) };
+      return { id: "h" + (i + 1) + "-" + (slug(h.category) || "hook"), say: h.text, benefit: h.benefit || sc.benefit || sc.end_line || "", accent_from: accentFrom(h.text) };
     });
     var body = sc.body.map(function (s) {
       used[s.screen] = 1;
@@ -964,7 +964,9 @@
       '<label class="check block" style="margin-top:8px"><input type="checkbox" id="m-ack"' + (S.ack ? " checked" : "") + "> I've checked these claims are true and allowed for my app</label></div>" : "";
     pane('<div class="card"><h2>Make the ads</h2>' + summary + ack +
       '<div class="row" style="margin-top:14px"><button class="btn" id="m-prev" type="button"' + (probs.length ? " disabled" : "") + ">Preview the frames (free)</button>" +
-      '<button class="btn pri" id="m-pack" type="button"' + (probs.length || left < 1 ? " disabled" : "") + ">Make the pack" + (left === Infinity ? "" : " (uses 1 of " + left + ")") + "</button></div>" +
+      '<button class="btn pri" id="m-pack" type="button"' + (probs.length || left < 1 ? " disabled" : "") + ">" +
+      (left < 1 ? "No free packs left" : "Make the pack" + (left === Infinity ? "" : " (uses 1 of " + left + ")")) + "</button></div>" +
+      (left < 1 ? '<p class="small muted">The beta includes one free pack. Email <a href="mailto:' + SUPPORT + '">' + SUPPORT + "</a> if you need another.</p>" : "") +
       '<p class="small muted" style="margin-top:8px">A preview shows one frame from each scene of every video, in seconds, without using your pack. A pack takes a few minutes once it starts.</p></div>' +
       '<div id="batches">' + batchesHtml() + "</div>");
     var a = document.getElementById("m-ack");
@@ -997,7 +999,8 @@
         html += '<h3>Your pack</h3><p><a class="btn pri" data-dl="' + esc(base + "/" + m.zip) + '" href="#">Download everything (.zip)</a></p><div class="vids">' +
           (m.ads || []).map(function (ad) {
             var f = ad.files, nc = ad.name_check;
-            return '<div class="vid"><video controls playsinline preload="none" data-render-video="' + esc(base + "/videos/" + f.video) + '"></video>' +
+            var cover = f.stills && f.stills["9x16"] ? ' data-render-poster="' + esc(base + "/images/" + f.stills["9x16"]) + '"' : "";
+            return '<div class="vid"><video controls playsinline preload="none" data-render-video="' + esc(base + "/videos/" + f.video) + '"' + cover + "></video>" +
               '<p class="small"><b>' + esc(ad.hook) + "</b></p>" +
               '<p class="small"><a href="#" data-dl="' + esc(base + "/videos/" + f.video) + '">Video</a>' +
               Object.keys(f.stills || {}).map(function (k) { return ' · <a href="#" data-dl="' + esc(base + "/images/" + f.stills[k]) + '">Image ' + esc(k.replace("x", ":")) + "</a>"; }).join("") +
@@ -1012,13 +1015,16 @@
   }
   function wireBatches() {
     var paths = [];
-    root.querySelectorAll("[data-render],[data-render-video],[data-dl]").forEach(function (el) {
-      paths.push(el.getAttribute("data-render") || el.getAttribute("data-render-video") || el.getAttribute("data-dl"));
+    root.querySelectorAll("[data-render],[data-render-video],[data-render-poster],[data-dl]").forEach(function (el) {
+      ["data-render", "data-render-video", "data-render-poster", "data-dl"].forEach(function (a) {
+        if (el.hasAttribute(a)) paths.push(el.getAttribute(a));
+      });
     });
     if (!paths.length) return;
     signed("studio-renders", paths).then(function () {
       root.querySelectorAll("[data-render]").forEach(function (el) { el.src = link("studio-renders", el.getAttribute("data-render")); });
       root.querySelectorAll("[data-render-video]").forEach(function (el) { el.src = link("studio-renders", el.getAttribute("data-render-video")); });
+      root.querySelectorAll("[data-render-poster]").forEach(function (el) { el.poster = link("studio-renders", el.getAttribute("data-render-poster")); });
       root.querySelectorAll("[data-dl]").forEach(function (el) {
         var u = link("studio-renders", el.getAttribute("data-dl"));
         if (u) { el.href = u + (u.indexOf("?") >= 0 ? "&" : "?") + "download="; el.setAttribute("download", ""); }
