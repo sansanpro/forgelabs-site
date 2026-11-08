@@ -18,12 +18,12 @@ The site and product at [forgelaboratory.net](https://forgelaboratory.net): a se
 |---|---|---|
 | Landing page, terms, privacy | `index.html`, `terms/`, `privacy/`, `assets/forge.css`, `assets/motion.*`, `assets/hero.js`, `assets/blackhole.js` | GitHub Pages (static, no build step) |
 | The Studio app | `app/index.html`, `assets/studio.js`, `assets/app.css` | GitHub Pages; talks to Supabase from the browser |
-| Database, sign-in, file storage | `supabase/migrations/` | The ForgeLabs Supabase project (`xhtwtnsvdmabfvewjgwz`) |
+| Database, sign-in, file storage | `supabase/migrations/` | The Studio's Supabase project (`cuijqoorjgvlyiyizgxi`) |
 | AI hook writer and claim check | `supabase/functions/studio-ai/` | Supabase Edge Functions, calling Claude |
 | Render engine | `engine/forge_engine/` | Python (Pillow + ffmpeg) |
 | Render worker | `engine/worker.py` | Any machine with Python 3.11+; the owner's Mac for the MVP |
 
-`remove/` and `unsubscribe/` belong to ForgeLabs' earlier lead product and stay live so its opt-outs keep working.
+`remove/` and `unsubscribe/` belong to ForgeLabs' earlier lead product and stay live so its opt-outs keep working. They still talk to that product's own Supabase project (`xhtwtnsvdmabfvewjgwz`), which is separate from the Studio's.
 
 Everything in this repository is public, because it's served by GitHub Pages. Secrets go in `.env.local` (gitignored) and in Supabase secrets, never in code.
 
@@ -61,8 +61,8 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 # database: run the migration through the Management API (it is safe to run again)
 # functions:
-npx -y supabase@2 functions deploy studio-ai --project-ref xhtwtnsvdmabfvewjgwz --use-api
-npx -y supabase@2 secrets set --project-ref xhtwtnsvdmabfvewjgwz ANTHROPIC_API_KEY=...   # switches AI on
+npx -y supabase@2 functions deploy studio-ai --project-ref cuijqoorjgvlyiyizgxi --use-api
+npx -y supabase@2 secrets set --project-ref cuijqoorjgvlyiyizgxi ANTHROPIC_API_KEY=...   # switches AI on
 ```
 
 **Optional secret:** `STUDIO_AI_MODEL` overrides the AI model (the default is `claude-opus-5-5`).

@@ -1,6 +1,6 @@
-# The ForgeLabs Supabase project. Only what `supabase functions deploy` needs; database changes
+# The Studio's Supabase project. Only what `supabase functions deploy` needs; database changes
 # are applied from supabase/migrations/ (see README.md).
-project_id = "xhtwtnsvdmabfvewjgwz"
+project_id = "cuijqoorjgvlyiyizgxi"
 
 [functions.studio-ai]
 verify_jwt = true

@@ -9,8 +9,8 @@
 (function () {
   "use strict";
 
-  var URL_ = "https://xhtwtnsvdmabfvewjgwz.supabase.co";
-  var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhodHd0bnN2ZG1hYmZ2ZXdqZ3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4NzU5NDEsImV4cCI6MjEwOTQ1MTk0MX0.Zgurc8l1LXPRFqtfNgUNShBQLGJUWpsg-sQ-FOcr-t4";
+  var URL_ = "https://cuijqoorjgvlyiyizgxi.supabase.co";
+  var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aWpxb29yamd2bHlpeWl6Z3hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNTUwMjMsImV4cCI6MjEwOTczMTAyM30.jwsfTktibmwUHKj3Gn6Ulk-TQJv__xczdQ5VgQvbXx8";
   var SUPPORT = "hassan@forgelaboratory.net";
   var MAX_HOOKS = 5, MAX_ASSETS = 30, MAX_BYTES = 50 * 1024 * 1024;
 
@@ -1062,11 +1062,27 @@
       if (S.batches.some(function (b) { return b.status === "queued" || b.status === "running"; })) startPoll();
     }).catch(fail);
   }
+  /* A confirmation email's link lands here with the new session in the hash */
+  function fromLink() {
+    var h = location.hash.slice(1);
+    if (h.indexOf("access_token=") < 0 && h.indexOf("error_description=") < 0) return Promise.resolve(null);
+    var p = new URLSearchParams(h);
+    history.replaceState(null, "", location.pathname + location.search);
+    if (p.get("error_description")) return Promise.resolve({ notice: p.get("error_description") + ". Sign in, or ask for a new link." });
+    var s = { access_token: p.get("access_token"), refresh_token: p.get("refresh_token"), expires_in: Number(p.get("expires_in")) };
+    return fetch(URL_ + "/auth/v1/user", { headers: { apikey: ANON, Authorization: "Bearer " + s.access_token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (u) { if (u && u.id) { s.user = u; saveSession(s); } return null; })
+      .catch(function () { return null; });
+  }
   function boot() {
-    loadSession();
-    if (!S.session) { route(); return; }
-    loadAccount().then(route).catch(function (e) {
-      if (e.pg === "42P01" || e.pg === "PGRST205") setupNeeded(); else if (S.session) route();
+    fromLink().then(function (res) {
+      loadSession();
+      if (res && res.notice) { renderAuth("signin", res.notice); return; }
+      if (!S.session) { route(); return; }
+      loadAccount().then(route).catch(function (e) {
+        if (e.pg === "42P01" || e.pg === "PGRST205") setupNeeded(); else if (S.session) route();
+      });
     });
   }
   window.addEventListener("hashchange", route);

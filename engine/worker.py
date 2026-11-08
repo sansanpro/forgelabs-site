@@ -53,7 +53,7 @@ def load_env():
 
 class Supabase:
     def __init__(self):
-        self.url = os.environ.get('SUPABASE_URL', 'https://xhtwtnsvdmabfvewjgwz.supabase.co').rstrip('/')
+        self.url = os.environ.get('SUPABASE_URL', 'https://cuijqoorjgvlyiyizgxi.supabase.co').rstrip('/')
         key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
         if not key:
             sys.exit('SUPABASE_SERVICE_ROLE_KEY is not set (add it to .env.local)')

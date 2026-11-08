@@ -1,7 +1,7 @@
 # The App Ad Studio render worker, for any container host (Fly.io, Render, Cloud Run, a VPS).
 #   docker build -t forge-worker engine/
 #   docker run --env-file .env.local forge-worker
-# Needs SUPABASE_SERVICE_ROLE_KEY and ELEVENLABS_API_KEY (SUPABASE_URL defaults to the ForgeLabs project).
+# Needs SUPABASE_SERVICE_ROLE_KEY and ELEVENLABS_API_KEY (SUPABASE_URL defaults to the Studio's project).
 FROM python:3.12-slim
 WORKDIR /engine
 COPY requirements.txt .
