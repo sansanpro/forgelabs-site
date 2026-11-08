@@ -445,6 +445,11 @@ class Ad:
             nxt = shown(self.words[i + 1]['w'], self.display) if i + 1 < s['b'] else ''
             if i == s['b'] - 1 or w[-1] in '.,?' or width + f.getlength(nxt) > 860:
                 lines.append((cur, i + 1)); cur = i + 1; width = 0
+        # Never leave one word alone on a line: the line before gives it a companion
+        for k in range(1, len(lines)):
+            (a, b), (c, d) = lines[k - 1], lines[k]
+            if d - c == 1 and b - a >= 3 and shown(self.words[b - 1]['w'], self.display)[-1] not in '.,?':
+                lines[k - 1], lines[k] = (a, b - 1), (b - 1, d)
         return lines
 
     def caption(self, fr, t, s):
