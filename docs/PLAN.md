@@ -104,11 +104,10 @@ The engine is ported from `marketing/ads/scripts/render_videos.py`, `voiceover.m
 | Backend | Live on project `cuijqoorjgvlyiyizgxi`: migration applied, `studio-ai` deployed, storage buckets created. Sign-in sends people to forgelaboratory.net/app/ with a 10-character password minimum; email confirmation is on (see the open items). |
 | App and landing page | Live on forgelaboratory.net |
 | End-to-end test | **Passed on the live site** with `tests/live-flow.mjs`: sign-in, uploads, hooks, script, preview ready 16 s after queueing, pack 61 s after, and the zip downloaded with every file. |
-| Worker | Server `forge-worker` created on GCP (us-central1-a) with the image pushed. It starts rendering once the keys are in Secret Manager (`engine/deploy/gcp.sh secrets`, run by the owner). Until then it runs on the owner's Mac. |
+| Worker | **Live on GCP**: server `forge-worker` (e2-standard-2, us-central1-a), keys from Secret Manager. The end-to-end test passed against it on 2026-11-09: preview in 17 s, a two-ad pack in 168 s (about 3x slower than the Mac). |
 
 **Open items for the owner:**
 - **Email confirmation:** the project's built-in mailer sends only 2 emails an hour, and only to members of the Supabase team, so customers can't sign up while it's on. Either add custom SMTP (Google Workspace: smtp.gmail.com, port 587, with an app password for hassan@forgelaboratory.net or an alias) under Authentication → Emails, or turn off "Confirm email" while in beta. Turning it off was left to the owner, since it lowers security.
-- **The worker's keys:** run `engine/deploy/gcp.sh secrets` once, so the GCP server can start rendering.
 - **The Anthropic key**, to switch on AI suggestions.
 - **Third-party terms:** ElevenLabs' commercial terms and the licence of the Canva hand photo.
 

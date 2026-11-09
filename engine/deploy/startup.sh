@@ -14,11 +14,21 @@ if ! command -v docker >/dev/null; then
 fi
 gcloud auth configure-docker "$REGISTRY" --quiet
 
+# Access granted just before a boot can take a minute to apply, so keep trying for 10 minutes
+# rather than starting the worker without its keys
+secret() {
+  local v
+  for _ in $(seq 1 60); do
+    v=$(gcloud secrets versions access latest --secret="$1" 2>/dev/null) && [ -n "$v" ] && { echo "$v"; return; }
+    sleep 10
+  done
+  echo "could not read secret $1" >&2; return 1
+}
 umask 077
-{
-  echo "SUPABASE_SERVICE_ROLE_KEY=$(gcloud secrets versions access latest --secret=forge-supabase-service-role)"
-  echo "ELEVENLABS_API_KEY=$(gcloud secrets versions access latest --secret=forge-elevenlabs)"
-} > /run/forge.env
+SB=$(secret forge-supabase-service-role)
+EL=$(secret forge-elevenlabs)
+printf 'SUPABASE_SERVICE_ROLE_KEY=%s\nELEVENLABS_API_KEY=%s\n' "$SB" "$EL" > /run/forge.env
+unset SB EL
 
 docker pull "$IMAGE"
 docker rm -f forge-worker 2>/dev/null || true
