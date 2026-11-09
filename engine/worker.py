@@ -225,7 +225,8 @@ def run(sb, job_row, name):
         files = []
         for root, _, names in os.walk(out):
             for n in sorted(names):
-                rel = os.path.relpath(os.path.join(root, n), out)
+                # Storage keys always use '/', even on a Windows worker
+                rel = os.path.relpath(os.path.join(root, n), out).replace(os.sep, '/')
                 files.append(rel)
         log(f'Uploading {len(files)} files')
         for rel in files:
