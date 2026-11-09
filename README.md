@@ -21,7 +21,7 @@ The site and product at [forgelaboratory.net](https://forgelaboratory.net): a se
 | Database, sign-in, file storage | `supabase/migrations/` | The Studio's Supabase project (`cuijqoorjgvlyiyizgxi`) |
 | AI hook writer and claim check | `supabase/functions/studio-ai/` | Supabase Edge Functions, calling Claude |
 | Render engine | `engine/forge_engine/` | Python (Pillow + ffmpeg) |
-| Render worker | `engine/worker.py` | The owner's Windows PC (Hassano), as a boot-time scheduled task (`engine/deploy/windows/`). Any machine with Python 3.11+ works; `engine/deploy/gcp.sh` sets up a GCP server (stopped to save cost) |
+| Render worker | `engine/worker.py` | The owner's Windows PC (Hassano), as a boot-time scheduled task (`engine/deploy/windows/`). Any machine with Python 3.11+ works; `engine/deploy/gcp.sh` can set up a GCP server (deleted to save cost) |
 
 `remove/` and `unsubscribe/` belong to ForgeLabs' earlier lead product and stay live so its opt-outs keep working. They still talk to that product's own Supabase project (`xhtwtnsvdmabfvewjgwz`), which is separate from the Studio's.
 
@@ -64,7 +64,7 @@ ssh t10admin@192.168.1.69 "cd /d C:\forge\forgelabs-site & git pull & schtasks /
 
 Its log is `C:\forge\worker.log`.
 
-**The worker on Google Cloud** (the server is stopped; start it with `gcloud compute instances start forge-worker --zone us-central1-a`), from the repo root, with Docker Desktop running:
+**The worker on Google Cloud** (the server was deleted to save cost; `engine/deploy/gcp.sh setup` recreates it), from the repo root, with Docker Desktop running:
 
 ```
 engine/deploy/gcp.sh deploy    # after engine changes: rebuild the image, restart the worker
