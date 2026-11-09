@@ -107,7 +107,7 @@ The engine is ported from `marketing/ads/scripts/render_videos.py`, `voiceover.m
 | Worker | **Live on GCP**: server `forge-worker` (e2-standard-2, us-central1-a), keys from Secret Manager. The end-to-end test passed against it on 2026-11-09: preview in 17 s, a two-ad pack in 168 s (about 3x slower than the Mac). |
 
 **Open items for the owner:**
-- **Email confirmation:** the project's built-in mailer sends only 2 emails an hour, and only to members of the Supabase team, so customers can't sign up while it's on. Either add custom SMTP (Google Workspace: smtp.gmail.com, port 587, with an app password for hassan@forgelaboratory.net or an alias) under Authentication → Emails, or turn off "Confirm email" while in beta. Turning it off was left to the owner, since it lowers security.
+- **Email confirmation:** the built-in mailer sends 2 emails an hour, and only to the Supabase team, so customers can't sign up until custom SMTP is on. Ready to apply: Google Workspace SMTP, branded templates (`supabase/templates/`) and `supabase/auth-email.mjs`. It needs a Google app password for hassan@forgelaboratory.net in `.env.local` as `SMTP_APP_PASSWORD`. Also add a DMARC record (SPF and DKIM are already set).
 - **The Anthropic key**, to switch on AI suggestions.
 - **Third-party terms:** ElevenLabs' commercial terms and the licence of the Canva hand photo.
 

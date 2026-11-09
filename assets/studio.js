@@ -255,6 +255,7 @@
 
   /* ── sign in ─────────────────────────────────────────────────── */
   function renderAuth(mode, notice) {
+    if (mode === "forgot" || mode === "reset") { renderPassword(mode, notice); return; }
     var up = mode === "signup";
     root.innerHTML =
       '<div class="auth"><a class="brand" href="/"><i></i>ForgeLabs <span class="sub">App Ad Studio</span></a><div class="card">' +
@@ -264,13 +265,14 @@
       '<div class="field"><label for="a-email">Email</label><input id="a-email" type="email" autocomplete="email" required></div>' +
       '<div class="field"><label for="a-pw">Password</label><input id="a-pw" type="password" autocomplete="' +
       (up ? "new-password" : "current-password") + '" required minlength="10">' +
-      (up ? '<div class="hint">At least 10 characters.</div>' : "") + "</div>" +
+      (up ? '<div class="hint">At least 10 characters.</div>' : '<div class="hint"><button type="button" class="btn link small" id="a-forgot">Forgot your password?</button></div>') + "</div>" +
       (up ? '<p class="small muted">By creating an account you agree to the <a href="/terms/">terms</a> and <a href="/privacy/">privacy policy</a>.</p>' : "") +
       '<button class="btn pri" style="width:100%" type="submit">' + (up ? "Create account" : "Sign in") + "</button>" +
       '<div class="err" id="a-err" role="alert"></div></form></div>' +
       '<div class="switch">' + (up ? "Already have an account? " : "New here? ") +
       '<button type="button" id="a-switch">' + (up ? "Sign in" : "Create an account") + "</button></div></div>";
     document.getElementById("a-switch").onclick = function () { renderAuth(up ? "signin" : "signup"); };
+    if (!up) document.getElementById("a-forgot").onclick = function () { renderAuth("forgot"); };
     document.getElementById("authf").onsubmit = function (e) {
       e.preventDefault();
       var email = val("a-email"), pw = document.getElementById("a-pw").value, err = document.getElementById("a-err");
@@ -286,12 +288,63 @@
         var m = r.data.msg || r.data.error_description || r.data.message;
         if (r.data.error_code === "invalid_credentials") m = "That email and password don't match.";
         if (r.data.error_code === "user_already_exists") m = "That email already has an account. Sign in instead.";
-        if (r.data.error_code === "email_not_confirmed") m = "Confirm your email first: check your inbox for the link.";
         err.textContent = m || "That didn't work. Try again.";
+        if (r.data.error_code === "email_not_confirmed") {
+          err.innerHTML = "Confirm your email first: check your inbox for the link. " +
+            '<button type="button" class="btn link small" id="a-resend">Send it again</button>';
+          document.getElementById("a-resend").onclick = function () {
+            authCall("resend", { type: "signup", email: email }).then(function (x) {
+              err.textContent = x.ok ? "Sent. Check your inbox, and your spam folder." : (x.data.msg || "Wait a minute, then try again.");
+            });
+          };
+        }
       }).catch(function () {
         btn.disabled = false;
         err.textContent = "We couldn't reach the server. Check your connection and try again.";
       });
+    };
+  }
+
+  /* "forgot" emails a reset link; "reset" is where that link lands, already signed in */
+  function renderPassword(mode, notice) {
+    var forgot = mode === "forgot";
+    root.innerHTML =
+      '<div class="auth"><a class="brand" href="/"><i></i>ForgeLabs <span class="sub">App Ad Studio</span></a><div class="card">' +
+      "<h1>" + (forgot ? "Reset your password" : "Choose a new password") + "</h1>" +
+      '<p class="small muted" role="status" id="a-note">' + esc(notice || (forgot ? "We'll email you a link to choose a new one." : "")) + "</p>" +
+      '<form id="authf" style="margin-top:16px" novalidate>' +
+      (forgot ? '<div class="field"><label for="a-email">Email</label><input id="a-email" type="email" autocomplete="email" required></div>'
+              : '<div class="field"><label for="a-pw">New password</label><input id="a-pw" type="password" autocomplete="new-password" required minlength="10"><div class="hint">At least 10 characters.</div></div>') +
+      '<button class="btn pri" style="width:100%" type="submit">' + (forgot ? "Email me a link" : "Save and continue") + "</button>" +
+      '<div class="err" id="a-err" role="alert"></div></form></div>' +
+      (forgot ? '<div class="switch"><button type="button" id="a-switch">Back to sign in</button></div>' : "") + "</div>";
+    if (forgot) document.getElementById("a-switch").onclick = function () { renderAuth("signin"); };
+    document.getElementById("authf").onsubmit = function (e) {
+      e.preventDefault();
+      var err = document.getElementById("a-err"), btn = e.target.querySelector("button[type=submit]");
+      err.textContent = "";
+      if (forgot) {
+        var email = val("a-email");
+        if (!email) { err.textContent = "Enter your email."; return; }
+        btn.disabled = true;
+        authCall("recover", { email: email }).then(function (r) {
+          btn.disabled = false;
+          if (r.ok) { document.getElementById("a-note").textContent = "If that email has an account, a link is on its way. Check your spam folder too."; return; }
+          err.textContent = r.data.msg || "Wait a minute, then try again.";
+        }).catch(function () { btn.disabled = false; err.textContent = "We couldn't reach the server. Try again."; });
+        return;
+      }
+      var pw = document.getElementById("a-pw").value;
+      if (pw.length < 10) { err.textContent = "Use at least 10 characters."; return; }
+      btn.disabled = true;
+      authed(URL_ + "/auth/v1/user", { method: "PUT", body: JSON.stringify({ password: pw }) })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (r) {
+          btn.disabled = false;
+          if (r.ok) { boot(); return; }
+          err.textContent = r.data.error_code === "same_password" ? "That's your current password. Choose a different one."
+            : (r.data.msg || "That didn't work. Try again.");
+        }).catch(function (x) { btn.disabled = false; err.textContent = x.message || "That didn't work. Try again."; });
     };
   }
 
@@ -1074,7 +1127,7 @@
       if (S.batches.some(function (b) { return b.status === "queued" || b.status === "running"; })) startPoll();
     }).catch(fail);
   }
-  /* A confirmation email's link lands here with the new session in the hash */
+  /* A confirmation or reset email's link lands here with the new session in the hash */
   function fromLink() {
     var h = location.hash.slice(1);
     if (h.indexOf("access_token=") < 0 && h.indexOf("error_description=") < 0) return Promise.resolve(null);
@@ -1084,13 +1137,17 @@
     var s = { access_token: p.get("access_token"), refresh_token: p.get("refresh_token"), expires_in: Number(p.get("expires_in")) };
     return fetch(URL_ + "/auth/v1/user", { headers: { apikey: ANON, Authorization: "Bearer " + s.access_token } })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (u) { if (u && u.id) { s.user = u; saveSession(s); } return null; })
+      .then(function (u) {
+        if (u && u.id) { s.user = u; saveSession(s); }
+        return u && u.id && p.get("type") === "recovery" ? { reset: true } : null;
+      })
       .catch(function () { return null; });
   }
   function boot() {
     fromLink().then(function (res) {
       loadSession();
       if (res && res.notice) { renderAuth("signin", res.notice); return; }
+      if (res && res.reset) { renderAuth("reset"); return; }
       if (!S.session) { route(); return; }
       loadAccount().then(route).catch(function (e) {
         if (e.pg === "42P01" || e.pg === "PGRST205") setupNeeded(); else if (S.session) route();

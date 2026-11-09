@@ -4,7 +4,7 @@
   "description": "Dev tooling only. The site itself has no build step.",
   "type": "module",
   "scripts": {
-    "test:ui": "node tests/studio-flow.mjs"
+    "test:ui": "node tests/studio-flow.mjs && node tests/auth-flow.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1"
