@@ -103,11 +103,11 @@ The engine is ported from `marketing/ads/scripts/render_videos.py`, `voiceover.m
 | Voice | Works against ElevenLabs. One take per ad, with the name check reported. |
 | Backend | Live on project `cuijqoorjgvlyiyizgxi`: migration applied, `studio-ai` deployed, storage buckets created. Sign-in sends people to forgelaboratory.net/app/ with a 10-character password minimum; email confirmation is on (see the open items). |
 | App and landing page | Live on forgelaboratory.net |
+| Sign-in emails | Sent through Google Workspace (smtp.gmail.com) as noreply@forgelaboratory.net, with branded templates, password reset and resend link. SPF, DKIM and DMARC (`p=none`, reports to noreply@) are set. Delivery was confirmed on 2026-11-09. Reapply with `supabase/auth-email.mjs`. |
 | End-to-end test | **Passed on the live site** with `tests/live-flow.mjs`: sign-in, uploads, hooks, script, preview ready 16 s after queueing, pack 61 s after, and the zip downloaded with every file. |
 | Worker | **Live on the owner's Windows PC (Hassano, on the home network)** as the ForgeWorker scheduled task, which starts at boot and restarts the worker if it exits. End-to-end passed against it on 2026-11-09: preview in 13 s, a two-ad pack in 77 s. The GCP server (`engine/deploy/gcp.sh`) is stopped, to save about $50 a month. Renders only happen while the PC is on. |
 
 **Open items for the owner:**
-- **Email confirmation:** the built-in mailer sends 2 emails an hour, and only to the Supabase team, so customers can't sign up until custom SMTP is on. Ready to apply: Google Workspace SMTP, branded templates (`supabase/templates/`) and `supabase/auth-email.mjs`. It needs a Google app password for hassan@forgelaboratory.net in `.env.local` as `SMTP_APP_PASSWORD`. Also add a DMARC record (SPF and DKIM are already set).
 - **The Anthropic key**, to switch on AI suggestions.
 - **Third-party terms:** ElevenLabs' commercial terms and the licence of the Canva hand photo.
 
