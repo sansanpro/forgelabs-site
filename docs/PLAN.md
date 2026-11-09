@@ -31,7 +31,7 @@ It grew out of the ads made for StockMatcherAI. `docs/HOW-THE-ADS-ARE-MADE.md` i
 | Name | "ForgeLabs App Ad Studio" on the existing domain, forgelaboratory.net | Keeps the ForgeLabs name; the descriptor says what it's for. The site was rebuilt for this product, replacing the lead-finding product. |
 | Payments | **None in the MVP.** Each new account gets one free pack (up to 5 videos); the owner can grant more in the database. Stripe comes after the MVP works. | The owner's call: MVP first. |
 | Backend | A new Supabase project for the Studio (`cuijqoorjgvlyiyizgxi`, created 2026-11-08): Auth, Postgres, Storage, Edge Functions. Tables are prefixed `studio_`. | The owner chose a clean project on 2026-11-08, after the token they had reached a new account rather than the old ForgeLabs project (`xhtwtnsvdmabfvewjgwz`), which keeps serving the old product's opt-out pages. |
-| Renderer | A Python worker (Pillow + ffmpeg), the generalized StockMatcherAI renderer. It polls a jobs table. For the MVP it runs on the owner's Mac; the Dockerfile is ready for Fly.io, Render or Cloud Run. | Renders take minutes of CPU, too long for edge functions. Hosting costs money, so the owner chooses where. |
+| Renderer | A Python worker (Pillow + ffmpeg), the generalized StockMatcherAI renderer. It polls a jobs table. It runs on an always-on Compute Engine server (e2-standard-2) in the owner's GCP project, paid from GCP credits; `engine/deploy/gcp.sh` deploys it. | Renders take minutes of CPU, too long for edge functions. Edge functions allow 2 s of CPU per request and can't run Python or ffmpeg. |
 | Hook writing and claim check | Claude (`claude-opus-5-5` by default, `STUDIO_AI_MODEL` overrides it) via the `studio-ai` Supabase Edge Function. It uses the official SDK, structured JSON output and the server-side refusal fallback (`fallbacks: "default"`). A deterministic "hook lint" in the browser works without AI. | **No Anthropic key yet** (2026-11-08). Until one is added, customers write hooks from patterns, checked by the lint. AI suggestions switch on when `ANTHROPIC_API_KEY` is set as a Supabase secret; the landing page's FAQ says they're being switched on during the beta. |
 | Voice | ElevenLabs with word timestamps, plus a product-name pronunciation check. The MVP reuses the StockMatcherAI ElevenLabs key (owner approved). | Word timing drives the whole edit. |
 | Repo | Public (GitHub Pages). The engine, prompts and docs are visible to anyone. | Pages on a free GitHub plan needs a public repo. Moving the engine to a private repo is an option before launch. |
@@ -104,11 +104,11 @@ The engine is ported from `marketing/ads/scripts/render_videos.py`, `voiceover.m
 | Backend | Live on project `cuijqoorjgvlyiyizgxi`: migration applied, `studio-ai` deployed, storage buckets created. Sign-in sends people to forgelaboratory.net/app/ with a 10-character password minimum; email confirmation is on (see the open items). |
 | App and landing page | Live on forgelaboratory.net |
 | End-to-end test | **Passed on the live site** with `tests/live-flow.mjs`: sign-in, uploads, hooks, script, preview ready 16 s after queueing, pack 61 s after, and the zip downloaded with every file. |
-| Worker | Runs on the owner's Mac (`engine/.venv/bin/python worker.py`); packs only render while it runs. |
+| Worker | Server `forge-worker` created on GCP (us-central1-a) with the image pushed. It starts rendering once the keys are in Secret Manager (`engine/deploy/gcp.sh secrets`, run by the owner). Until then it runs on the owner's Mac. |
 
 **Open items for the owner:**
-- **Email confirmation:** the project's built-in mailer sends only 2 emails an hour, so new sign-ups will stall. Either add custom SMTP (for example Resend or Postmark) under Authentication → Emails, or turn off "Confirm email" while in beta. Turning it off was left to the owner, since it lowers security.
-- **Hosting the worker** (Fly.io, Render, Cloud Run or a VPS), so renders don't depend on the Mac.
+- **Email confirmation:** the project's built-in mailer sends only 2 emails an hour, and only to members of the Supabase team, so customers can't sign up while it's on. Either add custom SMTP (Google Workspace: smtp.gmail.com, port 587, with an app password for hassan@forgelaboratory.net or an alias) under Authentication → Emails, or turn off "Confirm email" while in beta. Turning it off was left to the owner, since it lowers security.
+- **The worker's keys:** run `engine/deploy/gcp.sh secrets` once, so the GCP server can start rendering.
 - **The Anthropic key**, to switch on AI suggestions.
 - **Third-party terms:** ElevenLabs' commercial terms and the licence of the Canva hand photo.
 

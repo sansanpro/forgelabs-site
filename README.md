@@ -21,7 +21,7 @@ The site and product at [forgelaboratory.net](https://forgelaboratory.net): a se
 | Database, sign-in, file storage | `supabase/migrations/` | The Studio's Supabase project (`cuijqoorjgvlyiyizgxi`) |
 | AI hook writer and claim check | `supabase/functions/studio-ai/` | Supabase Edge Functions, calling Claude |
 | Render engine | `engine/forge_engine/` | Python (Pillow + ffmpeg) |
-| Render worker | `engine/worker.py` | Any machine with Python 3.11+; the owner's Mac for the MVP |
+| Render worker | `engine/worker.py` | A Compute Engine server (`forge-worker`, GCP project `oceanic-citadel-507922-a4`) running `engine/Dockerfile`; any machine with Python 3.11+ also works |
 
 `remove/` and `unsubscribe/` belong to ForgeLabs' earlier lead product and stay live so its opt-outs keep working. They still talk to that product's own Supabase project (`xhtwtnsvdmabfvewjgwz`), which is separate from the Studio's.
 
@@ -54,6 +54,14 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ```
 .venv/bin/python worker.py
+```
+
+**The hosted worker** on Google Cloud, from the repo root (Docker Desktop must be running):
+
+```
+engine/deploy/gcp.sh deploy    # after engine changes: rebuild the image, restart the worker
+engine/deploy/gcp.sh secrets   # put the keys from .env.local into Secret Manager, restart
+engine/deploy/gcp.sh logs      # recent worker log lines
 ```
 
 **The backend.** These use the Supabase CLI v2; v3 rejects this config.
