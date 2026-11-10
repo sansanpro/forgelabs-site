@@ -1,0 +1,36 @@
+/* The guide and case-study pages: app.css's palette and header, with a readable article column.
+   No scripts and no WebGL, so these pages paint at once. */
+main.article{max-width:740px; padding:44px 20px 90px}
+.article .kicker{font:600 12.5px Inter,sans-serif; letter-spacing:.14em; text-transform:uppercase; color:var(--ember-tx)}
+.article h1{font-size:clamp(30px,5vw,44px); line-height:1.08; letter-spacing:-.025em; margin-top:12px}
+.article .dek{font-size:18px; line-height:1.55; color:var(--body); margin-top:16px}
+.article .meta{font-size:13px; color:var(--muted); margin-top:14px}
+.article h2{font-size:24px; line-height:1.2; margin:46px 0 12px}
+.article h3{font-size:17px; margin:26px 0 8px}
+.article p,.article li{font-size:16px; line-height:1.65}
+.article p{margin:12px 0}
+.article ul,.article ol{padding-left:22px; margin:12px 0}
+.article li{margin:6px 0}
+.article strong{color:var(--ink)}
+.article blockquote{margin:18px 0; padding:14px 18px; border-left:3px solid var(--ember); background:var(--card);
+  border-radius:0 8px 8px 0; font:600 18px/1.4 Archivo,Inter,sans-serif; color:var(--ink)}
+.article blockquote small{display:block; margin-top:6px; font:400 13.5px Inter,sans-serif; color:var(--muted)}
+.article table{width:100%; border-collapse:collapse; margin:16px 0; font-size:14.5px}
+.article th,.article td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+.article th{color:var(--ink); font-weight:600; font-size:13px}
+.article td.n,.article th.n{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+.article .wide{overflow-x:auto}
+.article .figs{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin:22px 0}
+.article .figs div{background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 16px}
+.article .figs b{display:block; font:700 26px Archivo,sans-serif; color:var(--ink); letter-spacing:-.02em}
+.article .figs span{font-size:13px; color:var(--muted)}
+.article video{display:block; width:min(100%,300px); aspect-ratio:9/16; border-radius:16px; background:#000; margin:20px auto 6px}
+.article .cap{text-align:center; font-size:13px; color:var(--muted)}
+.article .note{font-size:14px; color:var(--muted)}
+.article .cta{margin-top:54px; padding:28px; border:1px solid var(--ember-line); border-radius:12px; background:var(--card)}
+.article .cta h2{margin-top:0}
+.article .cta .btn{font-size:15px; padding:11px 18px; margin-top:8px}
+.foot-links{max-width:740px; margin:0 auto; padding:0 20px 50px; display:flex; flex-wrap:wrap; gap:8px 20px; font-size:13.5px}
+.foot-links a{color:var(--muted)}
+.top .spacer{flex:1}
+@media(max-width:520px){.top .btn.pri{display:none}}

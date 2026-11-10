@@ -133,9 +133,41 @@ CapCut"), with verified claims only.
   log whether ForgeLabs is mentioned or linked.
 - **Speed:** PageSpeed Insights mobile score and LCP, before and after Phase 1.
 
-## Decisions for the owner
+## Owner decisions (2026-11-10)
 
-1. **The H1.** My pick is "Turn your app's screenshots into video ads."
-2. **Training bots.** Allow GPTBot, ClaudeBot and Google-Extended? I recommend yes.
-3. **The guide.** Publish the ad playbook as a public guide? It's already in this public repo.
-4. **The case study.** Use StockMatcherAI's real Meta results in a case study?
+1. **The H1:** "Turn your app's screenshots into video ads." Approved.
+2. **Training bots:** allowed.
+3. **The guide:** a glimpse only, not the full playbook. `/guide/app-video-ads/` covers the four
+   ideas, the clarity test, five hook patterns, the three truth rules, ad structure and the test
+   protocol. It leaves out capture, voice, rendering, the motion opening, launch scripts and the
+   templates.
+4. **The case study:** approved, with StockMatcherAI's real Meta numbers.
+
+## Progress
+
+**Done 2026-11-10 (Phase 1, plus the guide and case study from Phase 2):**
+- **Hero:** the new H1, a keyword tag line ("AI ad studio for app makers") and the lede naming
+  Reels, TikTok and Shorts. The H1 has no word reveal, so it shows on first paint. It sits at
+  201 px on desktop (was 282) and 141 px on a phone (was 188), with the example ad peeking in on a
+  phone's first screen.
+- **Title, description and Open Graph tags** updated, and og.png re-rendered with the new H1.
+- **JSON-LD:** Organization, WebSite, SoftwareApplication and three VideoObjects on the home page;
+  Article on both new pages.
+- **Home page content:** a script under each example ad, a Meta results strip linking to the case
+  study, two FAQ answers for direct questions, and Guide links in the nav and footer.
+- **robots.txt:** one group allowing every crawler. It blocks `/app/`, and also `/docs/`,
+  `/engine/`, `/supabase/` and `/tests/`: GitHub Pages serves the whole repo, so the full playbook
+  was reachable at `/docs/AD-PLAYBOOK.md`. It's still public on GitHub, just not indexed.
+- **noindex** on `/remove/` and `/unsubscribe/`, the sitemap refreshed, and `/llms.txt` added.
+- **Speed:** the hero poster is preloaded, and the WebGL backdrop starts only after load, when the
+  page is idle. It never starts with data saver on.
+- **New pages:**
+  - `/guide/app-video-ads/`
+  - `/case-studies/stockmatcherai/`: Meta Insights read 2026-11-10, covering 5 to 10 November. It
+    has $147.30 spent, 7,401 impressions, 342 link clicks, 4.6% click-through, $0.43 a click and
+    280 landing page views. Refresh the numbers and dates together.
+
+**Next:**
+- **Phase 3, owner's accounts:** Search Console and Bing.
+- **PageSpeed:** measure on the live site.
+- **The rest of Phase 2:** `/hooks/`, `/examples/` and a full FAQ page.

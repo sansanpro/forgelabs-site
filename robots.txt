@@ -1,6 +1,16 @@
+# Every crawler is welcome on the public pages: search engines (Googlebot, Bingbot), AI search and
+# assistants (OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot) and AI
+# training crawlers (GPTBot, ClaudeBot, Google-Extended). That's deliberate, so the brand is known.
+# A named group here would replace this one for that bot, so keep it to one group.
+#
+# Blocked: the signed-in app, and the repo's source folders that GitHub Pages also serves.
+# /remove/ and /unsubscribe/ stay crawlable so crawlers can see their noindex tags.
 User-agent: *
 Allow: /
 Disallow: /app/
-Disallow: /unsubscribe/
+Disallow: /docs/
+Disallow: /engine/
+Disallow: /supabase/
+Disallow: /tests/
 
 Sitemap: https://forgelaboratory.net/sitemap.xml

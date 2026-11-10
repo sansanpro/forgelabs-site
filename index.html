@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ForgeLabs App Ad Studio: Video Ads for Your App</title>
-<meta name="description" content="Upload your app's screens and say what it does. ForgeLabs App Ad Studio turns them into a ready-to-test set of vertical video ads: hooks checked against your facts, a voiceover, captions, images and ad copy.">
+<title>Turn App Screenshots into Video Ads | ForgeLabs App Ad Studio</title>
+<meta name="description" content="Upload your app's screenshots and ForgeLabs App Ad Studio turns them into ready-to-test vertical video ads for Reels, TikTok and Shorts: hooks checked against your facts, a voiceover, captions, images and ad copy. Free in beta.">
 <meta name="theme-color" content="#0C0806">
-<meta property="og:title" content="ForgeLabs App Ad Studio: video ads for your app">
-<meta property="og:description" content="Your real screens, hooks that pass a claim check, voiced and captioned. A ready-to-test pack of vertical video ads.">
+<meta property="og:title" content="Turn your app's screenshots into video ads">
+<meta property="og:description" content="ForgeLabs App Ad Studio: your real screens, hooks that pass a claim check, voiced and captioned. A ready-to-test pack of vertical video ads.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://forgelaboratory.net/">
 <!-- og.png is rendered from /assets/og.html at exactly 1200x630. Re-export it
@@ -16,6 +16,69 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://forgelaboratory.net/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" as="image" href="/assets/demo/tinder-revenue.jpg" fetchpriority="high">
+<!-- Structured data for search engines and AI assistants. Keep it matching the visible page:
+     names, prices and the example ads below. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://forgelaboratory.net/#org",
+      "name": "ForgeLabs",
+      "url": "https://forgelaboratory.net/",
+      "logo": "https://forgelaboratory.net/favicon.svg",
+      "email": "hassan@forgelaboratory.net"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://forgelaboratory.net/#site",
+      "name": "ForgeLabs App Ad Studio",
+      "url": "https://forgelaboratory.net/",
+      "publisher": {"@id": "https://forgelaboratory.net/#org"}
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://forgelaboratory.net/#app",
+      "name": "ForgeLabs App Ad Studio",
+      "url": "https://forgelaboratory.net/",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "Web",
+      "description": "Turns an app's screenshots and screen recordings into ready-to-test vertical video ads, with hooks checked against the app's facts, an AI voiceover, captions, feed images and ad copy.",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD", "description": "Free during the beta: one test pack of up to five videos."},
+      "publisher": {"@id": "https://forgelaboratory.net/#org"}
+    },
+    {
+      "@type": "VideoObject",
+      "name": "\"It's Tinder, except the matches have revenue.\" Video ad for StockMatcherAI",
+      "description": "A vertical video ad made with ForgeLabs App Ad Studio from StockMatcherAI's real screens. Comparison hook, opening mid-swipe.",
+      "thumbnailUrl": "https://forgelaboratory.net/assets/demo/tinder-revenue.jpg",
+      "contentUrl": "https://forgelaboratory.net/assets/demo/tinder-revenue.mp4",
+      "uploadDate": "2026-11-08",
+      "duration": "PT21S"
+    },
+    {
+      "@type": "VideoObject",
+      "name": "\"It's like Tinder, but for stocks.\" Video ad for StockMatcherAI",
+      "description": "A vertical video ad made with ForgeLabs App Ad Studio from StockMatcherAI's real screens. The plainest hook in the set, and the best click-through of the ads with over 1,000 impressions.",
+      "thumbnailUrl": "https://forgelaboratory.net/assets/demo/tinder-stocks.jpg",
+      "contentUrl": "https://forgelaboratory.net/assets/demo/tinder-stocks.mp4",
+      "uploadDate": "2026-11-08",
+      "duration": "PT19S"
+    },
+    {
+      "@type": "VideoObject",
+      "name": "\"You'd donate to fight cancer. Could you name one company working on it?\" Video ad for StockMatcherAI",
+      "description": "A vertical video ad made with ForgeLabs App Ad Studio from StockMatcherAI's real screens. Values hook, with the disclaimer the app's category needs.",
+      "thumbnailUrl": "https://forgelaboratory.net/assets/demo/donate.jpg",
+      "contentUrl": "https://forgelaboratory.net/assets/demo/donate.mp4",
+      "uploadDate": "2026-11-08",
+      "duration": "PT22S"
+    }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&family=Inter:wght@400;500;600&display=swap">
@@ -28,9 +91,17 @@
 
    The gradient on .fig-hole is the fallback: if WebGL is missing or the shader fails, the
    hero is still a deep ember well rather than an empty black box. */
+/* The headline sits high, level with the top of the phone, so it's the first thing read */
 body[data-hero="hole"] #hero{
-  background:var(--paper); min-height:100svh;
-  display:flex; align-items:center; padding:140px 0 110px;
+  background:var(--paper); display:flex; align-items:center; padding:116px 0 96px;
+}
+body[data-hero="hole"] .hero-in{align-items:start}
+body[data-hero="hole"] .hero-copy{padding-top:36px}
+@media(max-width:959px){
+  body[data-hero="hole"] #hero{padding:92px 0 56px}
+  body[data-hero="hole"] .hero-copy{padding-top:0}
+  body[data-hero="hole"] .hero-copy .lede{font-size:16px; margin-top:14px}
+  body[data-hero="hole"] .cta-row{margin-top:20px}
 }
 body[data-hero="hole"] #hero > .wrap{width:100%}
 .fig-hole{
@@ -137,6 +208,13 @@ body[data-hero="hole"] #hero .emberlight{display:none}
 .qa details:last-child{border-bottom:1px solid var(--line)}
 .qa summary{cursor:pointer; font:600 16.5px Inter,sans-serif; color:var(--ink)}
 .qa p{margin:10px 0 0; font-size:15px}
+.example .script{margin-top:10px; max-width:30ch; font-size:13.5px}
+.example .script summary{cursor:pointer; color:var(--ember-tx); font-weight:600; text-align:center}
+.example .script p{margin-top:8px; text-align:left; color:var(--body)}
+.results{margin-top:48px; display:flex; flex-wrap:wrap; gap:14px 34px; align-items:baseline; justify-content:center; text-align:center}
+.results b{display:block; font:700 30px Archivo,sans-serif; color:var(--ink); letter-spacing:-.02em}
+.results span{font-size:13.5px; color:var(--muted)}
+.results-note{margin-top:16px; text-align:center; font-size:14.5px}
 .brand{align-items:baseline}
 .brand i{align-self:center}
 .brand .sub{font:500 13px Inter,sans-serif; color:var(--muted); letter-spacing:0}
@@ -164,6 +242,7 @@ setTimeout(function(){
       <a href="#examples">Examples</a>
       <a href="#pack">The pack</a>
       <a href="#pricing">Pricing</a>
+      <a href="/guide/app-video-ads/">Guide</a>
       <a href="/app/">Sign in</a>
       <a class="btn pri" href="/app/?new=1">Make your first ads</a>
     </div>
@@ -178,6 +257,7 @@ setTimeout(function(){
   <a href="#examples">Examples</a>
   <a href="#pack">The pack</a>
   <a href="#pricing">Pricing</a>
+  <a href="/guide/app-video-ads/">Guide</a>
   <a href="/app/">Sign in</a>
   <a class="btn pri" href="/app/?new=1">Make your first ads</a>
 </div>
@@ -186,12 +266,13 @@ setTimeout(function(){
   <div class="fig-hole" aria-hidden="true"><canvas id="hole" data-full="1"></canvas></div>
   <div class="wrap hero-in">
     <div class="hero-copy">
-      <span class="tag">App Ad Studio</span>
-      <h1 data-reveal>Video ads for your app that <em>stop the scroll.</em></h1>
+      <span class="tag">AI ad studio for app makers</span>
+      <!-- No word reveal on the headline: it's the page's main statement and shows on first paint -->
+      <h1>Turn your app's screenshots into <em>video ads.</em></h1>
       <p class="lede">
-        Upload your app's screens and say what it does. ForgeLabs turns them into a ready-to-test
-        set of vertical video ads: hooks checked against your facts, a voiceover, captions,
-        feed images and ad copy.
+        Upload your app's screens and say what it does. ForgeLabs App Ad Studio turns them into a
+        ready-to-test set of vertical video ads for Reels, TikTok and Shorts: hooks checked against
+        your facts, a voiceover, captions, feed images and ad copy.
       </p>
       <div class="cta-row">
         <a class="btn pri" href="/app/?new=1">Make your first ads free</a>
@@ -244,20 +325,33 @@ setTimeout(function(){
           <button class="sound" type="button" data-sound="ex1">Play</button></div>
         <h3>"It's Tinder, except the matches have revenue."</h3>
         <p>Comparison hook. A hand already mid-swipe on frame one.</p>
+        <details class="script"><summary>Read the script</summary>
+          <p>It's Tinder, except the matches have revenue. Swipe right on real companies working on causes you pick. Every card shows what it does, the proof, and what to know. Stuck on something? Ask AI. Then see what your likes say about you. Download StockMatcherAI free on the App Store.</p></details>
       </div>
       <div class="example rv">
         <div class="phone"><video id="ex2" src="/assets/demo/tinder-stocks.mp4" poster="/assets/demo/tinder-stocks.jpg" muted loop playsinline preload="none" aria-label="Example ad two"></video>
           <button class="sound" type="button" data-sound="ex2">Play</button></div>
         <h3>"It's like Tinder, but for stocks."</h3>
-        <p>The plainest hook in the set: it explains the whole app in six words.</p>
+        <p>The plainest hook in the set: it explains the whole app in six words. It also got the most clicks.</p>
+        <details class="script"><summary>Read the script</summary>
+          <p>It's like Tinder, but for stocks. Swipe right to like. Swipe left to pass. Every card shows what a company does, the proof, and the things to know. Then see what your likes say about you. Download StockMatcherAI free on the App Store.</p></details>
       </div>
       <div class="example rv">
         <div class="phone"><video id="ex3" src="/assets/demo/donate.mp4" poster="/assets/demo/donate.jpg" muted loop playsinline preload="none" aria-label="Example ad three"></video>
           <button class="sound" type="button" data-sound="ex3">Play</button></div>
         <h3>"You'd donate to fight cancer. Could you name one company working on it?"</h3>
         <p>Values hook, with the disclaimer that app's category needs.</p>
+        <details class="script"><summary>Read the script</summary>
+          <p>You'd donate to fight cancer. Could you name one company working on it? Pick the causes you care about, like beating cancer, clean energy, or clean water. See real companies working on them, with proof and a source you can check. Then you decide. Download StockMatcherAI free on the App Store.</p></details>
       </div>
     </div>
+    <div class="results rv">
+      <div><b>7,401</b><span>impressions on Meta</span></div>
+      <div><b>342</b><span>link clicks</span></div>
+      <div><b>4.6%</b><span>click-through</span></div>
+      <div><b>$0.43</b><span>per link click</span></div>
+    </div>
+    <p class="results-note rv">StockMatcherAI's ads from this engine, 5 to 10 November 2026. <a href="/case-studies/stockmatcherai/">Read the case study</a></p>
   </div>
 </section>
 
@@ -347,6 +441,10 @@ setTimeout(function(){
     <span class="tag rv">Questions</span>
     <h2 class="rv" data-reveal>Before you start.</h2>
     <div class="qa">
+      <details><summary>Can I make a video ad from my app's screenshots?</summary>
+        <p>Yes. That's what the Studio does. Upload your screenshots (or a short screen recording), describe the app, pick your hooks, and it renders vertical video ads with your real screens in a phone frame, an AI voiceover and word-by-word captions.</p></details>
+      <details><summary>Do I need a video editor?</summary>
+        <p>No. Every ad is rendered from your screens and script, timed to the voice. You review a preview of every scene before the full render, and edit the words rather than a timeline.</p></details>
       <details><summary>Which apps does it work for?</summary>
         <p>Phone apps (iPhone and Android), web apps and SaaS, anything you can show on a phone screen. Upload screenshots from a phone or simulator, or a short screen recording.</p></details>
       <details><summary>Do you run the ads for me?</summary>
@@ -384,6 +482,8 @@ setTimeout(function(){
 <footer>
   <div class="wrap foot">
     <a href="mailto:hassan@forgelaboratory.net">hassan@forgelaboratory.net</a>
+    <a href="/guide/app-video-ads/">Guide to app video ads</a>
+    <a href="/case-studies/stockmatcherai/">Case study</a>
     <a href="/terms/">Terms</a>
     <a href="/privacy/">Privacy</a>
     <span class="sp">ForgeLabs. Not affiliated with Meta, TikTok, Google, Snap or ElevenLabs.</span>

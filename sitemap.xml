@@ -2,17 +2,22 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://forgelaboratory.net/</loc>
-    <lastmod>2026-11-05</lastmod>
-    <priority>1.0</priority>
+    <lastmod>2026-11-10</lastmod>
+  </url>
+  <url>
+    <loc>https://forgelaboratory.net/guide/app-video-ads/</loc>
+    <lastmod>2026-11-10</lastmod>
+  </url>
+  <url>
+    <loc>https://forgelaboratory.net/case-studies/stockmatcherai/</loc>
+    <lastmod>2026-11-10</lastmod>
   </url>
   <url>
     <loc>https://forgelaboratory.net/terms/</loc>
-    <lastmod>2026-11-05</lastmod>
-    <priority>0.3</priority>
+    <lastmod>2026-11-08</lastmod>
   </url>
   <url>
     <loc>https://forgelaboratory.net/privacy/</loc>
-    <lastmod>2026-11-05</lastmod>
-    <priority>0.3</priority>
+    <lastmod>2026-11-08</lastmod>
   </url>
 </urlset>

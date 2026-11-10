@@ -45,7 +45,15 @@
     body.appendChild(box);
   })();
 
-  if(variant === "hole")       blackHole();
+  /* The shader is the heaviest thing on the page, so it waits until the page has loaded and the
+     main thread is idle: the headline and the hero video paint first. On data saver it never
+     starts, and the CSS gradient stays. */
+  var saver = navigator.connection && navigator.connection.saveData;
+  function whenIdle(fn){
+    function go(){ (window.requestIdleCallback || function(f){ setTimeout(f, 200); })(fn, {timeout:1500}); }
+    if(document.readyState === "complete") go(); else window.addEventListener("load", go, {once:true});
+  }
+  if(variant === "hole")       { if(!saver) whenIdle(blackHole); }
   else if(variant === "ember") ember();
   else                         clickPath();
 
