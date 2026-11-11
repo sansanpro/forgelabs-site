@@ -12,5 +12,6 @@ Disallow: /docs/
 Disallow: /engine/
 Disallow: /supabase/
 Disallow: /tests/
+Disallow: /tools/
 
 Sitemap: https://forgelaboratory.net/sitemap.xml
