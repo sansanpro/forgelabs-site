@@ -40,65 +40,46 @@ await shot('01-signed-in');
 await page.click('#new-app');
 await page.waitForSelector('#b-name', { timeout: 20000 });
 
+// 1. Your app (saves as it's typed)
 await page.fill('#b-name', 'Habitly');
+await page.click('#b-say');
 await page.fill('#b-spoken', 'Habit-lee');
-await page.fill('#b-one', 'A habit tracker that turns daily habits into streaks you can share with friends.');
-await page.fill('#b-aud', 'People who keep restarting the same habit');
-await page.fill('#b-prob', 'I start strong every January and give up by February.');
-await page.fill('#b-out', 'Keep a habit going for more than a few weeks.');
+await page.fill('#b-one', 'Turns daily habits into streaks you can share with friends.');
 await page.fill('#b-ck', 'Duolingo'); await page.fill('#b-ct', 'your habits');
-await page.fill('#b-cant', "It doesn't see your health data or give medical advice.");
-await page.fill('#b-facts', 'Free to download. Streaks, reminders and friends.');
-await page.click('#b-save');
-
-await page.waitForSelector('#up', { state: 'attached', timeout: 20000 });
 await page.setInputFiles('#up', ['today.png', 'done.png', 'stats.png', 'friends.png', 'scroll.mp4'].map(f => join(FIX, f)));
 await page.waitForFunction(() => document.querySelectorAll('.shot').length === 5, null, { timeout: 60000 });
 await page.setInputFiles('#up-icon', join(FIX, 'icon.png'));
 await page.waitForSelector('.iconprev', { timeout: 30000 });
-const labels = ['Today list', 'Habit done', 'Streaks chart', 'Friends', 'Ticking a habit'];
-for (let i = 0; i < labels.length; i++) {
-  const el = page.locator('[data-label]').nth(i);
-  await el.fill(labels[i]); await el.dispatchEvent('change'); await page.waitForTimeout(300);
-}
 await page.waitForFunction(() => [...document.querySelectorAll('.shot img')].every(i => i.complete && i.naturalWidth > 0), null, { timeout: 20000 });
-await shot('02-screens');
-await page.click('#s-next');
+await shot('02-app');
+await page.click('#a-next');
 
-await page.waitForSelector('#h-text', { timeout: 20000 });
-await page.click('#h-ai');
-await page.waitForFunction(() => /switched on yet/.test(document.body.innerText), null, { timeout: 30000 });
-await page.waitForSelector('#h-text');
-await page.click('[data-tmpl="comparison"]');
-await page.click('#h-add');
-await page.waitForSelector('.hook', { timeout: 20000 });
-await page.selectOption('#h-cat', 'problem');
+// 2. Hooks: the comparison starts picked; AI is off, so add a problem hook by hand
+await page.waitForSelector('.hook.on', { timeout: 20000 });
+await page.click('[data-tmpl="problem"]');
 await page.fill('#h-text', 'Starting a habit is easy. Keeping it is the hard part.');
-await page.click('#h-add');
-await page.waitForFunction(() => document.querySelectorAll('.hook').length === 2, null, { timeout: 20000 });
-for (let i = 0; i < 2; i++) { await page.locator('[data-pick]').nth(i).check(); await page.waitForTimeout(800); }
+await page.press('#h-text', 'Enter');
+await page.waitForFunction(() => document.querySelectorAll('.hook.on').length === 2, null, { timeout: 20000 });
 await shot('03-hooks');
 await page.click('#h-next');
 
+// 3. Make the ads. Line 1 plays the recording, 2 swipes to the streaks chart, 3 to friends
 await page.waitForSelector('[data-s="0"][data-f="say"]', { timeout: 20000 });
-// Scene 1 plays the recording, 2 swipes to the streaks chart, 3 swipes to friends
-await page.selectOption('[data-s="0"][data-f="screen"]', { label: 'Ticking a habit (recording)' });
-await page.waitForTimeout(300);
-await page.selectOption('[data-s="0"][data-f="motion"]', 'play');
-await page.waitForTimeout(300);
+await page.selectOption('[data-s="0"][data-f="screen"]', { label: 'Recording 5' });
+await page.waitForSelector('[data-s="0"][data-f="move"] option[value="auto"]');
+await page.waitForTimeout(500);
 await page.fill('[data-s="0"][data-f="say"]', 'Tick off a habit and watch your day fill up.');
 await page.fill('[data-s="0"][data-f="head"]', 'Tap to tick it off');
-await page.selectOption('[data-s="1"][data-f="screen"]', { label: 'Streaks chart' });
-await page.waitForTimeout(300);
+await page.selectOption('[data-s="1"][data-f="screen"]', { label: 'Screen 3' });
 await page.fill('[data-s="1"][data-f="say"]', "Every streak shows how far you've come.");
 await page.fill('[data-s="1"][data-f="head"]', 'See your streaks');
-await page.selectOption('[data-s="2"][data-f="screen"]', { label: 'Friends' });
-await page.waitForTimeout(300);
+await page.selectOption('[data-s="2"][data-f="screen"]', { label: 'Screen 4' });
 await page.fill('[data-s="2"][data-f="say"]', 'Friends keep you honest.');
 await page.fill('[data-s="2"][data-f="head"]', 'Bring a friend');
+await page.click('details.more summary');
 await page.fill('#sc-line', 'Build habits that stick.');
-await shot('04-script');
-await page.click('#sc-save');
+await page.waitForTimeout(1200);
+await shot('04-make');
 
 await page.waitForSelector('#m-prev', { timeout: 20000 });
 await page.click('#m-prev');

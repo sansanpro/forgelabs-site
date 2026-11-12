@@ -35,9 +35,18 @@
     ["values", "Values", "You'd [do something good]. Could you name one [way to do it]?"],
     ["custom", "Your own", ""]
   ];
-  var STEPS = [["brief", "Brief"], ["screens", "Screens"], ["hooks", "Hooks"], ["script", "Script and style"], ["make", "Make the ads"]];
-  var MOTIONS = [["rise", "Phone slides up"], ["page", "Swipe across from the last screen"], ["zoom", "Zoom in on part of the screen"], ["play", "Play the recording"]];
-  var ZOOMS = [["top", "Top third", [0.1, 0.45]], ["middle", "Middle third", [0.33, 0.66]], ["bottom", "Bottom third", [0.55, 0.9]]];
+  var STEPS = [["app", "Your app"], ["hooks", "Hooks"], ["make", "Make the ads"]];
+  /* Links from before the flow had three steps */
+  var OLD_STEPS = { brief: "app", screens: "app", script: "make" };
+  var ZOOMS = [["top", "Zoom: top", [0.1, 0.45]], ["middle", "Zoom: middle", [0.33, 0.66]], ["bottom", "Zoom: bottom", [0.55, 0.9]]];
+  /* The ad-policy category, read from the one-line description instead of asked for. First match wins. */
+  var CATEGORY_WORDS = [
+    ["gambling", /\b(crypto\w*|bitcoin|betting|bets?|casinos?|poker|gambl\w*|lotter(y|ies)|sportsbooks?)\b/i],
+    ["finance", /\b(invest\w*|stocks?|shares|trading|traders?|portfolios?|brokerage|etfs?|budget\w*|banking|loans?|credit|savings|money|financ\w*|tax(es)?)\b/i],
+    ["dating", /\b(dating|singles|matchmaking)\b/i],
+    ["health", /\b(health\w*|fitness|workouts?|diet\w*|weight|calories|meditat\w*|sleep|therapy|mental|medical|symptoms?|fertility|gym)\b/i],
+    ["kids", /\b(kids?|children|child|toddlers?|preschool\w*)\b/i]
+  ];
   var POLICY = {
     finance: "Finance and investing ads have extra rules. On Meta in the US you must declare the Financial products and services category, and ads can't promote investments unless you're a licensed advisor or broker.",
     health: "Health and fitness ads can't imply a viewer's condition, or promise results. Check the platform's health policy.",
@@ -56,7 +65,7 @@
     ai_busy: "The AI is busy. Try again in a minute.",
     ai_declined: "The AI declined that request. Try different wording in your brief.",
     ai_failed: "The AI didn't answer. Try again.",
-    brief_incomplete: "Fill in the app name and what it does first (Brief)."
+    brief_incomplete: "Add the app name and what it does first."
   };
   var BRANDS = ("Tinder Spotify Netflix Uber Lyft Airbnb Duolingo Instagram TikTok Facebook Google Apple Amazon Strava " +
     "Notion Slack Venmo Robinhood Peloton Calm Headspace Bumble Hinge YouTube Shazam Pinterest Snapchat WhatsApp " +
@@ -69,7 +78,7 @@
 
   var S = {
     session: null, account: null, projects: [], project: null, assets: [], hooks: [], batches: [], jobs: {},
-    step: "brief", urls: {}, poll: null, ai: undefined, playing: null, ack: false
+    step: "app", urls: {}, poll: null, ai: undefined, playing: null, ack: false, suggested: {}, saveT: null
   };
   var root = document.getElementById("root");
 
@@ -374,15 +383,15 @@
         '<p class="muted small">' + esc(b.one_liner || "No brief yet") + "</p>" +
         '<p class="small muted">Edited ' + esc(when(p.updated_at)) + "</p></a>";
     }).join("");
-    shell('<div class="head"><div><h1>Your apps</h1><div class="muted small">One app per product. Each one keeps its brief, screens, hooks and packs.</div></div>' +
+    shell('<div class="head"><div><h1>Your apps</h1></div>' +
       '<span class="spacer"></span><button class="btn pri" id="new-app" type="button">New app</button></div>' +
-      '<div class="banner">Free during the beta: every account gets one test pack (up to five videos with stills, captions and ad copy). Previews are free.</div>' +
+      '<div class="banner">Free in beta: one test pack of up to five videos. Previews are always free.</div>' +
       (S.projects.length ? '<div class="apps">' + cards + "</div>" :
-        '<div class="card empty"><h2>Start with your app</h2><p class="muted" style="margin:8px 0 16px">Describe it, upload a few screenshots, pick your hooks and get a ready-to-test set of video ads.</p>' +
+        '<div class="card empty"><h2>Start with your app</h2><p class="muted" style="margin:8px 0 16px">Three steps: your app and its screenshots, your hooks, then the ads.</p>' +
         '<button class="btn pri" id="new-app-2" type="button">Add your first app</button></div>'));
     var make = function () {
       insert("studio_projects", { name: "Untitled app", script: defaults({}) }).then(function (p) {
-        location.hash = "#/app/" + p.id + "/brief";
+        location.hash = "#/app/" + p.id + "/app";
       }).catch(fail);
     };
     document.getElementById("new-app").onclick = make;
@@ -399,141 +408,144 @@
       return '<a class="step' + (S.step === s[0] ? " on" : "") + (done[s[0]] ? " done" : "") + '" href="#/app/' + esc(p.id) + "/" + s[0] + '">' +
         '<b>' + (i + 1) + "</b>" + esc(s[1]) + "</a>";
     }).join("");
-    shell('<div class="head"><div><div class="small muted"><a href="#/">Your apps</a> /</div><h1>' + esc(p.name) + "</h1></div></div>" +
+    shell('<div class="head"><div><div class="small muted"><a href="#/">Your apps</a> /</div><h1 id="p-name">' + esc(p.name) + "</h1></div></div>" +
       '<nav class="steps" aria-label="Steps">' + steps + "</nav>" + '<div id="pane"></div>');
-    ({ brief: renderBrief, screens: renderScreens, hooks: renderHooks, script: renderScript, make: renderMake }[S.step] || renderBrief)();
+    ({ app: renderApp, hooks: renderHooks, make: renderMake }[S.step] || renderApp)();
   }
   function pane(html) { document.getElementById("pane").innerHTML = html; }
-  function go(step) { location.hash = "#/app/" + S.project.id + "/" + step; }
-  function saveProject(fields) {
-    fields.updated_at = new Date().toISOString();
-    return patch("studio_projects", S.project.id, fields).then(function (p) {
-      if (p) { p.script = defaults(p.script || {}); S.project = p; }
-    });
+  function go(step) { flush().then(function () { location.hash = "#/app/" + S.project.id + "/" + step; }); }
+  /* Edits save themselves: changes go into S.project at once and reach the server shortly after.
+     flush() sends anything still waiting, before leaving a step or queueing a render. */
+  var pending = {};
+  function later(fields) {
+    Object.assign(pending, fields);
+    clearTimeout(S.saveT);
+    S.saveT = setTimeout(flush, 700);
+  }
+  function flush() {
+    clearTimeout(S.saveT);
+    if (!S.project || !Object.keys(pending).length) return Promise.resolve();
+    var f = pending; pending = {};
+    f.updated_at = new Date().toISOString();
+    return patch("studio_projects", S.project.id, f).catch(fail);
   }
   function readiness() {
     var b = brief(), sc = script();
     return {
-      brief: !!(S.project.name && S.project.name !== "Untitled app" && b.one_liner && b.cant_do),
-      screens: shots().length >= 2,
+      app: !!(S.project.name && S.project.name !== "Untitled app" && b.one_liner) && shots().length >= 2,
       hooks: selectedHooks().length >= 1,
-      script: sc.body.length >= 2 && sc.body.every(function (s) { return s.say && s.screen; }),
-      make: S.batches.some(function (x) { return x.status === "done"; })
+      make: S.batches.some(function (x) { return x.status === "done"; }),
+      script: sc.body.length >= 2 && sc.body.every(function (s) { return s.say && s.screen; })
     };
   }
-
-  /* ── 1. brief ────────────────────────────────────────────────── */
-  function renderBrief() {
-    var b = brief(), plat = b.platforms || ["ios"];
-    function field(id, label, value, hint, ph, area) {
-      return '<div class="field"><label for="' + id + '">' + label + "</label>" +
-        (area ? '<textarea id="' + id + '" placeholder="' + esc(ph || "") + '">' + esc(value) + "</textarea>"
-              : '<input id="' + id + '" value="' + esc(value) + '" placeholder="' + esc(ph || "") + '">') +
-        (hint ? '<div class="hint">' + hint + "</div>" : "") + "</div>";
-    }
-    pane('<div class="card"><h2>What your app is</h2><p class="muted small" style="margin-bottom:14px">The hook writer and the claim check read this. Every claim in your ads has to be true of what you write here.</p>' +
-      '<div class="cols2">' +
-      field("b-name", "App name", S.project.name === "Untitled app" ? "" : S.project.name, "As it appears on screen.", "Habitly") +
-      field("b-spoken", "How the voice should say it (optional)", b.spoken_name, "Spell it the way it sounds, for example <i>Stock Matcher A.I.</i>", "Habit-lee") +
-      "</div>" +
-      field("b-one", "What it does, in one sentence", b.one_liner, "", "A habit tracker that turns daily habits into streaks you can share with friends.") +
-      '<div class="field"><label>Where people get it</label><div class="row">' +
-      [["ios", "iPhone (App Store)"], ["android", "Android (Google Play)"], ["web", "Web"]].map(function (x) {
-        return '<label class="check"><input type="checkbox" name="b-plat" value="' + x[0] + '"' + (plat.indexOf(x[0]) >= 0 ? " checked" : "") + "> " + x[1] + "</label>";
-      }).join("") + "</div></div>" +
-      '<div class="cols2">' +
-      field("b-aud", "Who it's for", b.audience, "", "People who keep restarting the same habit") +
-      field("b-act", "What they should do after the ad", b.action, "", "Download the app") +
-      "</div>" +
-      field("b-prob", "The problem they feel, in their words", b.problem, "", "I start strong every January and give up by February.", true) +
-      field("b-out", "The result they want", b.outcome, "", "Keep a habit going for more than a few weeks.") +
-      '<div class="field"><label>A familiar comparison (optional)</label><div class="row nowrap-row"><span class="muted">It\'s like</span>' +
-      '<input id="b-ck" value="' + esc(b.comp_known) + '" placeholder="Duolingo" style="max-width:200px"><span class="muted">but for</span>' +
-      '<input id="b-ct" value="' + esc(b.comp_thing) + '" placeholder="your habits" style="max-width:260px"></div>' +
-      '<div class="hint">The strongest hooks explain an app by something people already know.</div></div>' +
-      field("b-cant", "What your app can NOT do or see", b.cant_do, "This is what stops false claims. For example: it doesn't see anyone's bank account, give medical advice or guarantee results.", "It doesn't track habits automatically, see your health data, or give medical advice.", true) +
-      field("b-facts", "Facts you can prove (optional)", b.facts, "Features, prices, numbers. Only numbers written here can appear in a hook.", "Free to download. Streaks, reminders and friends. 4.8 stars from 1,200 ratings.", true) +
-      '<div class="field"><label for="b-cat">Category</label><select id="b-cat">' +
-      [["general", "General"], ["finance", "Finance or investing"], ["health", "Health or fitness"], ["dating", "Dating"], ["gambling", "Gambling or crypto"], ["kids", "For children"]]
-        .map(function (x) { return opt(x[0], x[1], b.category || "general"); }).join("") +
-      '</select><div class="hint">Some categories have extra ad rules. We\'ll flag them.</div></div>' +
-      '<div class="row"><button class="btn pri" id="b-save" type="button">Save and add screens</button><button class="btn" id="b-save2" type="button">Save</button></div></div>');
-    function collect() {
-      var plats = Array.prototype.slice.call(document.querySelectorAll('input[name="b-plat"]:checked')).map(function (x) { return x.value; });
-      return {
-        name: val("b-name") || "Untitled app",
-        brief: {
-          name: val("b-name"), spoken_name: val("b-spoken"), one_liner: val("b-one"), platforms: plats.length ? plats : ["ios"],
-          audience: val("b-aud"), action: val("b-act"), problem: val("b-prob"), outcome: val("b-out"),
-          comp_known: val("b-ck"), comp_thing: val("b-ct"),
-          comparison: val("b-ck") && val("b-ct") ? "It's like " + val("b-ck") + ", but for " + val("b-ct") : "",
-          cant_do: val("b-cant"), facts: val("b-facts"), category: val("b-cat")
-        }
-      };
-    }
-    function save(next) {
-      var f = collect();
-      if (!f.brief.name || !f.brief.one_liner) { toast("Add the app name and what it does."); return; }
-      saveProject(f).then(function () { toast("Saved"); if (next) go("screens"); else renderProject(); }).catch(fail);
-    }
-    document.getElementById("b-save").onclick = function () { save(true); };
-    document.getElementById("b-save2").onclick = function () { save(false); };
+  function category(text) {
+    var hit = CATEGORY_WORDS.filter(function (c) { return c[1].test(text || ""); })[0];
+    return hit ? hit[0] : "general";
   }
 
-  /* ── 2. screens ──────────────────────────────────────────────── */
+  /* ── 1. your app ─────────────────────────────────────────────── */
   function shots() { return S.assets.filter(function (a) { return a.kind !== "icon"; }); }
   function icon() { return S.assets.filter(function (a) { return a.kind === "icon"; })[0]; }
-  function assetLabel(a) { return a.label || (a.kind === "recording" ? "Recording" : "Screen"); }
+  function assetLabel(a) {
+    var list = shots(), i = list.indexOf(a);
+    if (a.kind === "icon") return "App icon";
+    return (a.kind === "recording" ? "Recording " : "Screen ") + (i + 1);
+  }
 
-  function renderScreens() {
+  function renderApp() {
+    var b = brief(), plat = b.platforms || ["ios"];
+    pane('<div class="card flow">' +
+      '<div class="field"><label for="b-name">App name</label><input id="b-name" value="' + esc(S.project.name === "Untitled app" ? "" : S.project.name) + '" placeholder="Habitly" autocomplete="off">' +
+      '<div class="hint" id="b-spoken-wrap">' + (b.spoken_name
+        ? '<label for="b-spoken" class="small">Said as</label><input id="b-spoken" value="' + esc(b.spoken_name) + '" placeholder="Habit-lee">'
+        : '<button type="button" class="btn link small" id="b-say">Hard to pronounce?</button>') + "</div></div>" +
+      '<div class="field"><label for="b-one">What does it do?</label><input id="b-one" value="' + esc(b.one_liner) + '" maxlength="200" placeholder="Turns daily habits into streaks you can share with friends."></div>' +
+      '<div class="field"><label>Like… <span class="muted">(optional, makes the best hooks)</span></label><div class="row nowrap-row like">' +
+      '<span class="muted">It\'s like</span><input id="b-ck" value="' + esc(b.comp_known) + '" placeholder="Duolingo">' +
+      '<span class="muted">but for</span><input id="b-ct" value="' + esc(b.comp_thing) + '" placeholder="habits"></div></div>' +
+      '<div class="field"><label>Available on</label><div class="row">' +
+      [["ios", "iPhone"], ["android", "Android"], ["web", "Web"]].map(function (x) {
+        return '<label class="check"><input type="checkbox" name="b-plat" value="' + x[0] + '"' + (plat.indexOf(x[0]) >= 0 ? " checked" : "") + "> " + x[1] + "</label>";
+      }).join("") + "</div></div></div>" +
+      '<div class="card flow"><h2>Screenshots</h2><p class="muted small">Two or more, straight from your phone. A short screen recording works too.</p>' +
+      '<label class="drop" for="up"><input id="up" type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,video/quicktime">' +
+      '<b>Add screenshots</b><span class="small muted">or drop them here</span></label>' +
+      '<div id="up-status" class="small muted" role="status"></div><div id="shots"></div>' +
+      '<div class="row icon-row" id="icon-row"></div></div>' +
+      '<div class="row"><button class="btn pri" id="a-next" type="button">Continue</button><span class="small muted" id="a-need"></span></div>');
+
+    function read() {
+      var plats = Array.prototype.slice.call(document.querySelectorAll('input[name="b-plat"]:checked')).map(function (x) { return x.value; });
+      var nb = Object.assign({}, brief(), {
+        name: val("b-name"), one_liner: val("b-one"), platforms: plats.length ? plats : ["ios"],
+        comp_known: val("b-ck"), comp_thing: val("b-ct"),
+        comparison: val("b-ck") && val("b-ct") ? "It's like " + val("b-ck") + ", but for " + val("b-ct") : "",
+        category: category(val("b-one"))
+      });
+      if (document.getElementById("b-spoken")) nb.spoken_name = val("b-spoken");
+      S.project.brief = nb;
+      S.project.name = nb.name || "Untitled app";
+      document.getElementById("p-name").textContent = S.project.name;
+      later({ name: S.project.name, brief: nb });
+      need();
+    }
+    root.querySelectorAll("#pane input:not([type=file])").forEach(function (el) {
+      el.addEventListener(el.type === "checkbox" ? "change" : "input", read);
+    });
+    var say = document.getElementById("b-say");
+    if (say) say.onclick = function () {
+      document.getElementById("b-spoken-wrap").innerHTML = '<label for="b-spoken" class="small">Said as</label><input id="b-spoken" placeholder="Spell it how it sounds, like Habit-lee">';
+      var sp = document.getElementById("b-spoken"); sp.addEventListener("input", read); sp.focus();
+    };
+    var drop = root.querySelector(".drop");
+    drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", function () { drop.classList.remove("over"); });
+    drop.addEventListener("drop", function (e) { e.preventDefault(); drop.classList.remove("over"); addFiles(e.dataTransfer.files, false); });
+    document.getElementById("up").onchange = function (e) { addFiles(e.target.files, false); };
+    document.getElementById("a-next").onclick = function () {
+      var r = readiness();
+      if (!r.app) { need(true); return; }
+      go("hooks");
+    };
+    renderShots();
+  }
+  /* What's still missing before step 2, under the Continue button */
+  function need(loud) {
+    var el = document.getElementById("a-need");
+    if (!el) return;
+    var b = brief(), miss = [];
+    if (!b.name) miss.push("the app name");
+    if (!b.one_liner) miss.push("what it does");
+    if (shots().length < 2) miss.push(shots().length ? "one more screenshot" : "two screenshots");
+    el.textContent = miss.length ? "Add " + miss.join(", ").replace(/, ([^,]*)$/, " and $1") + "." : "";
+    el.className = "small " + (loud && miss.length ? "bad" : "muted");
+  }
+  function renderShots() {
     var list = shots(), ic = icon();
     signed("studio-uploads", S.assets.map(function (a) { return a.path; })).then(function () {
-      var tiles = list.map(function (a, i) {
+      var box = document.getElementById("shots");
+      if (!box) return;
+      box.innerHTML = list.length ? '<div class="shots">' + list.map(function (a, i) {
         var u = link("studio-uploads", a.path);
         var media = a.kind === "recording"
           ? '<video src="' + esc(u ? u + "#t=0.1" : "") + '" muted playsinline loop preload="metadata"></video>'
-          : '<img src="' + esc(u) + '" alt="" loading="lazy">';
-        var portrait = !a.width || a.height > a.width;
+          : '<img src="' + esc(u) + '" alt="' + esc(assetLabel(a)) + '" loading="lazy">';
         return '<figure class="shot" data-id="' + esc(a.id) + '">' + media +
-          '<figcaption><input class="lbl" data-label="' + esc(a.id) + '" value="' + esc(a.label) + '" placeholder="What this shows" aria-label="Label">' +
-          (a.kind === "screen" ? '<label class="check small" title="Tick if the screenshot shows the time and battery at the top"><input type="checkbox" data-bar="' + esc(a.id) + '"' + (a.status_bar ? " checked" : "") + "> Shows the status bar</label>" : '<span class="small muted">Screen recording</span>') +
-          (portrait ? "" : '<span class="small bad">Landscape: phone screenshots work best</span>') +
-          '<span class="row tight"><button class="btn small" data-up="' + i + '" type="button" aria-label="Move earlier"' + (i ? "" : " disabled") + ">↑</button>" +
-          '<button class="btn small" data-down="' + i + '" type="button" aria-label="Move later"' + (i < list.length - 1 ? "" : " disabled") + ">↓</button>" +
-          '<span class="spacer"></span><button class="btn small" data-del="' + esc(a.id) + '" type="button">Remove</button></span></figcaption></figure>';
-      }).join("");
-      pane('<div class="card"><h2>Your screens</h2><p class="muted small">Upload 5 to 10 screenshots taken on a phone or simulator, ideally with the status bar (time and battery) showing. ' +
-        'A short screen recording (under 30 seconds) plays inside the phone in your video. Label each one: the script uses the labels.</p>' +
-        '<label class="drop" for="up"><input id="up" type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,video/quicktime">' +
-        "<b>Add screenshots or a recording</b><span class=\"small muted\">PNG, JPEG, WebP, MP4 or MOV, up to 50 MB each</span></label>" +
-        '<div id="up-status" class="small muted" role="status"></div>' +
-        (list.length ? '<div class="shots">' + tiles + "</div>" : '<p class="empty">No screens yet.</p>') + "</div>" +
-        '<div class="card"><h2>App icon (optional)</h2><p class="muted small">Shown on the end card of every video.</p><div class="row">' +
-        (ic ? '<img class="iconprev" src="' + esc(link("studio-uploads", ic.path)) + '" alt="App icon"><button class="btn small" data-del="' + esc(ic.id) + '" type="button">Remove</button>'
-            : '<label class="btn" for="up-icon">Upload icon<input id="up-icon" type="file" accept="image/png,image/jpeg,image/webp" hidden></label>') +
-        "</div></div>" +
-        '<div class="row"><button class="btn pri" id="s-next" type="button"' + (list.length >= 2 ? "" : " disabled") + '>Continue to hooks</button>' +
-        (list.length >= 2 ? "" : '<span class="small muted">Add at least two screens to continue.</span>') + "</div>");
-      document.getElementById("up").onchange = function (e) { addFiles(e.target.files, false); };
+          '<span class="num">' + (i + 1) + "</span>" +
+          '<span class="tools"><button class="btn small" data-up="' + i + '" type="button" aria-label="Move earlier"' + (i ? "" : " disabled") + ">←</button>" +
+          '<button class="btn small" data-down="' + i + '" type="button" aria-label="Move later"' + (i < list.length - 1 ? "" : " disabled") + ">→</button>" +
+          '<button class="btn small" data-del="' + esc(a.id) + '" type="button" aria-label="Remove">✕</button></span>' +
+          (!a.width || a.height > a.width ? "" : '<span class="warnbadge">Landscape</span>') + "</figure>";
+      }).join("") + "</div>" : "";
+      document.getElementById("icon-row").innerHTML = ic
+        ? '<img class="iconprev" src="' + esc(link("studio-uploads", ic.path)) + '" alt="App icon"><span class="small muted">App icon, on the end card</span><button class="btn small link" data-del="' + esc(ic.id) + '" type="button">Remove</button>'
+        : '<label class="btn small" for="up-icon">Add your app icon<input id="up-icon" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><span class="small muted">Optional, for the end card</span>';
       var upi = document.getElementById("up-icon");
       if (upi) upi.onchange = function (e) { addFiles(e.target.files, true); };
-      document.getElementById("s-next").onclick = function () { go("hooks"); };
-      root.querySelectorAll("[data-label]").forEach(function (el) {
-        el.onchange = function () {
-          var a = find(el.getAttribute("data-label"));
-          patch("studio_assets", a.id, { label: el.value.trim().slice(0, 80) }).then(function () { a.label = el.value.trim().slice(0, 80); }).catch(fail);
-        };
-      });
-      root.querySelectorAll("[data-bar]").forEach(function (el) {
-        el.onchange = function () {
-          var a = find(el.getAttribute("data-bar"));
-          patch("studio_assets", a.id, { status_bar: el.checked }).then(function () { a.status_bar = el.checked; }).catch(fail);
-        };
-      });
-      root.querySelectorAll("[data-del]").forEach(function (el) {
+      root.querySelectorAll("#shots [data-del], #icon-row [data-del]").forEach(function (el) {
         el.onclick = function () { removeAsset(find(el.getAttribute("data-del"))); };
       });
-      root.querySelectorAll("[data-up],[data-down]").forEach(function (el) {
+      root.querySelectorAll("#shots [data-up], #shots [data-down]").forEach(function (el) {
         el.onclick = function () {
           var i = Number(el.getAttribute("data-up") || el.getAttribute("data-down"));
           var j = el.hasAttribute("data-up") ? i - 1 : i + 1;
@@ -542,7 +554,7 @@
             a.sort = j; b.sort = i;
             l.forEach(function (x, k) { if (x !== a && x !== b) x.sort = k; });
             S.assets.sort(function (x, y) { return x.sort - y.sort; });
-            renderScreens();
+            renderShots();
           }).catch(fail);
         };
       });
@@ -550,6 +562,7 @@
         v.onmouseenter = function () { v.play().catch(function () {}); };
         v.onmouseleave = function () { v.pause(); };
       });
+      need();
     });
   }
   function find(id) { return S.assets.filter(function (a) { return a.id === id; })[0]; }
@@ -597,8 +610,10 @@
       }).catch(function (e) { fail(e); });
     });
     chain.then(function () {
+      var st = document.getElementById("up-status");
+      if (st) st.textContent = "";
       if (n) toast(n === 1 ? "Uploaded" : n + " files uploaded");
-      renderScreens();
+      renderShots();
     });
   }
   function removeAsset(a) {
@@ -606,21 +621,22 @@
     del("studio_assets", a.id).then(function () {
       authed(URL_ + "/storage/v1/object/studio-uploads", { method: "DELETE", body: JSON.stringify({ prefixes: [a.path] }) }).catch(function () {});
       S.assets = S.assets.filter(function (x) { return x.id !== a.id; });
-      renderScreens();
+      renderShots();
     }).catch(fail);
   }
 
   /* ── hook lint: checks that work without AI ──────────────────── */
   function lint(text, b) {
-    var out = [], t = String(text || "").trim(), low = t.toLowerCase(), n = words(t).length;
-    var facts = String(b.facts || "").toLowerCase();
+    var out = [], t = String(text || "").trim(), n = words(t).length;
+    /* Numbers the description already states are fine; any other number is the most common false claim */
+    var known = [b.one_liner, b.facts].join(" ").toLowerCase();
     if (n > 14) out.push(["warn", "Long: about " + (n / 2.6).toFixed(1) + " seconds to say. Aim for 12 words or fewer."]);
     var nums = t.match(/\d[\d,.]*\s*%?|\b(?:two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|fifty|hundred|thousand|million|billion|double|twice|triple|tenfold)\b/gi) || [];
     nums.forEach(function (m) {
       var k = m.toLowerCase().trim(), digits = k.replace(/[,\s%]/g, "");
-      var ok = facts.indexOf(k) >= 0 || (digits && facts.replace(/,/g, "").indexOf(digits) >= 0) ||
-        (NUMWORDS[k] && facts.indexOf(String(NUMWORDS[k])) >= 0);
-      if (!ok) out.push(["block", "Uses a number (\"" + m.trim() + "\") that isn't in your facts. Add it to the brief if it's true, or remove it."]);
+      var ok = known.indexOf(k) >= 0 || (digits && known.replace(/,/g, "").indexOf(digits) >= 0) ||
+        (NUMWORDS[k] && known.indexOf(String(NUMWORDS[k])) >= 0);
+      if (!ok) out.push(["warn", "Uses a number (\"" + m.trim() + "\"). Make sure it's true today."]);
     });
     if (/\b(guarantee[ds]?|risk[- ]free|get rich|cures?|cured|miracle|never lose|100% (?:safe|accurate|guaranteed))\b/i.test(t))
       out.push(["block", "Promises a result no app can guarantee."]);
@@ -631,18 +647,8 @@
       out.push(["block", "Says something about the viewer's personal situation. Ad platforms reject this: describe the situation, not the person."]);
     var data = t.match(/\b(?:your|you've been)\s+(spending|money's|money has|bank(?: account)?|transactions|purchases|browsing|location|messages|photos|contacts|health data|sleep data|portfolio|holdings)\b/i);
     if (data) out.push(["warn", "Sounds like the app sees the viewer's " + data[1].toLowerCase() + ". Make sure it really does, or reword."]);
-    var stop = { doesn: 1, isn: 1, cannot: 1, won: 1, never: 1, about: 1, anyone: 1, their: 1, there: 1, which: 1, other: 1, people: 1, users: 1, without: 1, things: 1, really: 1, every: 1, track: 1 };
-    var seen = {};
-    String(b.cant_do || "").toLowerCase().split(/[^a-z']+/).forEach(function (w) {
-      w = w.replace(/'s$/, "");
-      if (w.length >= 5 && !stop[w] && !seen[w] && new RegExp("\\b" + w + "\\b").test(low)) {
-        seen[w] = 1;
-        out.push(["warn", "Mentions \"" + w + "\", and your brief says the app can't do or see that. Check the claim."]);
-      }
-    });
     var brand = BRANDS.filter(function (x) { return new RegExp("\\b" + x + "\\b").test(t); })[0];
-    if (brand) out.push(["warn", "Uses another brand's name (" + brand + "). Fine as a comparison only: no logos or styling, and keep a fallback hook."]);
-    if (POLICY[b.category]) out.push(["info", POLICY[b.category]]);
+    if (brand) out.push(["info", "Uses " + brand + "'s name: fine as a comparison, without their logo or colours."]);
     return out;
   }
   function issues(h) {
@@ -657,65 +663,74 @@
   }
   function selectedHooks() { return S.hooks.filter(function (h) { return h.selected; }); }
 
-  /* ── 3. hooks ────────────────────────────────────────────────── */
+  /* ── 2. hooks ────────────────────────────────────────────────── */
+  var PATTERNS = ["comparison", "problem", "outcome", "callout", "curiosity", "values"];
   function renderHooks() {
-    var b = brief(), sel = selectedHooks().length;
-    var groups = CATEGORIES.map(function (c) {
-      var hs = S.hooks.filter(function (h) { return (h.category || "custom") === c[0]; });
-      if (!hs.length) return "";
-      return '<h3 class="cat">' + esc(c[1]) + "</h3>" + hs.map(hookCard).join("");
+    var b = brief(), pid = S.project.id;
+    /* A comparison from step 1 is already a strong hook, so it starts on the list, picked */
+    if (!S.hooks.length && b.comparison && !S.suggested[pid + ":seed"]) {
+      S.suggested[pid + ":seed"] = 1;
+      addHook({ category: "comparison", text: b.comparison + ".", source: "template", selected: true }).then(renderHooks);
+      return;
+    }
+    var sel = selectedHooks().length;
+    var chips = CATEGORIES.filter(function (c) { return PATTERNS.indexOf(c[0]) >= 0; }).map(function (c) {
+      return '<button class="chip" type="button" data-tmpl="' + esc(c[0]) + '" data-text="' + esc(c[2]) + '">' + esc(c[1]) + "</button>";
     }).join("");
-    var tmpl = CATEGORIES.filter(function (c) { return c[2]; }).map(function (c) {
-      var text = c[2];
-      if (c[0] === "comparison" && b.comp_known && b.comp_thing) text = "It's like " + b.comp_known + ", but for " + b.comp_thing + ".";
-      return '<button class="chip" type="button" data-tmpl="' + esc(c[0]) + '" data-text="' + esc(text) + '">' + esc(c[1]) + "</button>";
-    }).join("");
-    pane('<div class="card"><div class="row"><h2>Hooks</h2><span class="spacer"></span><span class="small ' + (sel ? "good" : "muted") + '">' + sel + " of " + MAX_HOOKS + " picked</span></div>" +
-      '<p class="muted small">The hook is the first line of each video: the only thing that changes between your ads. Pick three to five. ' +
-      "A good hook passes the two-second test: a stranger can picture your app, or feel the problem, almost instantly.</p>" +
-      '<div class="row" style="margin:14px 0"><button class="btn' + (S.ai === false ? "" : " pri") + '" id="h-ai" type="button"' + (S.ai === false ? " disabled" : "") + ">Suggest hooks with AI</button>" +
-      '<button class="btn" id="h-check" type="button"' + (S.hooks.length && S.ai !== false ? "" : " disabled") + ">Check claims with AI</button>" +
-      '<span class="small muted" id="h-status" role="status">' + (S.ai === false ? esc(ERRORS.ai_unavailable) : "") + "</span></div>" +
-      '<div class="write"><h3>Write a hook</h3><div class="small muted" style="margin:4px 0 8px">Start from a pattern: ' + tmpl + "</div>" +
-      '<div class="cols3"><div class="field"><label for="h-cat">Category</label><select id="h-cat">' +
-      CATEGORIES.map(function (c) { return opt(c[0], c[1], "custom"); }).join("") + "</select></div>" +
-      '<div class="field grow"><label for="h-text">Hook</label><input id="h-text" maxlength="160" placeholder="It\'s like Duolingo, but for your habits."></div>' +
-      '<div class="field grow"><label for="h-ben">Benefit line for image ads (optional)</label><input id="h-ben" maxlength="140" placeholder="Streaks you can see make habits stick."></div></div>' +
-      '<div id="h-live" class="lint"></div><button class="btn" id="h-add" type="button">Add hook</button></div></div>' +
-      (S.hooks.length ? '<div class="card">' + groups + "</div>" : "") +
-      '<div class="row"><button class="btn pri" id="h-next" type="button"' + (sel ? "" : " disabled") + ">Continue to the script</button></div>");
+    pane('<div class="card flow"><div class="row"><h2>Pick your hooks</h2><span class="spacer"></span>' +
+      '<span class="small ' + (sel ? "good" : "muted") + '" id="h-count">' + sel + " of " + MAX_HOOKS + "</span></div>" +
+      '<p class="muted small">The opening line. Each video tries a different one, so you learn which works.</p>' +
+      (POLICY[b.category] ? '<div class="banner warn small">' + esc(POLICY[b.category]) + "</div>" : "") +
+      '<div id="h-list">' + S.hooks.map(hookCard).join("") + "</div>" +
+      (S.ai === false ? "" : '<div class="row" style="margin:6px 0 2px"><button class="btn' + (S.hooks.length ? "" : " pri") + '" id="h-ai" type="button">' +
+        (S.hooks.some(function (h) { return h.source === "ai"; }) ? "More ideas" : "Suggest hooks") + '</button><span class="small muted" id="h-status" role="status"></span></div>') +
+      '<div class="write"><div class="row nowrap-row"><input id="h-text" maxlength="160" placeholder="Write a hook, like: It\'s like Duolingo, but for habits." aria-label="New hook">' +
+      '<button class="btn" id="h-add" type="button">Add</button></div>' +
+      '<div class="small muted chips">Start from: ' + chips + "</div><div id=\"h-live\" class=\"lint\"></div></div></div>" +
+      '<div class="row"><button class="btn pri" id="h-next" type="button"' + (sel ? "" : " disabled") + ">Continue</button>" +
+      (sel ? "" : '<span class="small muted">Pick at least one.</span>') + "</div>");
 
-    var text = document.getElementById("h-text");
+    var text = document.getElementById("h-text"), cat = "custom";
     text.oninput = function () { document.getElementById("h-live").innerHTML = lintHtml(lint(text.value, b), text.value.trim()); };
+    text.onkeydown = function (e) { if (e.key === "Enter") { e.preventDefault(); document.getElementById("h-add").click(); } };
     root.querySelectorAll("[data-tmpl]").forEach(function (el) {
       el.onclick = function () {
-        document.getElementById("h-cat").value = el.getAttribute("data-tmpl");
-        text.value = el.getAttribute("data-text"); text.focus(); text.oninput();
+        cat = el.getAttribute("data-tmpl");
+        text.value = el.getAttribute("data-text"); text.focus();
+        /* Select the first [blank], so typing replaces it */
+        var i = text.value.indexOf("["), j = text.value.indexOf("]");
+        if (i >= 0 && j > i) text.setSelectionRange(i, j + 1);
+        text.oninput();
       };
     });
     document.getElementById("h-add").onclick = function () {
       var t = text.value.trim();
       if (t.length < 3) { toast("Write the hook first."); return; }
-      if (/\[[^\]]*\]/.test(t)) { toast("Replace the [brackets] with your own words."); return; }
-      addHook({ category: val("h-cat"), text: t, benefit: val("h-ben"), source: "user" }).then(function () { renderHooks(); });
+      if (/\[[^\]]*\]/.test(t)) { toast("Fill in the [blanks] with your own words."); return; }
+      addHook({ category: cat, text: t, source: "user", selected: selectedHooks().length < MAX_HOOKS }).then(renderHooks);
     };
-    document.getElementById("h-ai").onclick = suggestHooks;
-    document.getElementById("h-check").onclick = checkHooks;
-    document.getElementById("h-next").onclick = function () { go("script"); };
+    var ai = document.getElementById("h-ai");
+    if (ai) ai.onclick = function () { suggestHooks(false); };
+    document.getElementById("h-next").onclick = function () {
+      go("make");
+      /* Hooks people wrote themselves get the AI claim check on the way; AI ideas were written to the same rules */
+      if (S.ai) {
+        var todo = selectedHooks().filter(function (h) { return h.source !== "ai" && !(h.checks && h.checks.length); });
+        if (todo.length) checkHooks(todo);
+      }
+    };
     root.querySelectorAll("[data-pick]").forEach(function (el) {
       el.onchange = function () {
         var h = hookById(el.getAttribute("data-pick"));
-        if (el.checked && selectedHooks().length >= MAX_HOOKS) { el.checked = false; toast("Pick up to five hooks. Unpick one first."); return; }
+        if (el.checked && selectedHooks().length >= MAX_HOOKS) { el.checked = false; toast("Up to five. Unpick one first."); return; }
         patch("studio_hooks", h.id, { selected: el.checked }).then(function () { h.selected = el.checked; renderHooks(); }).catch(fail);
       };
     });
     root.querySelectorAll("[data-hedit]").forEach(function (el) {
       el.onchange = function () {
-        var h = hookById(el.getAttribute("data-hedit")), field = el.getAttribute("data-field"), v = el.value.trim();
-        if (field === "text" && v.length < 3) { el.value = h.text; return; }
-        var f = {}; f[field] = v;
-        if (field === "text") f.checks = [];
-        patch("studio_hooks", h.id, f).then(function () { h[field] = v; if (field === "text") h.checks = []; renderHooks(); }).catch(fail);
+        var h = hookById(el.getAttribute("data-hedit")), v = el.value.trim();
+        if (v.length < 3) { el.value = h.text; return; }
+        patch("studio_hooks", h.id, { text: v, checks: [] }).then(function () { h.text = v; h.checks = []; renderHooks(); }).catch(fail);
       };
     });
     root.querySelectorAll("[data-hdel]").forEach(function (el) {
@@ -724,26 +739,26 @@
         del("studio_hooks", h.id).then(function () { S.hooks = S.hooks.filter(function (x) { return x !== h; }); renderHooks(); }).catch(fail);
       };
     });
+    /* AI ideas load by themselves the first time, when AI is on */
+    if (S.ai !== false && !S.suggested[pid] && !S.hooks.some(function (h) { return h.source === "ai"; })) suggestHooks(true);
   }
   function hookById(id) { return S.hooks.filter(function (h) { return h.id === id; })[0]; }
   function lintHtml(list, text) {
-    if (!text) return "";
-    if (!list.length) return '<p class="lint-ok">Passes the automatic checks.</p>';
+    if (!text || !list.length) return "";
     return "<ul>" + list.map(function (x) { return '<li class="' + x[0] + '">' + esc(x[1]) + "</li>"; }).join("") + "</ul>";
   }
   function hookCard(h) {
     var full = selectedHooks().length >= MAX_HOOKS && !h.selected;
     return '<div class="hook' + (h.selected ? " on" : "") + '"><label class="pick"><input type="checkbox" data-pick="' + esc(h.id) + '"' +
       (h.selected ? " checked" : "") + (full ? " disabled" : "") + ' aria-label="Pick this hook"></label><div class="grow">' +
-      '<input class="htext" data-hedit="' + esc(h.id) + '" data-field="text" value="' + esc(h.text) + '" maxlength="160" aria-label="Hook">' +
-      '<input class="hben" data-hedit="' + esc(h.id) + '" data-field="benefit" value="' + esc(h.benefit) + '" maxlength="140" placeholder="Benefit line for image ads" aria-label="Benefit line">' +
+      '<input class="htext" data-hedit="' + esc(h.id) + '" value="' + esc(h.text) + '" maxlength="160" aria-label="Hook">' +
       '<div class="lint">' + lintHtml(issues(h), h.text) + "</div></div>" +
-      '<div class="hmeta"><span class="pill">' + esc(h.source === "ai" ? "AI" : h.source === "template" ? "Template" : "Yours") + "</span>" +
-      '<button class="btn small link" data-hdel="' + esc(h.id) + '" type="button">Delete</button></div></div>';
+      (h.source === "ai" ? '<span class="pill">AI</span>' : "") +
+      '<button class="btn small link" data-hdel="' + esc(h.id) + '" type="button" aria-label="Delete">✕</button></div>';
   }
   function addHook(h) {
     return insert("studio_hooks", { project_id: S.project.id, category: h.category || "custom", text: h.text.slice(0, 160),
-      benefit: (h.benefit || "").slice(0, 140), source: h.source || "user" }).then(function (row) { S.hooks.push(row); }).catch(fail);
+      benefit: (h.benefit || "").slice(0, 140), source: h.source || "user", selected: !!h.selected }).then(function (row) { S.hooks.push(row); }).catch(fail);
   }
   function aiBrief() {
     var b = Object.assign({}, brief());
@@ -762,11 +777,13 @@
       return r.data;
     }, function (e) { if (st) st.textContent = ""; throw e; });
   }
-  function suggestHooks() {
-    var b = brief();
-    if (!b.one_liner) { toast(ERRORS.brief_incomplete); return; }
-    var btn = document.getElementById("h-ai"); btn.disabled = true;
-    aiCall({ action: "suggest_hooks", brief: aiBrief() }, "Writing hooks… this takes up to a minute.").then(function (d) {
+  /* quiet: the automatic first run, which says nothing if AI is off */
+  function suggestHooks(quiet) {
+    var pid = S.project.id;
+    S.suggested[pid] = 1;
+    if (!brief().one_liner) { if (!quiet) toast(ERRORS.brief_incomplete); return; }
+    var btn = document.getElementById("h-ai"); if (btn) btn.disabled = true;
+    aiCall({ action: "suggest_hooks", brief: aiBrief() }, "Writing hook ideas…").then(function (d) {
       var have = {};
       S.hooks.forEach(function (h) { have[h.text.toLowerCase()] = 1; });
       var chain = Promise.resolve();
@@ -774,13 +791,13 @@
         if (have[h.text.toLowerCase()]) return;
         chain = chain.then(function () { return addHook({ category: h.category, text: h.text, benefit: h.benefit, source: "ai" }); });
       });
-      return chain.then(function () { toast((d.hooks || []).length + " hooks suggested. Pick your favourites."); renderHooks(); });
-    }).catch(function (e) { fail(e); renderHooks(); });
+      return chain.then(function () { if (S.step === "hooks" && S.project && S.project.id === pid) renderHooks(); });
+    }).catch(function (e) {
+      if (!(quiet && e.code === "ai_unavailable")) fail(e);
+      if (S.step === "hooks" && S.project && S.project.id === pid) renderHooks();
+    });
   }
-  function checkHooks() {
-    var list = S.hooks.filter(function (h) { return h.selected; });
-    if (!list.length) list = S.hooks.slice(0, 20);
-    var btn = document.getElementById("h-check"); btn.disabled = true;
+  function checkHooks(list) {
     aiCall({ action: "check_hooks", brief: aiBrief(), hooks: list.map(function (h) { return h.text; }) }, "Checking claims…").then(function (d) {
       var res = d.results || [];
       return Promise.all(list.map(function (h, i) {
@@ -788,11 +805,11 @@
         if (!r) return null;
         h.checks = [r];
         return patch("studio_hooks", h.id, { checks: [r] });
-      })).then(function () { toast("Claims checked."); renderHooks(); });
-    }).catch(function (e) { fail(e); renderHooks(); });
+      })).then(function () { if (S.step === "make") renderGo(); });
+    }).catch(function () {});
   }
 
-  /* ── 4. script and style ─────────────────────────────────────── */
+  /* ── 3. make the ads ─────────────────────────────────────────── */
   function platformCta() {
     var b = brief(), p = b.platforms || ["ios"], name = b.spoken_name || b.name || S.project.name;
     if (p.indexOf("ios") >= 0 && p.indexOf("android") >= 0) return ["Download " + name + " free today.", "Download free today"];
@@ -800,95 +817,89 @@
     if (p.indexOf("android") >= 0) return ["Get " + name + " free on Google Play.", "Get it free on Google Play"];
     return ["Try " + name + " free today.", "Try it free"];
   }
-  function renderScript() {
-    var sc = script(), list = shots(), ic = icon();
+  /* A new script starts as one line per screenshot, up to three, in upload order */
+  function seedScript() {
+    var sc = script(), list = shots();
     if (!sc.body.length && list.length) {
-      sc.body = list.slice(0, Math.min(3, list.length)).map(function (a, i) {
-        return { say: "", head: "", screen: a.id, motion: a.kind === "recording" ? "play" : (i ? "page" : "rise") };
-      });
+      sc.body = list.slice(0, Math.min(3, list.length)).map(function (a) { return { say: "", head: "", screen: a.id, motion: "auto" }; });
     }
-    var cta = platformCta();
-    var screenOpts = function (cur, imagesOnly) {
-      return list.filter(function (a) { return !imagesOnly || a.kind === "screen"; })
-        .map(function (a) { return opt(a.id, assetLabel(a) + (a.kind === "recording" ? " (recording)" : ""), cur); }).join("");
-    };
+    return sc;
+  }
+  function moveOf(s) { return s.motion === "zoom" ? "zoom:" + (s.zoomAt || "middle") : "auto"; }
+  function renderMake() {
+    var sc = seedScript(), list = shots(), cta = platformCta(), b = brief(), th = sc.theme, op = sc.opening;
+    var screenOpts = function (cur) { return list.map(function (a) { return opt(a.id, assetLabel(a), cur); }).join(""); };
     var scenes = sc.body.map(function (s, i) {
-      return '<div class="scene"><div class="row"><b>Scene ' + (i + 1) + '</b><span class="spacer"></span>' +
-        '<button class="btn small" data-sup="' + i + '" type="button"' + (i ? "" : " disabled") + ' aria-label="Move earlier">↑</button>' +
-        '<button class="btn small" data-sdown="' + i + '" type="button"' + (i < sc.body.length - 1 ? "" : " disabled") + ' aria-label="Move later">↓</button>' +
-        '<button class="btn small" data-sdel="' + i + '" type="button">Remove</button></div>' +
-        '<div class="field"><label>What the voice says</label><input data-s="' + i + '" data-f="say" maxlength="200" value="' + esc(s.say) + '" placeholder="Tick off a habit and watch your day fill up."></div>' +
-        '<div class="cols3"><div class="field"><label>Heading on screen</label><input data-s="' + i + '" data-f="head" maxlength="40" value="' + esc(s.head) + '" placeholder="Tap to tick it off"></div>' +
-        '<div class="field"><label>Screen</label><select data-s="' + i + '" data-f="screen">' + screenOpts(s.screen) + "</select></div>" +
-        '<div class="field"><label>Motion</label><select data-s="' + i + '" data-f="motion">' +
-        MOTIONS.map(function (m) { return opt(m[0], m[1], s.motion); }).join("") + "</select></div></div>" +
-        (s.motion === "zoom" ? '<div class="field"><label>Zoom on</label><select data-s="' + i + '" data-f="zoomAt">' +
-          ZOOMS.map(function (z) { return opt(z[0], z[1], s.zoomAt || "middle"); }).join("") + "</select></div>" : "") + "</div>";
+      var a = find(s.screen), rec = a && a.kind === "recording";
+      return '<div class="line"><img class="thumb" data-asset="' + esc(s.screen) + '" alt="">' +
+        '<div class="grow"><input data-s="' + i + '" data-f="say" maxlength="200" value="' + esc(s.say) + '" placeholder="' +
+        (i ? "The next thing it does." : "What this screen shows, like: Tick off a habit and watch your streak grow.") + '" aria-label="Line ' + (i + 1) + '">' +
+        '<div class="row tight opts"><select data-s="' + i + '" data-f="screen" aria-label="Screen">' + screenOpts(s.screen) + "</select>" +
+        '<select data-s="' + i + '" data-f="move" aria-label="Motion">' + (rec ? opt("auto", "Play recording", "auto")
+          : opt("auto", "Slide in", moveOf(s)) + ZOOMS.map(function (z) { return opt("zoom:" + z[0], z[1], moveOf(s)); }).join("")) + "</select>" +
+        '<input data-s="' + i + '" data-f="head" maxlength="40" value="' + esc(s.head) + '" placeholder="Heading (optional)" aria-label="Heading"></div></div>' +
+        '<button class="btn small link" data-sdel="' + i + '" type="button" aria-label="Remove line"' + (sc.body.length > 1 ? "" : " disabled") + ">✕</button></div>";
     }).join("");
     var voices = VOICES.map(function (v) {
       return '<label class="voice' + (sc.voice.id === v[0] ? " on" : "") + '"><input type="radio" name="voice" value="' + v[0] + '"' + (sc.voice.id === v[0] ? " checked" : "") + ">" +
-        "<b>" + v[1] + '</b><span class="small muted">' + v[2] + '</span><button class="btn small" type="button" data-play="' + v[3] + '" aria-label="Play ' + v[1] + '">Play</button></label>';
+        "<b>" + v[1] + '</b><span class="small muted">' + v[2].split(",")[0] + '</span><button class="btn small link" type="button" data-play="' + v[3] + '" aria-label="Play ' + v[1] + '">▶</button></label>';
     }).join("");
-    var op = sc.opening, th = sc.theme;
-    pane('<div class="card"><div class="row"><h2>The script</h2><span class="spacer"></span><button class="btn" id="sc-ai" type="button"' + (S.ai === false ? " disabled title=\"" + esc(ERRORS.ai_unavailable) + "\"" : "") + ">Draft with AI</button></div>" +
-      '<p class="muted small">Every video shares this part, so your test compares only the hooks. Show the app solving the problem the moment the hook ends: 3 or 4 short scenes, each a concrete feature.</p>' +
+    pane('<div class="card flow"><div class="row"><h2>The script</h2><span class="spacer"></span>' +
+      (S.ai === false ? "" : '<button class="btn small" id="sc-ai" type="button">Write it for me</button>') + "</div>" +
+      '<p class="muted small">Plays after every hook. One line per screen: what the app is doing there.</p>' +
       '<div class="small muted" id="sc-status" role="status"></div>' + scenes +
-      '<button class="btn" id="sc-add" type="button"' + (sc.body.length >= 5 ? " disabled" : "") + ">Add a scene</button></div>" +
+      '<button class="btn small" id="sc-add" type="button"' + (sc.body.length >= 5 ? " disabled" : "") + ">Add a line</button></div>" +
 
-      '<div class="card"><h2>The end card</h2><div class="cols2">' +
-      '<div class="field"><label for="sc-line">One line under your app\'s name</label><input id="sc-line" maxlength="60" value="' + esc(sc.end_line) + '" placeholder="Build habits that stick."></div>' +
-      '<div class="field"><label for="sc-btn">Button</label><input id="sc-btn" maxlength="40" value="' + esc(sc.button || cta[1]) + '"></div>' +
-      '<div class="field"><label for="sc-say">What the voice says at the end</label><input id="sc-say" maxlength="200" value="' + esc(sc.cta_say || cta[0]) + '"></div>' +
-      '<div class="field"><label for="sc-head">Ad headline (for the ad platform)</label><input id="sc-head" maxlength="60" value="' + esc(sc.headline || ("Download " + (brief().name || S.project.name) + " free")) + '"></div>' +
-      '<div class="field"><label for="sc-ben">Default benefit line for image ads</label><input id="sc-ben" maxlength="140" value="' + esc(sc.benefit) + '" placeholder="Used for hooks without their own"></div>' +
-      '<div class="field"><label for="sc-disc">Disclaimer (optional)</label><input id="sc-disc" maxlength="120" value="' + esc(sc.disclaimer) + '" placeholder="Not medical advice."></div>' +
-      "</div>" + (ic ? "" : '<p class="small muted">Tip: add your app icon on the Screens step to show it on the end card.</p>') + "</div>" +
+      '<div class="card flow"><h2>Voice and look</h2><div class="voices">' + voices + "</div>" +
+      '<div class="row look"><label class="check"><input id="th-acc" type="color" value="' + esc(th.accent || "#FF7A2E") + '"> Brand colour</label>' +
+      '<span class="seg">' + [["dark", "Dark"], ["light", "Light"]].map(function (x) {
+        return '<label><input type="radio" name="th-style" value="' + x[0] + '"' + ((th.style || "dark") === x[0] ? " checked" : "") + "><span>" + x[1] + "</span></label>";
+      }).join("") + "</span></div>" +
+      '<details class="more"><summary>More options</summary>' +
+      '<div class="field"><label>Opening</label>' +
+      [["hand", "A hand holding the phone, already swiping"], ["phone", "Just the phone, already swiping"], ["rise", "The phone slides up"]].map(function (x) {
+        return '<label class="check block"><input type="radio" name="op" value="' + x[0] + '"' + ((op.style || "hand") === x[0] ? " checked" : "") + "> " + x[1] + "</label>";
+      }).join("") + "</div>" +
+      '<div class="cols2">' +
+      '<div class="field"><label for="sc-line">Line on the end card</label><input id="sc-line" maxlength="60" value="' + esc(sc.end_line) + '" placeholder="Build habits that stick."></div>' +
+      '<div class="field"><label for="sc-btn">Button</label><input id="sc-btn" maxlength="40" value="' + esc(sc.button) + '" placeholder="' + esc(cta[1]) + '"></div>' +
+      '<div class="field"><label for="sc-say">Last thing the voice says</label><input id="sc-say" maxlength="200" value="' + esc(sc.cta_say) + '" placeholder="' + esc(cta[0]) + '"></div>' +
+      '<div class="field"><label for="sc-head">Ad headline</label><input id="sc-head" maxlength="60" value="' + esc(sc.headline) + '" placeholder="Download ' + esc(b.name || S.project.name) + ' free"></div>' +
+      '<div class="field"><label for="sc-disc">Disclaimer</label><input id="sc-disc" maxlength="120" value="' + esc(sc.disclaimer) + '" placeholder="' +
+        esc(b.category === "finance" ? "Educational only. Not financial advice." : b.category === "health" ? "Not medical advice." : "None") + '"></div>' +
+      '<div class="field"><label for="v-speed">Voice pace</label><select id="v-speed">' +
+      opt("1", "Natural", sc.voice.speed) + opt("1.1", "Brisk", sc.voice.speed) + opt("1.15", "Fast", sc.voice.speed) + "</select></div>" +
+      "</div></details></div>" +
+      '<div id="m-card"></div><div id="batches">' + batchesHtml() + "</div>");
 
-      '<div class="card"><h2>Opening</h2><p class="muted small">The first second decides whether people keep watching, so something should already be moving on frame one.</p>' +
-      [["hand", "A hand holding the phone, already swiping (recommended)"], ["phone", "The phone, already swiping"], ["rise", "Classic: the phone slides up"]].map(function (x) {
-        return '<label class="check block"><input type="radio" name="op" value="' + x[0] + '"' + (op.style === x[0] ? " checked" : "") + "> " + x[1] + "</label>";
-      }).join("") +
-      '<div class="cols3" style="margin-top:10px">' + [0, 1, 2].map(function (i) {
-        return '<div class="field"><label>Swipe ' + (i ? "to screen " + (i + 1) : "from screen 1") + '</label><select data-op="' + i + '">' +
-          opt("", "Automatic", "") + screenOpts((op.screens || [])[i] || "", true) + "</select></div>";
-      }).join("") + "</div></div>" +
-
-      '<div class="card"><h2>Colours</h2><div class="cols3">' +
-      '<div class="field"><label for="th-acc">Brand colour</label><input id="th-acc" type="color" value="' + esc(th.accent || "#FF7A2E") + '"></div>' +
-      '<div class="field"><label for="th-style">Background</label><select id="th-style">' + opt("dark", "Dark", th.style) + opt("light", "Light", th.style) + "</select></div>" +
-      '<div class="field"><label for="th-bg">Background colour (optional)</label><div class="row tight"><input id="th-bg-on" type="checkbox"' + (th.bg ? " checked" : "") + ' aria-label="Use my own background colour">' +
-      '<input id="th-bg" type="color" value="' + esc(th.bg || "#1A0F15") + '"></div></div></div>' +
-      '<p class="small muted">The accent is adjusted, if needed, so text stays readable against the background.</p></div>' +
-
-      '<div class="card"><h2>Voice</h2><div class="voices">' + voices + "</div>" +
-      '<div class="field" style="max-width:260px;margin-top:12px"><label for="v-speed">Pace</label><select id="v-speed">' +
-      opt("1", "Natural", sc.voice.speed) + opt("1.1", "Brisk", sc.voice.speed) + opt("1.15", "Fast (best with a moving opening)", sc.voice.speed) + "</select></div>" +
-      '<p class="small muted">Voices are AI-generated by ElevenLabs.</p></div>' +
-      '<div class="row"><button class="btn pri" id="sc-save" type="button">Save and continue</button><button class="btn" id="sc-save2" type="button">Save</button></div>');
-
-    root.querySelectorAll("[data-s]").forEach(function (el) {
-      el.onchange = function () {
-        var f = el.getAttribute("data-f");
+    fillThumbs();
+    root.querySelectorAll("#pane input:not([type=radio]):not([data-play]), #pane select").forEach(function (el) {
+      el.addEventListener(el.tagName === "SELECT" || el.type === "color" ? "change" : "input", function () {
         readScript();
-        if (f === "motion" || f === "screen") renderScript();
+        if (el.getAttribute("data-f") === "screen") {
+          var img = el.closest(".line").querySelector(".thumb");
+          img.setAttribute("data-asset", el.value); fillThumbs();
+          if ((find(el.value) || {}).kind === "recording") renderMake();
+        }
+      });
+    });
+    root.querySelectorAll('#pane input[type="radio"]').forEach(function (el) {
+      el.onchange = function () {
+        readScript();
+        root.querySelectorAll(".voice").forEach(function (v) { v.classList.toggle("on", v.querySelector("input").checked); });
       };
     });
     root.querySelectorAll("[data-sdel]").forEach(function (el) {
-      el.onclick = function () { readScript(); sc.body.splice(Number(el.getAttribute("data-sdel")), 1); renderScript(); };
-    });
-    root.querySelectorAll("[data-sup],[data-sdown]").forEach(function (el) {
-      el.onclick = function () {
-        readScript();
-        var i = Number(el.getAttribute("data-sup") || el.getAttribute("data-sdown")), j = el.hasAttribute("data-sup") ? i - 1 : i + 1;
-        var t = sc.body[i]; sc.body[i] = sc.body[j]; sc.body[j] = t;
-        renderScript();
-      };
+      el.onclick = function () { readScript(); sc.body.splice(Number(el.getAttribute("data-sdel")), 1); later({ script: sc }); renderMake(); };
     });
     document.getElementById("sc-add").onclick = function () {
       readScript();
-      var a = list[sc.body.length % Math.max(1, list.length)];
-      sc.body.push({ say: "", head: "", screen: a ? a.id : "", motion: "page" });
-      renderScript();
+      var usedIds = sc.body.map(function (s) { return s.screen; });
+      var a = list.filter(function (x) { return usedIds.indexOf(x.id) < 0; })[0] || list[sc.body.length % Math.max(1, list.length)];
+      sc.body.push({ say: "", head: "", screen: a ? a.id : "", motion: "auto" });
+      later({ script: sc });
+      renderMake();
+      var inputs = root.querySelectorAll('[data-f="say"]'); if (inputs.length) inputs[inputs.length - 1].focus();
     };
     root.querySelectorAll("[data-play]").forEach(function (el) {
       el.onclick = function (e) {
@@ -898,55 +909,56 @@
         S.playing.play().catch(function () { toast("Couldn't play that sample."); });
       };
     });
-    root.querySelectorAll('input[name="voice"]').forEach(function (el) {
-      el.onchange = function () { readScript(); renderScript(); };
+    var ai = document.getElementById("sc-ai");
+    if (ai) ai.onclick = draftScript;
+    renderGo();
+    wireBatches();
+  }
+  function fillThumbs() {
+    signed("studio-uploads", S.assets.map(function (a) { return a.path; })).then(function () {
+      root.querySelectorAll("[data-asset]").forEach(function (el) {
+        var a = find(el.getAttribute("data-asset"));
+        el.src = a ? link("studio-uploads", a.path) : "";
+        el.classList.toggle("rec", !!(a && a.kind === "recording"));
+      });
     });
-    document.getElementById("sc-ai").onclick = draftScript;
-    document.getElementById("sc-save").onclick = function () { saveScript(true); };
-    document.getElementById("sc-save2").onclick = function () { saveScript(false); };
   }
   function readScript() {
     var sc = script();
     root.querySelectorAll("[data-s]").forEach(function (el) {
-      sc.body[Number(el.getAttribute("data-s"))][el.getAttribute("data-f")] = el.value.trim();
+      var s = sc.body[Number(el.getAttribute("data-s"))], f = el.getAttribute("data-f"), v = el.value.trim();
+      if (f === "move") {
+        if (v.indexOf("zoom:") === 0) { s.motion = "zoom"; s.zoomAt = v.slice(5); } else { s.motion = "auto"; delete s.zoomAt; }
+      } else s[f] = v;
     });
-    var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : undefined; };
-    if (document.getElementById("sc-line")) {
-      sc.end_line = v("sc-line"); sc.button = v("sc-btn"); sc.cta_say = v("sc-say"); sc.headline = v("sc-head");
-      sc.benefit = v("sc-ben"); sc.disclaimer = v("sc-disc");
-      var op = root.querySelector('input[name="op"]:checked');
-      sc.opening = { style: op ? op.value : "hand", screens: [0, 1, 2].map(function (i) { return (root.querySelector('[data-op="' + i + '"]') || {}).value || ""; }).filter(Boolean) };
-      sc.theme = { style: v("th-style"), accent: v("th-acc") };
-      if (document.getElementById("th-bg-on").checked) sc.theme.bg = v("th-bg");
-      var voice = root.querySelector('input[name="voice"]:checked');
-      sc.voice = { id: voice ? voice.value : VOICES[0][0], speed: Number(v("v-speed")) || 1 };
-    }
+    var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ""; };
+    sc.end_line = v("sc-line"); sc.button = v("sc-btn"); sc.cta_say = v("sc-say"); sc.headline = v("sc-head"); sc.disclaimer = v("sc-disc");
+    var op = root.querySelector('input[name="op"]:checked'), st = root.querySelector('input[name="th-style"]:checked');
+    sc.opening = { style: op ? op.value : "hand", screens: sc.opening.screens || [] };
+    sc.theme = Object.assign({}, sc.theme, { style: st ? st.value : "dark", accent: v("th-acc") || "#FF7A2E" });
+    var voice = root.querySelector('input[name="voice"]:checked');
+    sc.voice = { id: voice ? voice.value : VOICES[0][0], speed: Number(v("v-speed")) || 1.15 };
+    later({ script: sc });
+    renderGo();
     return sc;
-  }
-  function saveScript(next) {
-    var sc = readScript();
-    var bad = sc.body.filter(function (s) { return !s.say || !s.screen; }).length;
-    if (next && sc.body.length < 2) { toast("Add at least two scenes."); return; }
-    if (next && bad) { toast("Every scene needs words and a screen."); return; }
-    saveProject({ script: sc }).then(function () { toast("Saved"); if (next) go("make"); else renderProject(); }).catch(fail);
   }
   function draftScript() {
     readScript();
     var list = shots();
-    if (!list.length) { toast("Add your screens first."); return; }
+    if (!list.length) { toast("Add your screenshots first."); return; }
     document.getElementById("sc-ai").disabled = true;
     aiCall({ action: "draft_script", brief: aiBrief(), screens: list.map(function (a) { return { id: a.id, label: assetLabel(a), kind: a.kind }; }) },
-      "Drafting the script…").then(function (d) {
+      "Writing the script…").then(function (d) {
       var sc = script();
-      if (d.body && d.body.length) sc.body = d.body;
+      if (d.body && d.body.length) sc.body = d.body.map(function (s) { return { say: s.say, head: s.head, screen: s.screen, motion: s.motion === "zoom" ? "zoom" : "auto" }; });
       if (d.benefit && !sc.benefit) sc.benefit = d.benefit;
       if (d.end_line && !sc.end_line) sc.end_line = d.end_line;
-      toast("Draft ready. Edit anything that isn't right.");
-      renderScript();
-    }).catch(function (e) { fail(e); renderScript(); });
+      later({ script: sc });
+      toast("Done. Change anything that isn't right.");
+      renderMake();
+    }).catch(function (e) { fail(e); renderMake(); });
   }
 
-  /* ── 5. make the ads ─────────────────────────────────────────── */
   function accentFrom(text) {
     var w = words(text), ends = 0;
     for (var i = 0; i < w.length; i++) if (/[.?!]$/.test(w[i])) ends++;
@@ -959,10 +971,14 @@
     var hooks = selectedHooks().map(function (h, i) {
       return { id: "h" + (i + 1) + "-" + (slug(h.category) || "hook"), say: h.text, benefit: h.benefit || sc.benefit || sc.end_line || "", accent_from: accentFrom(h.text) };
     });
-    var body = sc.body.map(function (s) {
+    var body = sc.body.map(function (s, i) {
       used[s.screen] = 1;
-      var scene = { say: s.say, head: s.head, screen: s.screen, motion: s.motion };
-      if (s.motion === "zoom") scene.zoom = (ZOOMS.filter(function (z) { return z[0] === (s.zoomAt || "middle"); })[0] || ZOOMS[1])[2];
+      var a = find(s.screen);
+      /* "auto": the first scene slides up, later ones swipe across from the one before; recordings play */
+      var motion = a && a.kind === "recording" ? "play" : s.motion === "zoom" ? "zoom"
+        : (s.motion === "rise" || s.motion === "page") ? s.motion : (i ? "page" : "rise");
+      var scene = { say: s.say, head: s.head, screen: s.screen, motion: motion };
+      if (motion === "zoom") scene.zoom = (ZOOMS.filter(function (z) { return z[0] === (s.zoomAt || "middle"); })[0] || ZOOMS[1])[2];
       return scene;
     });
     /* The opening swipes across three different screens: the ones picked, then the uploads in order */
@@ -987,10 +1003,9 @@
   }
   function problems() {
     var r = readiness(), out = [];
-    if (!r.brief) out.push(["brief", "Finish the brief: the app name, what it does and what it can't do."]);
-    if (!r.screens) out.push(["screens", "Add at least two screens."]);
+    if (!r.app) out.push(["app", "Finish step 1: the name, what it does and two screenshots."]);
     if (!r.hooks) out.push(["hooks", "Pick at least one hook."]);
-    if (!r.script) out.push(["script", "Write at least two scenes, each with words and a screen."]);
+    if (!r.script) out.push(["make", "Write at least two lines of the script."]);
     return out;
   }
   function batchFor(kind) {
@@ -1004,41 +1019,39 @@
   function queue(kind) {
     if (kind === "pack" && packsLeft() < 1) { toast(ERRORS.no_packs_left); return; }
     var blocked = selectedHooks().filter(function (h) { return issues(h).some(function (x) { return x[0] === "block"; }); });
-    if (blocked.length && !S.ack) { toast("Fix the flagged claims, or confirm they're true, first."); return; }
+    if (blocked.length && !S.ack) { toast("Fix the flagged hooks, or confirm they're true, first."); return; }
     var btn = document.getElementById(kind === "pack" ? "m-pack" : "m-prev");
     if (btn) btn.disabled = true;
-    batchFor(kind).then(function (b) {
+    flush().then(function () { return batchFor(kind); }).then(function (b) {
       return rpc("studio_queue", { p_batch: b.id, p_kind: kind });
     }).then(function () {
       toast(kind === "pack" ? "Your pack is queued." : "Preview queued.");
       return Promise.all([loadBatches(S.project.id), loadAccount()]);
     }).then(function () { renderProject(); startPoll(); }).catch(function (e) { fail(e); renderProject(); });
   }
-  function renderMake() {
-    var probs = problems(), hooks = selectedHooks(), sc = script();
+  /* The card with the two buttons, redrawn as the script changes */
+  function renderGo() {
+    var box = document.getElementById("m-card");
+    if (!box) return;
+    var probs = problems(), hooks = selectedHooks(), left = packsLeft();
     var flagged = hooks.filter(function (h) { return issues(h).some(function (x) { return x[0] === "block"; }); });
-    var voice = VOICES.filter(function (v) { return v[0] === sc.voice.id; })[0] || VOICES[0];
-    var left = packsLeft();
-    var summary = probs.length
-      ? '<div class="banner">' + probs.map(function (p) { return '<div>' + esc(p[1]) + ' <a href="#/app/' + esc(S.project.id) + "/" + p[0] + '">Fix</a></div>'; }).join("") + "</div>"
-      : '<ul class="sum"><li><b>' + hooks.length + " hook" + (hooks.length === 1 ? "" : "s") + "</b>: " + hooks.map(function (h) { return "“" + esc(h.text) + "”"; }).join(", ") + "</li>" +
-        "<li><b>" + sc.body.length + " scenes</b> shared by every video, voiced by " + esc(voice[1]) + "</li>" +
-        "<li><b>You get</b> " + hooks.length + " vertical videos (1080×1920, captions burned in), 9:16 and 4:5 images, caption files, ad copy and a test plan, in one zip.</li></ul>";
-    var ack = flagged.length ? '<div class="banner warn"><b>' + flagged.length + " picked hook" + (flagged.length === 1 ? " has" : "s have") + " a flagged claim.</b> " +
-      'Fix it on the <a href="#/app/' + esc(S.project.id) + '/hooks">Hooks</a> step, or confirm it\'s true.' +
-      '<label class="check block" style="margin-top:8px"><input type="checkbox" id="m-ack"' + (S.ack ? " checked" : "") + "> I've checked these claims are true and allowed for my app</label></div>" : "";
-    pane('<div class="card"><h2>Make the ads</h2>' + summary + ack +
-      '<div class="row" style="margin-top:14px"><button class="btn" id="m-prev" type="button"' + (probs.length ? " disabled" : "") + ">Preview the frames (free)</button>" +
+    box.innerHTML = '<div class="card flow go">' +
+      (probs.length
+        ? '<ul class="todo">' + probs.map(function (p) {
+            return "<li>" + esc(p[1]) + (p[0] === "make" ? "" : ' <a href="#/app/' + esc(S.project.id) + "/" + p[0] + '">Go</a>') + "</li>";
+          }).join("") + "</ul>"
+        : '<p class="small">' + hooks.length + " video" + (hooks.length === 1 ? "" : "s") + ", one per hook, plus images, captions, ad copy and a test plan.</p>") +
+      (flagged.length ? '<div class="banner warn small">' + flagged.length + " picked hook" + (flagged.length === 1 ? " is" : "s are") + ' flagged. <a href="#/app/' + esc(S.project.id) + '/hooks">Fix</a>, or ' +
+        '<label class="check"><input type="checkbox" id="m-ack"' + (S.ack ? " checked" : "") + "> I've checked it's true</label></div>" : "") +
+      '<div class="row"><button class="btn" id="m-prev" type="button"' + (probs.length ? " disabled" : "") + ">Preview (free)</button>" +
       '<button class="btn pri" id="m-pack" type="button"' + (probs.length || left < 1 ? " disabled" : "") + ">" +
       (left < 1 ? "No free packs left" : "Make the pack" + (left === Infinity ? "" : " (uses 1 of " + left + ")")) + "</button></div>" +
-      (left < 1 ? '<p class="small muted">The beta includes one free pack. Email <a href="mailto:' + SUPPORT + '">' + SUPPORT + "</a> if you need another.</p>" : "") +
-      '<p class="small muted" style="margin-top:8px">A preview shows one frame from each scene of every video, in seconds, without using your pack. A pack takes a few minutes once it starts.</p></div>' +
-      '<div id="batches">' + batchesHtml() + "</div>");
+      (left < 1 ? '<p class="small muted note">The beta includes one free pack. Email <a href="mailto:' + SUPPORT + '">' + SUPPORT + "</a> for another.</p>"
+                : '<p class="small muted note">The preview shows a frame from every scene in seconds. The pack takes a few minutes.</p>') + "</div>";
     var a = document.getElementById("m-ack");
     if (a) a.onchange = function () { S.ack = a.checked; };
     document.getElementById("m-prev").onclick = function () { queue("preview"); };
     document.getElementById("m-pack").onclick = function () { queue("pack"); };
-    wireBatches();
   }
   function batchesHtml() {
     if (!S.batches.length) return "";
@@ -1114,13 +1127,14 @@
 
   /* ── routing and boot ────────────────────────────────────────── */
   function route() {
+    flush();
     if (!S.session) { renderAuth(/[?&]new=1/.test(location.search) ? "signup" : "signin"); return; }
     var m = location.hash.match(/^#\/app\/([0-9a-f-]{36})(?:\/(\w+))?/);
     if (!m) {
       loadProjects().then(renderApps).catch(function (e) { if (e.pg === "42P01" || e.pg === "PGRST205") setupNeeded(); else fail(e); });
       return;
     }
-    S.step = m[2] || "brief";
+    S.step = OLD_STEPS[m[2]] || m[2] || "app";
     var load = S.project && S.project.id === m[1] ? Promise.resolve() : loadProject(m[1]);
     load.then(function () {
       renderProject();

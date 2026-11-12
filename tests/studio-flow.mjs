@@ -134,63 +134,52 @@ await page.waitForSelector('#new-app'); await shot('01-apps-empty');
 await page.click('#new-app-2');
 await page.waitForSelector('#b-name');
 
-// Brief
+// 1. Your app: name, one line, a comparison and screenshots, all saving as they're typed
 await page.fill('#b-name', 'Habitly');
+await page.click('#b-say');
 await page.fill('#b-spoken', 'Habit-lee');
-await page.fill('#b-one', 'A habit tracker that turns daily habits into streaks you can share with friends.');
-await page.fill('#b-aud', 'People who keep restarting the same habit');
-await page.fill('#b-prob', 'I start strong every January and give up by February.');
-await page.fill('#b-out', 'Keep a habit going for more than a few weeks.');
+await page.fill('#b-one', 'Turns daily habits into streaks you can share with friends.');
 await page.fill('#b-ck', 'Duolingo'); await page.fill('#b-ct', 'your habits');
-await page.fill('#b-cant', "It doesn't see your health data or give medical advice.");
-await page.fill('#b-facts', 'Free to download. Streaks, reminders and friends.');
-await shot('02-brief');
-await page.click('#b-save');
-
-// Screens
-await page.waitForSelector('#up', { state: 'attached' });
+await page.click('#a-next');
+await page.waitForFunction(() => /two screenshots/.test(document.getElementById('a-need').textContent));
 await page.setInputFiles('#up', ['today.png', 'done.png', 'stats.png', 'friends.png', 'scroll.mp4'].map(f => join(FIX, f)));
 await page.waitForFunction(() => document.querySelectorAll('.shot').length === 5, null, { timeout: 15000 });
 await page.setInputFiles('#up-icon', join(FIX, 'icon.png'));
 await page.waitForSelector('.iconprev', { timeout: 15000 });
-await page.fill('[data-label]:nth-of-type(1)', 'Today list');
-await shot('03-screens');
-await page.click('#s-next');
+await page.waitForTimeout(900);
+await shot('02-app');
+const proj = db.studio_projects[0];
+if (proj.name !== 'Habitly' || proj.brief.comparison !== "It's like Duolingo, but for your habits" || proj.brief.spoken_name !== 'Habit-lee')
+  errors.push('step 1 did not save itself: ' + JSON.stringify([proj.name, proj.brief]));
+await page.click('#a-next');
 
-// Hooks
+// 2. Hooks: the comparison is already there and picked; add one from a pattern
 await page.waitForSelector('#h-text');
-await page.click('[data-tmpl="comparison"]');
-await page.waitForTimeout(200);
-await shot('04a-hook-template');
-await page.click('#h-add');
-await page.waitForSelector('.hook');
+await page.waitForFunction(() => document.querySelectorAll('.hook.on').length === 1);
+await page.click('[data-tmpl="callout"]');
+await page.keyboard.type('restarted the same habit');
+await shot('03a-hook-pattern');
 await page.fill('#h-text', "You've restarted the same habit five times this year.");
-await page.dispatchEvent('#h-text', 'input');
-await page.selectOption('#h-cat', 'callout');
-await page.click('#h-add');
-await page.waitForFunction(() => document.querySelectorAll('.hook').length === 2);
-for (let i = 0; i < 2; i++) { await page.locator('[data-pick]').nth(i).check(); await page.waitForTimeout(400); }
-await page.click('#h-ai');
-await page.waitForTimeout(800);
-await shot('04b-hooks');
+await page.press('#h-text', 'Enter');
+await page.waitForFunction(() => document.querySelectorAll('.hook.on').length === 2);
+await shot('03b-hooks');
 await page.click('#h-next');
 
-// Script
+// 3. Make the ads: write the lines, pick a zoom and a voice
 await page.waitForSelector('[data-s="0"][data-f="say"]');
 await page.fill('[data-s="0"][data-f="say"]', 'Tick off a habit and watch your day fill up.');
 await page.fill('[data-s="0"][data-f="head"]', 'Tap to tick it off');
 await page.fill('[data-s="1"][data-f="say"]', "Every streak shows how far you've come.");
-await page.fill('[data-s="1"][data-f="head"]', 'See your streaks');
 await page.fill('[data-s="2"][data-f="say"]', 'Friends keep you honest.');
+await page.selectOption('[data-s="2"][data-f="move"]', 'zoom:bottom');
+await page.click('.voice:nth-child(2)');
+await page.click('details.more summary');
 await page.fill('#sc-line', 'Build habits that stick.');
-await page.selectOption('[data-s="2"][data-f="motion"]', 'zoom');
-await page.waitForSelector('[data-f="zoomAt"]');
-await shot('05-script');
-await page.click('#sc-save');
+await page.waitForTimeout(900);
+await shot('04-make');
 
 // Make: preview
-await page.waitForSelector('#m-prev');
-await shot('06a-make');
+await page.waitForSelector('#m-prev:not([disabled])');
 const ack = await page.$('#m-ack');
 if (ack) await ack.check();
 await page.click('#m-prev');
@@ -225,6 +214,10 @@ if (batch.spec.opening.screens.length !== 3) errors.push('the opening should hav
 console.log('packs used:', db.studio_accounts[0].packs_used, 'hooks:', db.studio_hooks.map(h => h.text + (h.selected ? ' [picked]' : '')));
 console.log('spec hooks:', JSON.stringify(batch.spec.hooks));
 console.log('spec body:', JSON.stringify(batch.spec.body));
+const motions = batch.spec.body.map(s => s.motion).join(',');
+if (motions !== 'rise,page,zoom') errors.push('scene motions should be rise,page,zoom, got ' + motions);
+if (batch.spec.voice.id !== 'Xb7hH8MSUJpSbSDYk0k2') errors.push('the picked voice (Alice) did not reach the spec');
+if (batch.spec.cta.lines[0] !== 'Build habits that stick.') errors.push('the end-card line did not reach the spec');
 console.log('spec opening/voice/cta:', JSON.stringify([batch.spec.opening, batch.spec.voice, batch.spec.cta, batch.spec.brand]));
 console.log(errors.length ? errors.join('\n') : 'no page errors');
 await b.close();

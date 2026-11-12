@@ -1,7 +1,7 @@
 // ForgeLabs App Ad Studio: the AI half of hook writing.
 //
 //   POST { action: "suggest_hooks", brief }               hooks by category, from docs/AD-PLAYBOOK.md's rules
-//   POST { action: "check_hooks", brief, hooks: [text] }  each hook checked against the brief's facts
+//   POST { action: "check_hooks", brief, hooks: [text] }  each hook checked against the brief
 //   POST { action: "draft_script", brief, screens }       body lines matched to the uploaded screens
 //
 // Needs the ANTHROPIC_API_KEY secret. Without it every action answers 503 ai_unavailable and the
@@ -26,10 +26,12 @@ stocks" works because the viewer already knows how Tinder works. "Your money is 
 something" failed: it sounds good but doesn't say what the app is.
 
 Rules for every hook:
-1. Every claim must be true of this app today, according to the brief. Never invent numbers,
-   results, ratings, user counts or features. A number may appear only if it is in the brief's facts.
-2. Never imply the app knows or sees something it doesn't (the brief lists what it can't do or
-   see). "Where your money's been going" implies access to someone's finances.
+1. Every claim must be true of this app today, according to the brief. The brief is short, so stay
+   inside it: never invent numbers, results, ratings, user counts or features. Use a number only if
+   the brief states it.
+2. Never imply the app knows or sees anything about the viewer (their money, health, location,
+   messages, photos) unless the brief says it does. "Where your money's been going" implies access
+   to someone's finances.
 3. Describe the situation, not the person. Ad platforms reject wording that asserts or implies
    the viewer's personal attributes: health, finances, debt, beliefs, age, sexuality, ethnicity,
    religion, disability. "Are you struggling with debt?" is a classic rejection.
@@ -124,17 +126,17 @@ function cut(v: unknown, n: number): string {
 function describe(brief: Brief): string {
   const lines = [
     `App name: ${cut(brief.name, 80)}`,
-    `What it does, in one sentence: ${cut(brief.one_liner, 300)}`,
+    `What it does: ${cut(brief.one_liner, 300)}`,
     `Platforms: ${cut(brief.platforms, 80) || "not stated"}`,
-    `Who it's for: ${cut(brief.audience, 300)}`,
-    `The problem they feel: ${cut(brief.problem, 400)}`,
-    `The outcome they want: ${cut(brief.outcome, 300)}`,
-    `A familiar comparison, if any: ${cut(brief.comparison, 200) || "none given"}`,
-    `What the app can NOT do or see: ${cut(brief.cant_do, 600) || "not stated - be conservative"}`,
-    `Provable facts and numbers (the only numbers allowed): ${cut(brief.facts, 800) || "none"}`,
+    `A familiar comparison: ${cut(brief.comparison, 200) || "none given"}`,
     `Category, for ad policy: ${cut(brief.category, 80) || "general"}`,
-    `The one action after the ad: ${cut(brief.action, 120) || "download the app"}`,
   ];
+  // Briefs from before the shorter form had more fields; use them when they're there
+  const extra: [string, string, number][] = [
+    ["audience", "Who it's for", 300], ["problem", "The problem they feel", 400], ["outcome", "The outcome they want", 300],
+    ["cant_do", "What the app can NOT do or see", 600], ["facts", "Provable facts and numbers", 800],
+  ];
+  for (const [key, label, n] of extra) if (cut(brief[key], n)) lines.push(`${label}: ${cut(brief[key], n)}`);
   return lines.join("\n");
 }
 
@@ -215,7 +217,7 @@ Deno.serve(async (req) => {
       const hooks = (Array.isArray(body.hooks) ? body.hooks : []).map((t) => cut(t, 160)).filter(Boolean).slice(0, 20);
       if (!hooks.length) return json(req, 400, { error: "no_hooks" });
       const r = await ask(client, `${RULES}\n\nYou are now the claim checker. Judge each hook against the brief and the rules.
-verdict "block": a false or unsupported claim, an invented number, implied access to data the app can't see, or
+verdict "block": a claim the brief doesn't support, an invented number, implied access to the viewer's data, or
 personal-attribute wording a platform would likely reject. "warn": true but risky or unclear (a brand name, a
 regulated category, vague wording, too long to say in three seconds). "ok": passes. Give short plain reasons,
 and for block or warn a rewrite that fixes the problem while keeping the idea (empty for ok).`,

@@ -206,6 +206,59 @@ h3.cat:first-child{margin-top:0}
 .vids{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px}
 .vid video{display:block; width:100%; aspect-ratio:9/16; border-radius:10px; background:#000; border:1px solid var(--line)}
 .vid p{margin:6px 0 0}
+/* the three-step flow: one column, generous spacing, few words */
+#pane{max-width:760px}
+.card.flow{padding:22px}
+.card.flow h2{font-size:19px}
+.card.flow > p.muted{margin:-4px 0 14px}
+.flow .field label{font-size:13.5px; color:var(--ink)}
+.flow input:not([type=checkbox]):not([type=radio]):not([type=color]),.flow select{padding:11px 12px; font-size:15px}
+.flow .hint input{margin-top:6px}
+.like input{flex:1; min-width:0}
+.drop.over{border-color:var(--ember-tx); background:rgba(255,122,46,.18)}
+.shots{grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:10px}
+.shot{position:relative}
+.shot .num{position:absolute; top:6px; left:6px; min-width:22px; height:22px; padding:0 6px; border-radius:99px; display:grid; place-items:center;
+  background:rgba(12,8,6,.8); color:var(--ink); font:600 12px Inter,sans-serif}
+.shot .tools{position:absolute; left:0; right:0; bottom:0; display:flex; justify-content:center; gap:4px; padding:6px;
+  background:linear-gradient(rgba(12,8,6,0),rgba(12,8,6,.85)); opacity:0; transition:opacity .15s}
+.shot:hover .tools,.shot:focus-within .tools{opacity:1}
+@media(hover:none){.shot .tools{opacity:1}}
+.shot .tools .btn{padding:3px 8px; background:rgba(30,21,14,.9)}
+.warnbadge{position:absolute; top:6px; right:6px; font-size:11px; padding:1px 6px; border-radius:99px; background:rgba(255,143,143,.2); color:var(--bad)}
+.icon-row{margin-top:14px; gap:10px}
+.icon-row .iconprev{width:40px; height:40px; border-radius:10px}
+.write .row input{flex:1; min-width:0}
+.chips{margin-top:8px}
+.hook{align-items:center; padding:8px 10px}
+.hook .pick{padding-top:0}
+.hook .lint ul{margin:0 0 4px 8px}
+.line{display:flex; gap:12px; align-items:flex-start; padding:10px; border:1px solid var(--line-2); border-radius:10px; margin-bottom:10px; background:var(--card-2)}
+.line .thumb{width:54px; aspect-ratio:9/19.5; object-fit:cover; object-position:top; border-radius:7px; background:#000; border:1px solid var(--line); flex:none}
+.line .opts{margin-top:8px; flex-wrap:wrap}
+.flow .line .opts select,.flow .line .opts input{width:auto; flex:1; min-width:130px; padding:7px 9px; font-size:13px}
+.voices{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.voice{position:relative; grid-template-columns:1fr auto; padding:8px 10px}
+.voice input{position:absolute; opacity:0; width:1px; height:1px}
+.voice b,.voice .small{grid-column:1}
+.voice .btn{grid-column:2; grid-row:1 / span 2}
+.voice:focus-within{outline:2px solid var(--ember-tx); outline-offset:2px}
+.look{margin-top:14px; gap:16px}
+.look input[type=color]{width:38px; height:30px; padding:2px; border-radius:6px}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.seg label{margin:0; font-weight:500; font-size:13.5px; cursor:pointer}
+.seg input{position:absolute; opacity:0; width:1px; height:1px}
+.seg span{display:block; padding:6px 14px; color:var(--body)}
+.seg input:checked + span{background:var(--ember-wash); color:var(--ember-tx)}
+.seg input:focus-visible + span{outline:2px solid var(--ember-tx); outline-offset:-2px}
+details.more{margin-top:16px; border-top:1px solid var(--line); padding-top:12px}
+details.more summary{cursor:pointer; font-weight:600; color:var(--body); font-size:13.5px}
+details.more[open] summary{margin-bottom:12px}
+.go .todo{margin:0 0 12px; padding-left:18px}
+.go .todo li{margin:4px 0}
+.go p.small{margin:0 0 12px}
+.go p.note{margin:12px 0 0}
+.banner.small{font-size:13px; padding:9px 12px}
 @media(max-width:860px){.cols3,.write .cols3{grid-template-columns:1fr}.cols2{grid-template-columns:1fr}}
 @media(max-width:700px){
   .top{flex-wrap:wrap; padding:8px 12px}

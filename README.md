@@ -1,7 +1,7 @@
 # ForgeLabs App Ad Studio
 
 The site and product at [forgelaboratory.net](https://forgelaboratory.net): a self-serve tool that turns an app's real screens into a ready-to-test pack of vertical video ads. The pack has:
-- hooks checked against the app's facts
+- hooks checked for false claims
 - a voiceover
 - captions
 - 9:16 and 4:5 images

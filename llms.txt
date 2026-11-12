@@ -2,7 +2,7 @@
 
 > A web app that turns an app's screenshots and screen recordings into ready-to-test vertical video ads for Reels, TikTok and Shorts. Free during the beta.
 
-The founder describes the app, uploads its real screens and picks hooks. The Studio checks every hook against the app's facts, then renders a pack: three to five 1080x1920 videos that share one body (so a test compares only the hooks), with an AI voiceover, word-by-word captions, 4:5 and 9:16 images, .srt caption files, ad copy and a test plan. It doesn't run ads or connect to ad accounts.
+The founder names the app, says what it does in one line, uploads its real screens and picks hooks. The Studio checks every hook for claims ad platforms reject, then renders a pack: three to five 1080x1920 videos that share one body (so a test compares only the hooks), with an AI voiceover, word-by-word captions, 4:5 and 9:16 images, .srt caption files, ad copy and a test plan. It doesn't run ads or connect to ad accounts.
 
 - [Home page](https://forgelaboratory.net/): what the Studio does, example ads, pricing and FAQ
 - [How to make video ads for your app](https://forgelaboratory.net/guide/app-video-ads/): the core method, from hook to test
