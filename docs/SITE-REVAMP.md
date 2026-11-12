@@ -167,7 +167,16 @@ CapCut"), with verified claims only.
     has $147.30 spent, 7,401 impressions, 342 link clicks, 4.6% click-through, $0.43 a click and
     280 landing page views. Refresh the numbers and dates together.
 
+**Done 2026-11-11:**
+- **Google Search Console:** the URL-prefix property was verified with the HTML file at the root,
+  which must stay there. The owner requested indexing for the home page, the guide and the case
+  study.
+- **IndexNow:** the key file is at the root, and `tools/indexnow.mjs` sends the URLs. All five
+  sitemap URLs were sent and came back 202 (accepted while the key is checked). Run
+  `npm run indexnow` after page changes deploy.
+
 **Next:**
-- **Phase 3, owner's accounts:** Search Console and Bing.
+- **Phase 3, owner's accounts:** Bing Webmaster Tools, imported from Search Console, so you can
+  see Bing's reports.
 - **PageSpeed:** measure on the live site.
 - **The rest of Phase 2:** `/hooks/`, `/examples/` and a full FAQ page.
