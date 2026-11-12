@@ -189,6 +189,7 @@ def build_job(spec, owner, workdir, sb):
         data['voice']['speed'] = max(.85, min(1.2, float(v['speed'])))
     if text(spec.get('disclaimer'), 120):
         data['disclaimer'] = text(spec.get('disclaimer'), 120)
+    data['effects'] = spec.get('effects') is not False  # sound effects, typing and camera moves
     with open(os.path.join(workdir, 'job.json'), 'w') as f:
         json.dump(data, f, indent=2)
     return jobs.Job(data, workdir)

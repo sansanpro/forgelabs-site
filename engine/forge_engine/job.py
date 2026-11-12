@@ -122,6 +122,13 @@ class Job:
         v.setdefault('similarity', .75)
         self.voice = v
 
+        # sfx: whooshes, key clicks and pops under the voice. type: the hook and headings type out
+        # letter by letter. camera: push-ins, zooms in and out, zoom-through transitions.
+        # true (the default) is all three; false is the original look, which the golden test uses.
+        fx = data.get('effects', True)
+        fx = {} if fx is True else {'sfx': False, 'type': False, 'camera': False} if fx is False else dict(fx)
+        self.effects = {k: bool(fx.get(k, True)) for k in ('sfx', 'type', 'camera')}
+
         out = dict(data.get('outputs') or {})
         out.setdefault('video', True)
         out.setdefault('stills', ['9x16', '4x5'])

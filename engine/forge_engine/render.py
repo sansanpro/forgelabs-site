@@ -63,6 +63,24 @@ def put(fr, im, x, y, o=1.0):
         im.putalpha(im.getchannel('A').point(lambda v: int(v * o)))
     fr.paste(im, (int(x), int(y)), im)
 
+def cursor(fr, x, y, size, color):
+    """The typing caret: a bar as tall as the capitals."""
+    ImageDraw.Draw(fr).rectangle((int(x), int(y + size * .14), int(x + max(4, size * .07)), int(y + size * 1.06)), fill=color)
+
+def zoomed(im, z, bg):
+    """The frame scaled by z about its centre, cropped (z > 1) or framed in bg (z < 1)."""
+    w, h = int(W * z), int(H * z)
+    big = im.resize((w, h), Image.BILINEAR)
+    if z >= 1:
+        return big.crop(((w - W) // 2, (h - H) // 2, (w - W) // 2 + W, (h - H) // 2 + H))
+    out = bg.copy()
+    out.paste(big, ((W - w) // 2, (H - h) // 2))
+    return out
+
+def typed_span(s, e):
+    """When a spoken word's letters appear: from just before it starts, over most of its length."""
+    return s - .04, max(.12, (e - s) * .9)
+
 DOTTED = re.compile(r'^((?:[A-Za-z]\.){2,})([,!?;:]*)$')
 
 def shown(word, display):
@@ -433,6 +451,7 @@ class Ad:
         self.scenes = scenes
         self.opening = job.opening
         self.hand = self.opening['style'] == 'hand'
+        self.fx = getattr(job, 'effects', {'sfx': False, 'type': False, 'camera': False})
 
     def caption_lines(self, s):
         """The scene's words grouped into caption lines, as (first, end) word indexes."""
@@ -506,16 +525,31 @@ class Ad:
             draw_phone(fr, self.S, self.view(s, t), ptop + (1 - p) * 120, 640)
         y = SAFE_T; i = s['a']; f = F(size)
         n_q = self.hook.get('accent_from', next((n for n, w in enumerate(words) if w[-1] in '.?'), len(words) - 1) + 1) - 1
+        typing = self.fx['type']
+        caret = (SAFE_X, SAFE_T, th['text'])  # where the caret sits: after the last letter typed
         for line in lines:
             x = SAFE_X
             for w in line:
                 st = self.words[i]['s']
-                q = ease((t - st + .06) / .24)
                 col = th['accent'] if (i - s['a']) > n_q else th['text']
                 word = shown(w, self.display)
-                if q > 0: put(fr, sprite(word, size, col), x, y + (1 - q) * 26, min(1, q * 1.4))
+                if typing:
+                    a, d = typed_span(st, self.words[i]['e'])
+                    k = int(round(clamp((t - a) / d) * len(word)))
+                    if k:
+                        part = word[:k]
+                        put(fr, sprite(part, size, col), x, y)
+                        caret = (x + f.getlength(part) + 6, y, col)
+                else:
+                    q = ease((t - st + .06) / .24)
+                    if q > 0: put(fr, sprite(word, size, col), x, y + (1 - q) * 26, min(1, q * 1.4))
                 x += f.getlength(word + ' '); i += 1
             y += lh
+        if typing:
+            last = self.words[s['b'] - 1]
+            busy = self.words[s['a']]['s'] - .04 <= t <= sum(typed_span(last['s'], last['e']))
+            if busy or (t * 2.2) % 1 < .55:  # solid while typing, blinking while waiting
+                cursor(fr, caret[0], caret[1], size, caret[2])
 
     def view(self, s, t):
         key = s['screen']
@@ -529,9 +563,18 @@ class Ad:
         head = s.get('head') or ''
         if head:
             size = fit_size(head, 74 if len(head) < 27 else 62, W - 2 * SAFE_X)
-            put(fr, sprite(head, size, th['text']), SAFE_X, SAFE_T + (1 - p) * 20, p)
+            if self.fx['type']:
+                a, d = self.head_span(s)
+                k = int(round(clamp((t - a) / d) * len(head)))
+                if k: put(fr, sprite(head[:k], size, th['text']), SAFE_X, SAFE_T)
+                if a <= t < a + d + .7 and (t < a + d or (t * 2.2) % 1 < .55):
+                    cursor(fr, SAFE_X + F(size).getlength(head[:k]) + (6 if k else 0), SAFE_T, size, th['accent'])
+            else:
+                put(fr, sprite(head, size, th['text']), SAFE_X, SAFE_T + (1 - p) * 20, p)
         motion = s['motion']
         top = SAFE_T + 118
+        # A slow push-in across the scene, so nothing ever sits perfectly still
+        push = smooth((t - t0) / max(.5, s['t1'] - t0)) * .07 if self.fx['camera'] else 0
         if motion in ('swipe', 'page'):
             if motion == 'swipe':
                 sign = 1 if s.get('dir', 'right') == 'right' else -1
@@ -548,17 +591,23 @@ class Ad:
         elif motion == 'zoom':
             z = s.get('zoom') or [0, .3, 1, .7]
             a, b = (z[1], z[3]) if len(z) == 4 else (z[0], z[1])
-            q = smooth((t - t0 - .05) / .5)
             top = SAFE_T + 110
-            w = int(s.get('zoom_w', 948) * (.86 + .14 * q))
-            draw_phone(fr, self.S, ('static', s['screen']) if self.S.spec(s['screen']).get('kind') != 'video'
-                       else self.view(s, t), top, w, crop=(a, b), room=SAFE_B - 110 - top)
+            view = ('static', s['screen']) if self.S.spec(s['screen']).get('kind') != 'video' else self.view(s, t)
+            if self.fx['camera']:
+                # Zoom in from the whole screen to the band, hold, then pull back out before the next scene
+                q = smooth((t - t0 - .05) / .6) * (1 - smooth((t - (s['t1'] - .55)) / .5))
+                zw = s.get('zoom_w', 948)
+                draw_phone(fr, self.S, view, top, int(640 + (zw - 640) * q), crop=(a * q, 1 - (1 - b) * q), room=SAFE_B - 110 - top)
+            else:
+                q = smooth((t - t0 - .05) / .5)
+                w = int(s.get('zoom_w', 948) * (.86 + .14 * q))
+                draw_phone(fr, self.S, view, top, w, crop=(a, b), room=SAFE_B - 110 - top)
         else:
             p2 = ease((t - t0) / .45)
             if self.hand:
-                draw_hand(fr, self.S, self.view(s, t), top + (1 - p2) * 90, 1.15, rot=math.sin(t * 2.3) * .5)
+                draw_hand(fr, self.S, self.view(s, t), top + (1 - p2) * 90 - push * 260, 1.15 * (1 + push), rot=math.sin(t * 2.3) * .5)
             else:
-                draw_phone(fr, self.S, self.view(s, t), top + (1 - p2) * 90, 680)
+                draw_phone(fr, self.S, self.view(s, t), top + (1 - p2) * 90 - push * 120, int(680 * (1 + push)))
         self.caption(fr, t, s)
 
     def outro_frame(self, fr, s, t):
@@ -594,15 +643,56 @@ class Ad:
     def draw(self, s, t, fr):
         {'hook': self.hook_frame, 'body': self.body_frame, 'outro': self.outro_frame}[s['kind']](fr, s, t)
 
-    def frame(self, t, xf=.2):
+    def head_span(self, s):
+        """When a scene's heading types out: (start, duration)."""
+        return s['t0'] + .1, .05 + .032 * len(s.get('head') or '')
+
+    def frame(self, t, xf=None):
+        cam = self.fx['camera']
+        xf = xf or (.3 if cam else .2)
         for i, s in enumerate(self.scenes):
             if s['t0'] <= t < s['t1']:
                 fr = self.bg.copy(); self.draw(s, t, fr)
                 if i > 0 and t < s['t0'] + xf and s.get('motion') not in ('swipe', 'page'):
                     o = self.bg.copy(); self.draw(self.scenes[i - 1], t, o)
-                    fr = Image.blend(o, fr, smooth((t - s['t0']) / xf))
+                    k = smooth((t - s['t0']) / xf)
+                    if cam:  # zoom through: the old scene rushes past the viewer, the new one settles in
+                        o, fr = zoomed(o, 1 + .12 * k, self.bg), zoomed(fr, .93 + .07 * k, self.bg)
+                    fr = Image.blend(o, fr, k)
                 return fr
         return self.frame(self.end - .05)
+
+    def sound_cues(self):
+        """(time, kind, level) for every sound effect in this ad: see sfx.py."""
+        cues = []
+        op = self.opening['style']
+        if op in ('hand', 'phone'):
+            cues += [(0, 'whoosh', .5), (.97, 'whoosh', .5)]  # the two opening swipes
+        else:
+            cues.append((0, 'whoosh', .4))
+        for s in self.scenes:
+            if self.fx['type'] and s['kind'] == 'hook':
+                for i in range(s['a'], s['b']):
+                    word = shown(self.words[i]['w'], self.display)
+                    a, d = typed_span(self.words[i]['s'], self.words[i]['e'])
+                    cues += [(a + (j + 1) / len(word) * d, 'key', .3) for j, c in enumerate(word) if c.isalnum()]
+            if s['kind'] == 'body':
+                m = s['motion']
+                if m in ('swipe', 'page'):
+                    cues.append((s['t0'] + .02, 'whoosh', .55))
+                elif m == 'zoom' and self.fx['camera']:
+                    cues += [(s['t0'] - .1, 'whoosh', .45), (s['t0'] + .05, 'zoom', .4), (s['t1'] - .55, 'zoom-out', .35)]
+                else:
+                    cues.append((s['t0'] - .12, 'whoosh', .5))
+                head = s.get('head') or ''
+                if self.fx['type'] and head:
+                    a, d = self.head_span(s)
+                    cues += [(a + (j + 1) / len(head) * d, 'key', .22) for j, c in enumerate(head) if c.isalnum()]
+            if s['kind'] == 'outro':
+                cues.append((s['t0'] - .12, 'whoosh-down', .45))
+                if self.job.icon: cues.append((s['t0'] + .18, 'pop', .3))
+                cues.append((s['t0'] + .4, 'pop', .45))  # the button lands
+        return [c for c in cues if 0 <= c[0] < self.end]
 
     def review_times(self):
         """One moment per scene that shows it settled."""
@@ -623,7 +713,16 @@ class Ad:
         n = int(self.end * FPS)
         cmd = [FFMPEG, '-y', '-hide_banner', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
                '-s', f'{W}x{H}', '-r', str(FPS), '-i', '-']
-        if audio:
+        fx_wav = None
+        if audio and self.fx['sfx']:
+            from . import sfx  # numpy, only needed here
+            fx_wav = sfx.track(self.sound_cues(), self.end, out + '.sfx.wav')
+            # The voice is levelled first; the effects sit under it, then a limiter catches peaks
+            cmd += ['-i', audio, '-i', fx_wav, '-filter_complex',
+                    '[1:a]loudnorm=I=-16:TP=-1.5:LRA=11,apad[v];[2:a]volume=0.35,apad[s];'
+                    '[v][s]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.84[a]',
+                    '-map', '0:v', '-map', '[a]']
+        elif audio:
             cmd += ['-i', audio, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11,apad']
         cmd += ['-t', f'{n / FPS:.3f}', '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p']
         if audio:
@@ -636,6 +735,7 @@ class Ad:
         finally:
             p.stdin.close()
             p.wait()
+            if fx_wav and os.path.exists(fx_wav): os.remove(fx_wav)
         if p.returncode:
             raise RuntimeError(f'ffmpeg failed with code {p.returncode} for {out}')
         return round(n / FPS, 2)

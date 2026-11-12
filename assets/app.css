@@ -254,6 +254,7 @@ h3.cat:first-child{margin-top:0}
 details.more{margin-top:16px; border-top:1px solid var(--line); padding-top:12px}
 details.more summary{cursor:pointer; font-weight:600; color:var(--body); font-size:13.5px}
 details.more[open] summary{margin-bottom:12px}
+.fxrow{margin-bottom:14px}
 .go .todo{margin:0 0 12px; padding-left:18px}
 .go .todo li{margin:4px 0}
 .go p.small{margin:0 0 12px}

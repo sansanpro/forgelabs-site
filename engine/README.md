@@ -100,6 +100,11 @@ The swipe (`motion`) is one of:
 ### Other fields
 - **`voice`**: an ElevenLabs voice. `id`, `model` (default `eleven_v4`), `seed`, `speed`, `stability` and `similarity`.
 - **`display`**: extra spoken-to-written spellings for captions, such as `{"P.E.": "P/E"}`. Dotted letters like "A.I." are always shown as "AI".
+- **`effects`**: `true` (the default) or `false`, or an object with any of `sfx`, `type` and `camera` switched off.
+  - **`sfx`:** whooshes on transitions, swipes and zooms, a key click per typed letter and pops on the end card. They're synthesized in `forge_engine/sfx.py`, so there's nothing to license, and mixed about 13 LU under the voice.
+  - **`type`:** the hook and the headings type out letter by letter with a cursor, timed to the voice.
+  - **`camera`:** a slow push-in on every scene. Zoom scenes zoom in from the whole screen and pull back out before the next scene, and scenes zoom through instead of fading.
+  - **`false`:** the original look. The golden job uses it.
 
 ## Output
 

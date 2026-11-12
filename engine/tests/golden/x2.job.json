@@ -30,5 +30,6 @@
   ],
   "cta": {"say": "Download Stock Matcher A.I. free on the App Store.", "button": "Download free on the App Store",
           "lines": ["Matches built around your values,", "with AI to explain every company."]},
-  "voice": {"speed": 1.15}
+  "voice": {"speed": 1.15},
+  "effects": false
 }

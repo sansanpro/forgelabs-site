@@ -856,6 +856,7 @@
         return '<label><input type="radio" name="th-style" value="' + x[0] + '"' + ((th.style || "dark") === x[0] ? " checked" : "") + "><span>" + x[1] + "</span></label>";
       }).join("") + "</span></div>" +
       '<details class="more"><summary>More options</summary>' +
+      '<label class="check block fxrow"><input type="checkbox" id="sc-fx"' + (sc.effects === false ? "" : " checked") + "> Sound effects, typing text and zooms</label>" +
       '<div class="field"><label>Opening</label>' +
       [["hand", "A hand holding the phone, already swiping"], ["phone", "Just the phone, already swiping"], ["rise", "The phone slides up"]].map(function (x) {
         return '<label class="check block"><input type="radio" name="op" value="' + x[0] + '"' + ((op.style || "hand") === x[0] ? " checked" : "") + "> " + x[1] + "</label>";
@@ -932,6 +933,8 @@
       } else s[f] = v;
     });
     var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ""; };
+    var fxBox = document.getElementById("sc-fx");
+    if (fxBox) sc.effects = fxBox.checked;
     sc.end_line = v("sc-line"); sc.button = v("sc-btn"); sc.cta_say = v("sc-say"); sc.headline = v("sc-head"); sc.disclaimer = v("sc-disc");
     var op = root.querySelector('input[name="op"]:checked'), st = root.querySelector('input[name="th-style"]:checked');
     sc.opening = { style: op ? op.value : "hand", screens: sc.opening.screens || [] };
@@ -998,7 +1001,8 @@
       opening: { style: sc.opening.style || "hand", motion: "page", screens: opening },
       cta: { say: sc.cta_say || cta[0], button: sc.button || cta[1], lines: sc.end_line ? [sc.end_line] : [], headline: sc.headline || "" },
       voice: { id: sc.voice.id, speed: Number(sc.voice.speed) || 1 },
-      disclaimer: sc.disclaimer || ""
+      disclaimer: sc.disclaimer || "",
+      effects: sc.effects !== false
     };
   }
   function problems() {
