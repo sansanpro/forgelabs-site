@@ -66,7 +66,7 @@ await page.click('#h-next');
 // 3. Make the ads. Line 1 plays the recording, 2 swipes to the streaks chart, 3 to friends
 await page.waitForSelector('[data-s="0"][data-f="say"]', { timeout: 20000 });
 await page.selectOption('[data-s="0"][data-f="screen"]', { label: 'Recording 5' });
-await page.waitForSelector('[data-s="0"][data-f="move"] option[value="auto"]');
+await page.waitForFunction(() => document.querySelector('[data-s="0"][data-f="move"]').options[0].text === 'Play recording', null, { timeout: 20000 });
 await page.waitForTimeout(500);
 await page.fill('[data-s="0"][data-f="say"]', 'Tick off a habit and watch your day fill up.');
 await page.fill('[data-s="0"][data-f="head"]', 'Tap to tick it off');
