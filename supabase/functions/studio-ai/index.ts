@@ -1,8 +1,12 @@
 // ForgeLabs App Ad Studio: the AI half of hook writing.
 //
-//   POST { action: "suggest_hooks", brief }               hooks by category, from docs/AD-PLAYBOOK.md's rules
+//   POST { action: "suggest_hooks", brief, screens? }     hooks by category, from docs/AD-PLAYBOOK.md's rules
 //   POST { action: "check_hooks", brief, hooks: [text] }  each hook checked against the brief
 //   POST { action: "draft_script", brief, screens }       body lines matched to the uploaded screens
+//
+// The copywriter: suggest_hooks and draft_script see the screenshots (screens[].path, signed with the
+// caller's own token, so storage rules decide what can be read), write a draft, then an editor pass
+// applies the two-second clarity test to every line and rewrites or drops the weak ones.
 //
 // Needs the ANTHROPIC_API_KEY secret. Without it every action answers 503 ai_unavailable and the
 // app falls back to its templates and the in-browser hook lint. STUDIO_AI_MODEL overrides the
@@ -28,7 +32,8 @@ something" failed: it sounds good but doesn't say what the app is.
 Rules for every hook:
 1. Every claim must be true of this app today, according to the brief. The brief is short, so stay
    inside it: never invent numbers, results, ratings, user counts or features. Use a number only if
-   the brief states it.
+   the brief states it. Features you can see in the app's screenshots are true too, but numbers,
+   names and results shown in them are sample data: never quote them as claims.
 2. Never imply the app knows or sees anything about the viewer (their money, health, location,
    messages, photos) unless the brief says it does. "Where your money's been going" implies access
    to someone's finances.
@@ -163,21 +168,60 @@ async function allowed(auth: string): Promise<boolean> {
   return r.ok && (await r.json()) === true;
 }
 
-async function ask(client: Anthropic, system: string, prompt: string, schema: Record<string, unknown>, effort: "low" | "medium" | "high") {
-  const response = await client.beta.messages.create({
+type Block = { type: "text"; text: string } | { type: "image"; source: { type: "url"; url: string } };
+
+async function ask(client: Anthropic, system: string, prompt: string | Block[], schema: Record<string, unknown>, effort: "low" | "medium" | "high") {
+  const send = (content: string | Block[]) => client.beta.messages.create({
     model: MODEL,
     max_tokens: 16000,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
     output_config: { effort, format: { type: "json_schema", schema } },
     system,
-    messages: [{ role: "user", content: prompt }],
+    messages: [{ role: "user", content }],
   });
+  let response;
+  try {
+    response = await send(prompt);
+  } catch (e) {
+    // A screenshot the API can't take (too large, unreadable): write from the words alone
+    if (!(e instanceof Anthropic.BadRequestError) || typeof prompt === "string") throw e;
+    console.error("retrying without screenshots:", e.message);
+    response = await send(prompt.filter((b) => b.type === "text"));
+  }
   if (response.stop_reason === "refusal") return { declined: true as const };
   const text = response.content.find((b) => b.type === "text");
   if (!text || text.type !== "text") throw new Error(`no text in the reply (stop reason ${response.stop_reason})`);
   return { declined: false as const, data: JSON.parse(text.text) };
 }
+
+/* Up to six screenshots as image blocks, each signed for ten minutes with the caller's token. */
+async function screenshots(auth: string, screens: unknown): Promise<Block[]> {
+  const list = (Array.isArray(screens) ? screens : []).filter((s) =>
+    s && s.kind !== "recording" && /^[0-9a-f-]{36}\/[\w\-./]+\.(png|jpe?g|webp)$/i.test(String(s.path ?? "")) &&
+    !String(s.path).includes("..")).slice(0, 6);
+  const out: Block[] = [];
+  for (const s of list) {
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/studio-uploads/${s.path}`, {
+      method: "POST",
+      headers: { apikey: ANON, Authorization: auth, "Content-Type": "application/json" },
+      body: JSON.stringify({ expiresIn: 600 }),
+    });
+    if (!r.ok) continue;
+    const { signedURL } = await r.json();
+    if (!signedURL) continue;
+    out.push({ type: "text", text: `Screenshot ${cut(s.label, 80) || cut(s.id, 60)}${s.id ? ` (id ${cut(s.id, 60)})` : ""}:` });
+    out.push({ type: "image", source: { type: "url", url: `${SUPABASE_URL}/storage/v1${signedURL}` } });
+  }
+  return out;
+}
+
+const EDITOR = `${RULES}
+
+You are now the editor. Read each line as a stranger scrolling past would hear it, once, with no
+context. Apply the clarity test: within two seconds, can they picture the app or feel the problem?
+Keep lines that pass exactly as written. Rewrite lines that fail (abstract, clever, vague, too long,
+or breaking a rule) so they pass while keeping the idea. Drop a line only if it can't be saved.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors(req) });
@@ -200,10 +244,18 @@ Deno.serve(async (req) => {
 
   try {
     if (body.action === "suggest_hooks") {
-      const r = await ask(client, `${RULES}\n\n${HOOK_CATEGORIES}`,
-        `${describe(brief)}\n\nWrite two hooks for each category (14 in total). For each, give a benefit line of ` +
+      const shots = await screenshots(auth, body.screens);
+      const draft = await ask(client, `${RULES}\n\n${HOOK_CATEGORIES}`,
+        [{ type: "text", text: describe(brief) }, ...shots, { type: "text", text:
+          `Write two hooks for each category (14 in total). For each, give a benefit line of ` +
           `at most 60 characters that sits under the hook on an image ad and says what the app does, and one ` +
-          `short sentence on why the hook works. Skip a category rather than break a rule.`,
+          `short sentence on why the hook works. Skip a category rather than break a rule.` }],
+        hooksSchema, "medium");
+      if (draft.declined) return json(req, 422, { error: "ai_declined" });
+      const r = await ask(client, `${EDITOR}\n\n${HOOK_CATEGORIES}`,
+        `${describe(brief)}\n\nDraft hooks (category | hook | benefit):\n` +
+          (draft.data.hooks ?? []).map((h: Record<string, string>) => `${h.category} | ${h.text} | ${h.benefit}`).join("\n") +
+          `\n\nReturn the edited list. For each hook, "why" says in one short sentence why it passes the clarity test.`,
         hooksSchema, "medium");
       if (r.declined) return json(req, 422, { error: "ai_declined" });
       const hooks = (r.data.hooks ?? []).map((h: Record<string, string>) => ({
@@ -232,15 +284,23 @@ and for block or warn a rewrite that fixes the problem while keeping the idea (e
         id: cut(s.id, 60), label: cut(s.label, 80), kind: s.kind === "recording" ? "recording" : "screen",
       })).filter((s) => s.id);
       if (!screens.length) return json(req, 400, { error: "no_screens" });
-      const r = await ask(client, `${RULES}\n\nYou are now writing the body of the ad: what comes after the hook. It must be
+      const SCRIPT = `${RULES}\n\nYou are now writing the body of the ad: what comes after the hook. It must be
 solution-first: the moment the hook ends, the viewer sees the app doing the thing. Three or four scenes.
 Each scene: one spoken line of at most 14 words naming a concrete feature (no adjectives like smart or
 powerful), a heading of at most 28 characters for the top of the screen, the id of the screen that shows
 it, and a motion: "rise" (the phone slides up), "page" (swipes across from the previous scene's screen),
 "zoom" (enlarges part of the screen so small text is readable) or "play" (only for screen recordings).
 End on the most satisfying moment. Also give a benefit line (at most 60 characters) and an end-card
-line (at most 40 characters) that says what the app does.`,
-        `${describe(brief)}\n\nScreens you can use (id: label, kind):\n${screens.map((s) => `${s.id}: ${s.label || "unlabelled"} (${s.kind})`).join("\n")}`,
+line (at most 40 characters) that says what the app does. Match each line to the screen that shows it.`;
+      const list = `Screens you can use (id: label, kind):\n${screens.map((s) => `${s.id}: ${s.label || "unlabelled"} (${s.kind})`).join("\n")}`;
+      const shots = await screenshots(auth, body.screens);
+      const draft = await ask(client, SCRIPT, [{ type: "text", text: describe(brief) }, ...shots, { type: "text", text: list }],
+        scriptSchema, "low");
+      if (draft.declined) return json(req, 422, { error: "ai_declined" });
+      const r = await ask(client, `${EDITOR}\n\n${SCRIPT}`,
+        [{ type: "text", text: describe(brief) }, ...shots, { type: "text", text: `${list}\n\nDraft script:\n${JSON.stringify(draft.data, null, 1)}\n\n` +
+          `Edit it: each spoken line must name something the viewer can see on its screen, in words a stranger gets at once, ` +
+          `and each heading must sharpen its line without adding a claim. Return the edited script.` }],
         scriptSchema, "low");
       if (r.declined) return json(req, 422, { error: "ai_declined" });
       const ids = new Set(screens.map((s) => s.id));

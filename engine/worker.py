@@ -7,8 +7,8 @@ reports back (studio_finish_job). One job at a time.
     .venv/bin/python worker.py            runs until stopped (Ctrl-C)
     .venv/bin/python worker.py --once     takes one job if there is one, then exits
 
-Reads SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and ELEVENLABS_API_KEY from the environment, or
-from .env.local at the repo root. The service role key bypasses row level security, so a job is
+Reads SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ELEVENLABS_API_KEY and ANTHROPIC_API_KEY (optional:
+the director and the quality check) from the environment, or from .env.local at the repo root. The service role key bypasses row level security, so a job is
 treated as untrusted input: every upload path must sit in the job owner's own folder, voices
 come from a fixed list, and text lengths and counts are capped before the engine sees them.
 """
@@ -28,7 +28,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from forge_engine import job as jobs, pack  # noqa: E402
+from forge_engine import agents, job as jobs, pack  # noqa: E402
 
 Image.MAX_IMAGE_PIXELS = 40_000_000  # a phone screenshot is under 4 million
 
@@ -165,6 +165,8 @@ def build_job(spec, owner, workdir, sb):
             raise ValueError('Every scene needs one of your screens.')
         scene = {'say': text(s.get('say'), 200), 'head': text(s.get('head'), 40), 'screen': key,
                  'motion': s.get('motion') if s.get('motion') in MOTIONS else 'rise'}
+        if s.get('auto') is True:
+            scene['auto'] = True  # the director may choose this scene's move
         if not scene['say']:
             raise ValueError('Every scene needs words.')
         z = s.get('zoom')
@@ -189,10 +191,34 @@ def build_job(spec, owner, workdir, sb):
         data['voice']['speed'] = max(.85, min(1.2, float(v['speed'])))
     if text(spec.get('disclaimer'), 120):
         data['disclaimer'] = text(spec.get('disclaimer'), 120)
-    data['effects'] = spec.get('effects') is not False  # sound effects, typing and camera moves
+    on = spec.get('effects') is not False  # typing text and camera moves
+    data['effects'] = {'type': on, 'camera': on, 'sfx': spec.get('sfx') is True}
+    b = spec.get('brief') or {}  # what the director and the quality check judge claims against
+    data['brief'] = {k: text(b.get(k), n) for k, n in (('one_liner', 300), ('comparison', 200), ('category', 80))}
     with open(os.path.join(workdir, 'job.json'), 'w') as f:
         json.dump(data, f, indent=2)
     return jobs.Job(data, workdir)
+
+
+def directed(sb, job, path, workdir, log):
+    """The director's choices (forge_engine/agents.py), made once per batch and kept in storage, so
+    the pack matches the preview the customer approved."""
+    local = os.path.join(workdir, 'direction.json')
+    try:
+        sb.download('studio-renders', path, local)
+        with open(local) as f:
+            return agents.apply_direction(job, json.load(f))
+    except (ValueError, KeyError, TypeError):
+        pass  # not directed yet, or a direction from an older format
+    job, answer = pack.direct(job, log)
+    if answer:
+        with open(local, 'w') as f:
+            json.dump(answer, f)
+        try:
+            sb.upload('studio-renders', path, local)
+        except Exception as e:
+            print('could not save the direction:', e, flush=True)
+    return job
 
 
 def run(sb, job_row, name):
@@ -215,6 +241,7 @@ def run(sb, job_row, name):
     try:
         log('Fetching your screens')
         job = build_job(batch['spec'], owner, workdir, sb)
+        job = directed(sb, job, f'{owner}/{batch["id"]}/direction.json', workdir, log)
         out = os.path.join(workdir, 'out')
         if kind == 'preview':
             log('Drawing the review frames')

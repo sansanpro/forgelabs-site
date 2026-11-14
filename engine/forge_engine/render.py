@@ -21,6 +21,8 @@ FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 
 W, H, FPS = 1080, 1920, 30
 SAFE_T, SAFE_B, SAFE_X = 269, 1248, 66
+LEVELS = {'whoosh': .45, 'tap': .5, 'typing': .35, 'hit': .6}  # each sound's level in the effects mix
+TAP_WORD = re.compile(r"^(tap|taps|tapped|tapping|tick|ticks|press|presses|click|clicks)\b", re.I)
 
 
 # ---------- text ----------
@@ -663,35 +665,33 @@ class Ad:
         return self.frame(self.end - .05)
 
     def sound_cues(self):
-        """(time, kind, level) for every sound effect in this ad: see sfx.py."""
-        cues = []
-        op = self.opening['style']
-        if op in ('hand', 'phone'):
-            cues += [(0, 'whoosh', .5), (.97, 'whoosh', .5)]  # the two opening swipes
-        else:
-            cues.append((0, 'whoosh', .4))
+        """(time, sound, level) for this ad's few sound effects: see sfx.py. A body scene's `sfx`
+        (from the director: [{sound}] on the scene's move, [{sound, word}] on a word counted from
+        0 within the scene's line) replaces its defaults: a whoosh on a swipe or a change of
+        screen, a tap on a word like "tap". The end card always lands on a hit. Nothing clicks
+        under the voice."""
+        cues, prev = [], None
         for s in self.scenes:
-            if self.fx['type'] and s['kind'] == 'hook':
-                for i in range(s['a'], s['b']):
-                    word = shown(self.words[i]['w'], self.display)
-                    a, d = typed_span(self.words[i]['s'], self.words[i]['e'])
-                    cues += [(a + (j + 1) / len(word) * d, 'key', .3) for j, c in enumerate(word) if c.isalnum()]
             if s['kind'] == 'body':
-                m = s['motion']
-                if m in ('swipe', 'page'):
-                    cues.append((s['t0'] + .02, 'whoosh', .55))
-                elif m == 'zoom' and self.fx['camera']:
-                    cues += [(s['t0'] - .1, 'whoosh', .45), (s['t0'] + .05, 'zoom', .4), (s['t1'] - .55, 'zoom-out', .35)]
+                # The middle of the swipe on screen, or of the transition into the scene
+                move = s['t0'] + {'swipe': .5, 'page': .45}.get(s['motion'], .1)
+                if 'sfx' in s:
+                    for c in s['sfx']:
+                        if 'word' not in c:
+                            cues.append((move, c['sound'], LEVELS[c['sound']]))
+                        elif 0 <= c['word'] < s['b'] - s['a']:
+                            at = self.words[s['a'] + c['word']]['s'] + (.05 if c['sound'] == 'tap' else 0)
+                            cues.append((at, c['sound'], LEVELS[c['sound']]))
                 else:
-                    cues.append((s['t0'] - .12, 'whoosh', .5))
-                head = s.get('head') or ''
-                if self.fx['type'] and head:
-                    a, d = self.head_span(s)
-                    cues += [(a + (j + 1) / len(head) * d, 'key', .22) for j, c in enumerate(head) if c.isalnum()]
+                    if s['motion'] in ('swipe', 'page') or s['screen'] != prev:
+                        cues.append((move, 'whoosh', LEVELS['whoosh']))
+                    for i in range(s['a'], s['b']):
+                        if TAP_WORD.match(self.words[i]['w']):
+                            cues.append((self.words[i]['s'] + .05, 'tap', LEVELS['tap']))
+                            break
             if s['kind'] == 'outro':
-                cues.append((s['t0'] - .12, 'whoosh-down', .45))
-                if self.job.icon: cues.append((s['t0'] + .18, 'pop', .3))
-                cues.append((s['t0'] + .4, 'pop', .45))  # the button lands
+                cues.append((s['t0'] + .25, 'hit', LEVELS['hit']))
+            prev = s.get('screen') or prev
         return [c for c in cues if 0 <= c[0] < self.end]
 
     def review_times(self):
@@ -714,13 +714,13 @@ class Ad:
         cmd = [FFMPEG, '-y', '-hide_banner', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
                '-s', f'{W}x{H}', '-r', str(FPS), '-i', '-']
         fx_wav = None
-        if audio and self.fx['sfx']:
-            from . import sfx  # numpy, only needed here
+        from . import sfx
+        if audio and self.fx['sfx'] and sfx.available():
             fx_wav = sfx.track(self.sound_cues(), self.end, out + '.sfx.wav')
             # The voice is levelled first; the effects sit under it, then a limiter catches peaks
             cmd += ['-i', audio, '-i', fx_wav, '-filter_complex',
                     '[1:a]loudnorm=I=-16:TP=-1.5:LRA=11,apad[v];[2:a]volume=0.35,apad[s];'
-                    '[v][s]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.84[a]',
+                    '[v][s]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.84:level=disabled[a]',
                     '-map', '0:v', '-map', '[a]']
         elif audio:
             cmd += ['-i', audio, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11,apad']

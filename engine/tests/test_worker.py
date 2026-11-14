@@ -41,12 +41,14 @@ def spec(**over):
         'opening': {'style': 'hand', 'motion': 'page', 'screens': ['a-today', 'a-done', 'a-stats']},
         'body': [
             {'say': 'Tick off a habit and watch your day fill up.', 'head': 'Tap to tick it off', 'screen': 'a-rec', 'motion': 'play'},
-            {'say': "Every streak shows how far you've come.", 'head': 'See your streaks', 'screen': 'a-stats', 'motion': 'page'},
+            {'say': "Every streak shows how far you've come.", 'head': 'See your streaks', 'screen': 'a-stats', 'motion': 'page', 'auto': True},
             {'say': 'Your best week, in one chart.', 'head': 'Your best week', 'screen': 'a-stats', 'motion': 'zoom', 'zoom': [0.12, 0.5]},
         ],
         'cta': {'say': 'Download Habitly free on the App Store.', 'button': 'Download free on the App Store', 'lines': ['Build habits that stick.'], 'headline': ''},
         'voice': {'id': 'JBFqnCBsd6RMkjVDRZzb', 'speed': 1.15},
         'disclaimer': '',
+        'sfx': True,
+        'brief': {'one_liner': 'A habit tracker with streaks.', 'comparison': '', 'category': 'general', 'extra': 'dropped'},
     }
     s.update(over)
     return s
@@ -71,6 +73,9 @@ def main():
     try:
         job = worker.build_job(spec(), OWNER, d, FakeSupabase())
         assert job.voice['id'] == 'JBFqnCBsd6RMkjVDRZzb' and job.icon
+        assert job.effects == {'sfx': True, 'type': True, 'camera': True}
+        assert [s.get('auto') for s in job.body] == [None, True, None]
+        assert job.data['brief'] == {'one_liner': 'A habit tracker with streaks.', 'comparison': '', 'category': 'general'}
         m = pack.make_preview(job, os.path.join(d, 'out'), log=lambda *_: None)
         assert m['strips'], m
         print('spec from the app: built and previewed', m['strips'])

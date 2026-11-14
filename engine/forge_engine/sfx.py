@@ -1,108 +1,64 @@
-"""Sound effects for an ad, synthesized rather than sampled: nothing to license, and the same
-job always gives the same sound.
+"""Sound effects for an ad, from a small set of recorded sounds in assets/sfx/ (made with
+ElevenLabs by tools/make_sfx.py and picked by ear).
 
-    whoosh   filtered noise sweeping up (or down), for transitions, swipes and zooms
-    key      a short keyboard click, one per typed letter
-    pop      a soft tonal pop, for a button or icon landing
+    whoosh   a scene change
+    tap      something on screen being tapped
+    typing   text typing out where nobody is speaking
+    hit      the end card landing
 
-render.Ad.sound_cues() lists (time, kind, level) for one ad; track() turns the list into a
+render.Ad.sound_cues() lists (time, sound, level) for one ad, where time is when the sound's
+loudest moment lands (the middle of a whoosh, the impact of a hit). track() turns the list into a
 mono WAV the length of the video, which encode() mixes under the voice.
 """
-import random
+import os
 import wave
 
 import numpy as np
 
 RATE = 44100
+DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'sfx')
+SOUNDS = ('whoosh', 'tap', 'typing', 'hit')
+_cache = {}
 
 
-def _noise(rng, n):
-    return np.random.default_rng(rng.randrange(1 << 30)).standard_normal(n)
+def path(name):
+    return os.path.join(DIR, f'{name}.wav')
 
 
-def _bandpassed(noise, centres, width=.9):
-    """Noise whose pass band follows `centres` (Hz, one per chunk), by overlap-added FFT chunks."""
-    n = len(noise)
-    chunks = len(centres)
-    size = max(256, int(2 * n / (chunks + 1)))
-    hop = size // 2
-    out = np.zeros(n + size)
-    win = np.hanning(size)
-    freqs = np.fft.rfftfreq(size, 1 / RATE)
-    padded = np.concatenate([noise, np.zeros(size)])
-    for i, c in enumerate(centres):
-        a = i * hop
-        seg = padded[a:a + size] * win
-        spec = np.fft.rfft(seg)
-        # A gaussian band on a log scale: wide and airy, like air moving past
-        spec *= np.exp(-0.5 * (np.log2(np.maximum(freqs, 1) / c) / width) ** 2)
-        out[a:a + size] += np.fft.irfft(spec, size)
-    return out[:n]
+def available():
+    return all(os.path.exists(path(n)) for n in SOUNDS)
 
 
-def whoosh(dur=.42, up=True, rng=None, strength=1.0):
-    rng = rng or random.Random(1)
-    n = int(dur * RATE)
-    noise = _noise(rng, n)
-    lo, hi = 350, 4200 * strength
-    k = np.linspace(0, 1, 24)
-    centres = lo * (hi / lo) ** (k if up else 1 - k)
-    sig = _bandpassed(noise, centres)
-    t = np.linspace(0, 1, n)
-    # Swells in, peaks just after the middle, falls away fast
-    env = np.sin(np.pi * np.clip(t, 0, 1) ** .8) ** 1.6
-    sig = sig * env
-    return sig / (np.abs(sig).max() + 1e-9)
+def load(name):
+    """(samples in -1..1, seconds from the start to the loudest moment)."""
+    if name not in _cache:
+        with wave.open(path(name)) as w:
+            if w.getframerate() != RATE or w.getnchannels() != 1 or w.getsampwidth() != 2:
+                raise ValueError(f'{name}.wav must be mono 16-bit {RATE} Hz (see tools/make_sfx.py install)')
+            x = np.frombuffer(w.readframes(w.getnframes()), '<i2').astype(np.float64) / 32768
+        k = int(.02 * RATE)  # a 20 ms loudness curve finds the peak, not a stray sample
+        env = np.convolve(np.abs(x), np.ones(k) / k, 'same')
+        _cache[name] = (x, int(env.argmax()) / RATE)
+    return _cache[name]
 
 
-def key(rng=None):
-    rng = rng or random.Random(2)
-    n = int(.045 * RATE)
-    t = np.arange(n) / RATE
-    click = _noise(rng, n)
-    click = np.diff(click, prepend=0) * np.exp(-t / .0025)            # the sharp contact
-    tick = np.sin(2 * np.pi * rng.uniform(2300, 3400) * t) * np.exp(-t / .006)
-    thock = np.sin(2 * np.pi * rng.uniform(150, 210) * t) * np.exp(-t / .012)  # the key bottoming out
-    sig = .55 * click / (np.abs(click).max() + 1e-9) + .3 * tick + .45 * thock
-    return sig / (np.abs(sig).max() + 1e-9)
-
-
-def pop(rng=None):
-    n = int(.12 * RATE)
-    t = np.arange(n) / RATE
-    f = 720 * (340 / 720) ** (t / t[-1])                              # a quick downward bend
-    sig = np.sin(2 * np.pi * np.cumsum(f) / RATE) * np.exp(-t / .028)
-    return sig / (np.abs(sig).max() + 1e-9)
-
-
-def track(cues, length, path, seed=7):
+def track(cues, length, out):
     """Writes the cues into a mono 16-bit WAV of `length` seconds."""
-    rng = random.Random(seed)
-    out = np.zeros(int(length * RATE) + RATE)
-    made = {}
-    for at, kind, level in sorted(cues):
-        if kind == 'key':
-            sound = key(rng)                                          # every key a little different
-        else:
-            if kind not in made:
-                made[kind] = {
-                    'whoosh': lambda: whoosh(.42, True, rng),
-                    'whoosh-down': lambda: whoosh(.38, False, rng),
-                    'zoom': lambda: whoosh(.55, True, rng, .7),
-                    'zoom-out': lambda: whoosh(.45, False, rng, .7),
-                    'pop': lambda: pop(rng),
-                }[kind]()
-            sound = made[kind]
-        a = max(0, int(at * RATE))
-        b = min(len(out), a + len(sound))
-        out[a:b] += sound[:b - a] * level
-    out = out[:int(length * RATE)]
-    peak = np.abs(out).max()
-    if peak > .98:
-        out *= .98 / peak
-    with wave.open(path, 'wb') as w:
+    mix = np.zeros(int(length * RATE) + RATE)
+    for at, name, level in sorted(cues):
+        x, peak = load(name)
+        a = int(round((at - peak) * RATE))
+        if a < 0:
+            x, a = x[-a:], 0
+        b = min(len(mix), a + len(x))
+        mix[a:b] += x[:b - a] * level
+    mix = mix[:int(length * RATE)]
+    top = np.abs(mix).max() if len(mix) else 0
+    if top > .98:
+        mix *= .98 / top
+    with wave.open(out, 'wb') as w:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(RATE)
-        w.writeframes((out * 32767).astype('<i2').tobytes())
-    return path
+        w.writeframes((mix * 32767).astype('<i2').tobytes())
+    return out

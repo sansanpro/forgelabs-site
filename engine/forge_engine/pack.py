@@ -3,13 +3,17 @@
     preview: one review strip per hook, from estimated timings. No voice, no credits, seconds.
     pack:    the voice for each hook, then its video, 9:16 and 4:5 stills and .srt captions,
              plus ad-copy.txt, test-plan.txt, manifest.json and one zip of everything.
+
+With ANTHROPIC_API_KEY set, direct() lets Claude choose the moves, zooms, headings and sounds
+the customer left on auto, and make_pack() has Claude check frames of every ad before encoding,
+fixing zooms and headings and retaking voiceovers that miss words (quality-check.txt).
 """
 import json
 import os
 import re
 import zipfile
 
-from . import render, voice
+from . import agents, render, voice
 from .render import Ad, Screens
 
 
@@ -84,6 +88,77 @@ def voice_for(job, hook, workdir, log=print):
     return voice.make(job.script(hook), job.voice, base, job.spoken_name, job.name, tries=job.voice.get('tries', 1), log=log)
 
 
+def direct(job, log=print):
+    """The director's choices for the body (agents.py), or the job unchanged when Claude isn't
+    available or fails. Returns (job, the director's answer or None)."""
+    if not agents.available():
+        return job, None
+    S = Screens(job.screens)
+    try:
+        log('Directing the scenes')
+        return agents.direct(job, S, log=log)
+    except Exception as e:
+        log(f'the director failed ({type(e).__name__}: {str(e)[:120]}); using the defaults')
+        return job, None
+    finally:
+        S.close()
+
+
+def check_quality(job, voices, S, workdir, log=print):
+    """Claude reviews frames of every ad (agents.review), the fixes are applied, voiceovers that
+    miss words are recorded again, and the fixed scenes are checked once more. Returns (job,
+    voices, report), with report None when the check didn't run."""
+    c = agents.client()
+    if not c:
+        return job, voices, None
+    key = os.environ.get('ELEVENLABS_API_KEY')
+    try:
+        heard = {hid: voice.transcribe(v[0], key) for hid, v in voices.items()} if key else {}
+        ads = [Ad(job, h, voices[h['id']][1], S) for h in job.hooks if h['id'] in voices]
+        log('Checking the ads')
+        first = agents.review(job, ads, heard, c)
+        if not first:
+            return job, voices, None
+        job, changed = agents.apply_fixes(job, first['fixes'])
+        retaken = []
+        for h in job.hooks:
+            if h['id'] in first['retake'] and h['id'] in voices and not h.get('voice'):
+                log(f'Recording {h["id"]} again')
+                cfg = dict(job.voice, seed=job.voice['seed'] + 100)
+                base = os.path.join(workdir, 'vo', slug(h['id']) + '-retake')
+                voices[h['id']] = voice.make(job.script(h), cfg, base, job.spoken_name, job.name, log=log)
+                if key:
+                    heard[h['id']] = voice.transcribe(voices[h['id']][0], key)
+                retaken.append(h['id'])
+        recheck = None
+        if changed:
+            ads = [Ad(job, h, voices[h['id']][1], S) for h in job.hooks if h['id'] in voices]
+            recheck = agents.review(job, ads, heard, c, scenes=changed)
+        return job, voices, {'summary': first['summary'], 'issues': first['issues'],
+                             'fixed_scenes': [i + 1 for i in changed], 'retaken': retaken, 'recheck': recheck}
+    except Exception as e:
+        log(f'the quality check failed ({type(e).__name__}: {str(e)[:120]}); rendering without it')
+        return job, voices, None
+
+
+def quality_text(q):
+    def issues(items):
+        return [f"- {i['where']} ({i['check']}): {i['problem']}" for i in items]
+    out = ['Quality check', '=============', '',
+           'Claude looked at frames from every ad, the script and what was heard in each voiceover.', '',
+           q['summary'], '']
+    if q['issues']:
+        out += ['What it found:', *issues(q['issues']), '']
+    if q['fixed_scenes']:
+        out.append(f"Fixed before rendering: scene {', '.join(map(str, q['fixed_scenes']))} (zoom or heading).")
+    if q['retaken']:
+        out.append(f"Voiceover recorded again: {', '.join(q['retaken'])}.")
+    if q['recheck']:
+        out += ['', 'Checked again after the fixes:', q['recheck']['summary'], *issues(q['recheck']['issues'])]
+    out += ['', 'Claims are flagged, never changed: check anything listed under claims before you run the ads.']
+    return '\n'.join(out) + '\n'
+
+
 def make_preview(job, out, hooks=None, log=print):
     """One review strip per hook, from estimated timings."""
     os.makedirs(out, exist_ok=True)
@@ -106,16 +181,19 @@ def make_preview(job, out, hooks=None, log=print):
     return manifest
 
 
-def make_pack(job, out, hooks=None, log=print, workdir=None):
+def make_pack(job, out, hooks=None, log=print, workdir=None, ai=True):
+    """ai: run the quality check (agents.review) when Claude is available."""
     workdir = workdir or out
     for d in ('videos', 'images', 'captions'):
         os.makedirs(os.path.join(out, d), exist_ok=True)
     S = Screens(job.screens)
     items = []
     try:
+        voices = {h['id']: voice_for(job, h, workdir, log) for h in job.hooks if not hooks or h['id'] in hooks}
+        job, voices, quality = check_quality(job, voices, S, workdir, log) if ai else (job, voices, None)
         for h in job.hooks:
-            if hooks and h['id'] not in hooks: continue
-            mp3, words, check = voice_for(job, h, workdir, log)
+            if h['id'] not in voices: continue
+            mp3, words, check = voices[h['id']]
             ad = Ad(job, h, words, S)
             name = slug(h['id'])
             files = {'stills': {}}
@@ -138,9 +216,14 @@ def make_pack(job, out, hooks=None, log=print, workdir=None):
         f.write(ad_copy(job, items))
     with open(os.path.join(out, 'test-plan.txt'), 'w') as f:
         f.write(TEST_PLAN.format(name=job.name, n=len(items)))
+    if quality:
+        with open(os.path.join(out, 'quality-check.txt'), 'w') as f:
+            f.write(quality_text(quality))
     manifest = {'kind': 'pack', 'name': job.name,
                 'ads': [{'id': it['hook']['id'], 'hook': it['hook']['say'], 'files': it['files'],
                          'name_check': it['name_check']} for it in items]}
+    if quality:
+        manifest['quality'] = quality
     with open(os.path.join(out, 'manifest.json'), 'w') as f:
         json.dump(manifest, f, indent=2)
     zname = f'{slug(job.name)}-ad-pack.zip'

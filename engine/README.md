@@ -12,6 +12,12 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 `ELEVENLABS_API_KEY` must be set for a pack, unless every hook has a prerecorded voice.
 
+With `ANTHROPIC_API_KEY` set (and the `anthropic` package installed), Claude works on every pack. `--no-ai` skips both steps below; without the key the pack renders as before.
+- **The director** looks at each body scene's screenshot and line. It decides what the customer left on auto: the move, the band to zoom into, an empty heading, and which moments get a sound. The worker makes it once per batch and keeps it in storage (`direction.json`), so the pack matches the approved preview.
+- **The quality check** looks at frames of every ad before encoding, along with the script, the brief and a transcript of each voiceover. It fixes zoom bands and headings, records a voiceover again when words are missing, checks the fixed scenes once more, and writes `quality-check.txt`. It flags claims but never changes them.
+
+`FORGE_AI_MODEL` overrides the model (default `claude-opus-5-5`).
+
 ## Files
 
 | File | What it does |
@@ -20,12 +26,16 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 | `forge_engine/theme.py` | Builds a readable theme from a brand colour |
 | `forge_engine/render.py` | Draws frames; encodes videos, review strips and stills |
 | `forge_engine/voice.py` | ElevenLabs voiceover with word timing, and the product-name check |
+| `forge_engine/agents.py` | Claude as the director and the quality check |
+| `forge_engine/sfx.py` | Mixes the sound effects from `assets/sfx/` |
 | `forge_engine/pack.py` | Builds the preview or the pack: files, captions, ad copy, test plan, zip |
 | `worker.py` | Takes jobs from Supabase, checks them as untrusted input, renders, uploads |
 | `tools/make_hand_asset.py` | Cuts a green-screen hand photo into `assets/hand-phone.png` |
+| `tools/make_sfx.py` | Makes candidate sound effects with ElevenLabs, and installs the picked ones into `assets/sfx/` |
 | `tests/test_golden.py` | Re-renders StockMatcherAI's x2 and compares it with frames from the shipped video |
 | `tests/make_fixture.py`, `tests/fixture.job.json` | A made-up habit tracker with screenshots, a recording and an icon |
 | `tests/test_worker.py` | The worker's checks, without Supabase |
+| `tests/test_agents.py` | The director and the quality check, with a stand-in for Claude |
 
 ## The job format
 
@@ -88,6 +98,10 @@ The swipe (`motion`) is one of:
 - `page`: swipes across your screens. Any three work.
 - `card`: StockMatcherAI's card cutouts. Takes `screens` (two deck screens) and `cards` (two cards).
 
+### body scenes
+- **`auto`**: `true` lets the director choose the move, and the zoom band when the move is a zoom.
+- **`sfx`**: the scene's sounds, replacing the defaults. `[{"sound": "whoosh"}]` lands on the scene's move; `[{"sound": "tap", "word": 2}]` lands on a word of the line, counted from 0. The director writes these.
+
 ### body motions
 | `motion` | What happens |
 |---|---|
@@ -99,9 +113,15 @@ The swipe (`motion`) is one of:
 
 ### Other fields
 - **`voice`**: an ElevenLabs voice. `id`, `model` (default `eleven_v4`), `seed`, `speed`, `stability` and `similarity`.
+- **`brief`**: `{one_liner, comparison, category}`, what the director and the quality check judge claims against.
 - **`display`**: extra spoken-to-written spellings for captions, such as `{"P.E.": "P/E"}`. Dotted letters like "A.I." are always shown as "AI".
 - **`effects`**: `true` (the default) or `false`, or an object that switches `sfx`, `type` and `camera` on or off one by one.
-  - **`sfx`:** off unless the object switches it on, while better sounds are made. Whooshes on transitions, swipes and zooms, a key click per typed letter and pops on the end card. They're synthesized in `forge_engine/sfx.py`, so there's nothing to license, and mixed about 13 LU under the voice.
+  - **`sfx`:** off unless the object switches it on. A few sounds per ad, never under every word:
+    - a whoosh on a swipe or a change of screen
+    - a tap on a word like "tap"
+    - a hit when the end card lands
+
+    The director can choose these per scene instead. The sounds are ElevenLabs recordings in `assets/sfx/`.
   - **`type`:** the hook and the headings type out letter by letter with a cursor, timed to the voice.
   - **`camera`:** a slow push-in on every scene. Zoom scenes zoom in from the whole screen and pull back out before the next scene, and scenes zoom through instead of fading.
   - **`false`:** the original look. The golden job uses it.
@@ -121,4 +141,5 @@ A preview writes one `<hook>-preview.jpg` strip per hook: one frame from each sc
 ## Licences
 
 - `assets/fonts/Inter.ttf` is under the SIL Open Font License (`OFL.txt`).
+- `assets/sfx/*.wav` were generated with ElevenLabs sound effects (`tools/make_sfx.py`). ElevenLabs says its sound effects are royalty-free for commercial projects, and paid plans need no attribution (elevenlabs.io/sound-effects/commercial). Keep them on a paid plan.
 - `assets/hand-phone.png` comes from an AI image generated in Canva. **Check Canva's terms cover commercial use in a product before charging for the hand opening.**

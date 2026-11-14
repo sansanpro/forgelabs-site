@@ -766,6 +766,10 @@
     b.platforms = (b.platforms || []).join(", ");
     return b;
   }
+  /* The screens the copywriter sees: its id, label and kind, and the upload path it signs to look at */
+  function aiScreens(list) {
+    return list.map(function (a) { return { id: a.id, label: assetLabel(a), kind: a.kind, path: a.path }; });
+  }
   function aiCall(body, status) {
     var st = document.getElementById("h-status") || document.getElementById("sc-status");
     if (st) st.textContent = status;
@@ -783,7 +787,7 @@
     S.suggested[pid] = 1;
     if (!brief().one_liner) { if (!quiet) toast(ERRORS.brief_incomplete); return; }
     var btn = document.getElementById("h-ai"); if (btn) btn.disabled = true;
-    aiCall({ action: "suggest_hooks", brief: aiBrief() }, "Writing hook ideas…").then(function (d) {
+    aiCall({ action: "suggest_hooks", brief: aiBrief(), screens: aiScreens(shots()) }, "Writing hook ideas…").then(function (d) {
       var have = {};
       S.hooks.forEach(function (h) { have[h.text.toLowerCase()] = 1; });
       var chain = Promise.resolve();
@@ -857,6 +861,7 @@
       }).join("") + "</span></div>" +
       '<details class="more"><summary>More options</summary>' +
       '<label class="check block fxrow"><input type="checkbox" id="sc-fx"' + (sc.effects === false ? "" : " checked") + "> Typing text and zooms</label>" +
+      '<label class="check block fxrow"><input type="checkbox" id="sc-sfx"' + (sc.sfx === true ? " checked" : "") + "> Sound effects</label>" +
       '<div class="field"><label>Opening</label>' +
       [["hand", "A hand holding the phone, already swiping"], ["phone", "Just the phone, already swiping"], ["rise", "The phone slides up"]].map(function (x) {
         return '<label class="check block"><input type="radio" name="op" value="' + x[0] + '"' + ((op.style || "hand") === x[0] ? " checked" : "") + "> " + x[1] + "</label>";
@@ -935,6 +940,8 @@
     var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ""; };
     var fxBox = document.getElementById("sc-fx");
     if (fxBox) sc.effects = fxBox.checked;
+    var sfxBox = document.getElementById("sc-sfx");
+    if (sfxBox) sc.sfx = sfxBox.checked;
     sc.end_line = v("sc-line"); sc.button = v("sc-btn"); sc.cta_say = v("sc-say"); sc.headline = v("sc-head"); sc.disclaimer = v("sc-disc");
     var op = root.querySelector('input[name="op"]:checked'), st = root.querySelector('input[name="th-style"]:checked');
     sc.opening = { style: op ? op.value : "hand", screens: sc.opening.screens || [] };
@@ -950,7 +957,7 @@
     var list = shots();
     if (!list.length) { toast("Add your screenshots first."); return; }
     document.getElementById("sc-ai").disabled = true;
-    aiCall({ action: "draft_script", brief: aiBrief(), screens: list.map(function (a) { return { id: a.id, label: assetLabel(a), kind: a.kind }; }) },
+    aiCall({ action: "draft_script", brief: aiBrief(), screens: aiScreens(list) },
       "Writing the script…").then(function (d) {
       var sc = script();
       if (d.body && d.body.length) sc.body = d.body.map(function (s) { return { say: s.say, head: s.head, screen: s.screen, motion: s.motion === "zoom" ? "zoom" : "auto" }; });
@@ -981,6 +988,8 @@
       var motion = a && a.kind === "recording" ? "play" : s.motion === "zoom" ? "zoom"
         : (s.motion === "rise" || s.motion === "page") ? s.motion : (i ? "page" : "rise");
       var scene = { say: s.say, head: s.head, screen: s.screen, motion: motion };
+      /* Left on auto: with AI on, the director picks the move from the screenshot and the line */
+      if (!(a && a.kind === "recording") && ["rise", "page", "zoom"].indexOf(s.motion) < 0) scene.auto = true;
       if (motion === "zoom") scene.zoom = (ZOOMS.filter(function (z) { return z[0] === (s.zoomAt || "middle"); })[0] || ZOOMS[1])[2];
       return scene;
     });
@@ -1002,7 +1011,9 @@
       cta: { say: sc.cta_say || cta[0], button: sc.button || cta[1], lines: sc.end_line ? [sc.end_line] : [], headline: sc.headline || "" },
       voice: { id: sc.voice.id, speed: Number(sc.voice.speed) || 1 },
       disclaimer: sc.disclaimer || "",
-      effects: sc.effects !== false
+      effects: sc.effects !== false,
+      sfx: sc.sfx === true,
+      brief: { one_liner: b.one_liner || "", comparison: b.comparison || "", category: b.category || category(b.one_liner || "") }
     };
   }
   function problems() {

@@ -1,6 +1,8 @@
 Pillow>=11
 imageio-ffmpeg>=0.5
 requests>=2.31
-# tools/make_hand_asset.py only
 numpy
+# the director and the quality check (forge_engine/agents.py); without it they're skipped
+anthropic>=2.8
+# tools/make_hand_asset.py only
 scipy
