@@ -856,7 +856,7 @@
         return '<label><input type="radio" name="th-style" value="' + x[0] + '"' + ((th.style || "dark") === x[0] ? " checked" : "") + "><span>" + x[1] + "</span></label>";
       }).join("") + "</span></div>" +
       '<details class="more"><summary>More options</summary>' +
-      '<label class="check block fxrow"><input type="checkbox" id="sc-fx"' + (sc.effects === false ? "" : " checked") + "> Sound effects, typing text and zooms</label>" +
+      '<label class="check block fxrow"><input type="checkbox" id="sc-fx"' + (sc.effects === false ? "" : " checked") + "> Typing text and zooms</label>" +
       '<div class="field"><label>Opening</label>' +
       [["hand", "A hand holding the phone, already swiping"], ["phone", "Just the phone, already swiping"], ["rise", "The phone slides up"]].map(function (x) {
         return '<label class="check block"><input type="radio" name="op" value="' + x[0] + '"' + ((op.style || "hand") === x[0] ? " checked" : "") + "> " + x[1] + "</label>";
