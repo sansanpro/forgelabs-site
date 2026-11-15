@@ -65,7 +65,10 @@
     ai_busy: "The AI is busy. Try again in a minute.",
     ai_declined: "The AI declined that request. Try different wording in your brief.",
     ai_failed: "The AI didn't answer. Try again.",
-    brief_incomplete: "Add the app name and what it does first."
+    brief_incomplete: "Add the app name and what it does first.",
+    store_link: "That isn't an App Store or Google Play link. Copy it from your app's store page.",
+    store_not_found: "That app isn't on the store, or isn't public yet.",
+    store_unreachable: "The store didn't answer. Try again, or add your screenshots below."
   };
   var BRANDS = ("Tinder Spotify Netflix Uber Lyft Airbnb Duolingo Instagram TikTok Facebook Google Apple Amazon Strava " +
     "Notion Slack Venmo Robinhood Peloton Calm Headspace Bumble Hinge YouTube Shazam Pinterest Snapchat WhatsApp " +
@@ -455,6 +458,10 @@
   function renderApp() {
     var b = brief(), plat = b.platforms || ["ios"];
     pane('<div class="card flow">' +
+      '<div class="field"><label for="b-store">Already on the App Store or Google Play? <span class="muted">(optional)</span></label>' +
+      '<div class="row"><input id="b-store" type="url" value="' + esc(b.store_url) + '" placeholder="Paste your store link" autocomplete="off">' +
+      '<button class="btn" id="b-import" type="button">Fill in from the store</button></div>' +
+      '<div class="hint" id="store-status" role="status">Fills in the name, what it does, the icon and your screenshots.</div></div>' +
       '<div class="field"><label for="b-name">App name</label><input id="b-name" value="' + esc(S.project.name === "Untitled app" ? "" : S.project.name) + '" placeholder="Habitly" autocomplete="off">' +
       '<div class="hint" id="b-spoken-wrap">' + (b.spoken_name
         ? '<label for="b-spoken" class="small">Said as</label><input id="b-spoken" value="' + esc(b.spoken_name) + '" placeholder="Habit-lee">'
@@ -477,7 +484,7 @@
     function read() {
       var plats = Array.prototype.slice.call(document.querySelectorAll('input[name="b-plat"]:checked')).map(function (x) { return x.value; });
       var nb = Object.assign({}, brief(), {
-        name: val("b-name"), one_liner: val("b-one"), platforms: plats.length ? plats : ["ios"],
+        store_url: val("b-store"), name: val("b-name"), one_liner: val("b-one"), platforms: plats.length ? plats : ["ios"],
         comp_known: val("b-ck"), comp_thing: val("b-ct"),
         comparison: val("b-ck") && val("b-ct") ? "It's like " + val("b-ck") + ", but for " + val("b-ct") : "",
         category: category(val("b-one"))
@@ -502,6 +509,8 @@
     drop.addEventListener("dragleave", function () { drop.classList.remove("over"); });
     drop.addEventListener("drop", function (e) { e.preventDefault(); drop.classList.remove("over"); addFiles(e.dataTransfer.files, false); });
     document.getElementById("up").onchange = function (e) { addFiles(e.target.files, false); };
+    document.getElementById("b-import").onclick = importStore;
+    document.getElementById("b-store").addEventListener("keydown", function (e) { if (e.key === "Enter") importStore(); });
     document.getElementById("a-next").onclick = function () {
       var r = readiness();
       if (!r.app) { need(true); return; }
@@ -537,6 +546,10 @@
           '<button class="btn small" data-del="' + esc(a.id) + '" type="button" aria-label="Remove">✕</button></span>' +
           (!a.width || a.height > a.width ? "" : '<span class="warnbadge">Landscape</span>') + "</figure>";
       }).join("") + "</div>" : "";
+      if (list.some(function (a) { return /^Store screenshot/.test(a.label || ""); })) {
+        box.innerHTML += '<p class="small muted">These came from your store listing. Store screenshots often have captions or a phone frame already; ' +
+          "plain screenshots from your phone make cleaner ads, so swap any that look busy.</p>";
+      }
       document.getElementById("icon-row").innerHTML = ic
         ? '<img class="iconprev" src="' + esc(link("studio-uploads", ic.path)) + '" alt="App icon"><span class="small muted">App icon, on the end card</span><button class="btn small link" data-del="' + esc(ic.id) + '" type="button">Remove</button>'
         : '<label class="btn small" for="up-icon">Add your app icon<input id="up-icon" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><span class="small muted">Optional, for the end card</span>';
@@ -586,7 +599,7 @@
   function addFiles(fileList, asIcon) {
     var files = Array.prototype.slice.call(fileList || []);
     var status = document.getElementById("up-status");
-    if (S.assets.length + files.length > MAX_ASSETS) { toast("Keep it to " + MAX_ASSETS + " files per app."); return; }
+    if (S.assets.length + files.length > MAX_ASSETS) { toast("Keep it to " + MAX_ASSETS + " files per app."); return Promise.resolve(); }
     var okType = /^(image\/(png|jpeg|webp)|video\/(mp4|quicktime))$/;
     var n = 0, chain = Promise.resolve();
     files.forEach(function (file) {
@@ -609,11 +622,86 @@
         });
       }).catch(function (e) { fail(e); });
     });
-    chain.then(function () {
+    return chain.then(function () {
       var st = document.getElementById("up-status");
       if (st) st.textContent = "";
       if (n) toast(n === 1 ? "Uploaded" : n + " files uploaded");
       renderShots();
+    });
+  }
+
+  /* ── start from a store link ─────────────────────────────────── */
+  var STORE_SHOTS = 6;
+  /* The store's own short line, or the description's first sentence */
+  function storeLine(d) {
+    var t = (d.subtitle || d.description || "").trim();
+    var first = t.match(/^.{12,200}?[.!?](\s|$)/);
+    return (first ? first[0] : t).trim().slice(0, 200);
+  }
+  function storeFile(url, name) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("image " + r.status);
+      return r.blob();
+    }).then(function (blob) {
+      var ext = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[blob.type];
+      if (!ext) throw new Error("image type " + blob.type);
+      return new File([blob], name + "." + ext, { type: blob.type });
+    });
+  }
+  /* Phone screenshots only: the stores also list tablet and desktop ones, which are wider */
+  function storeShots(urls, want) {
+    var out = [], i = 0;
+    function next() {
+      if (out.length >= want || i >= Math.min(urls.length, 16)) return Promise.resolve(out);
+      var url = urls[i++];
+      return storeFile(url, "Store screenshot " + (out.length + 1)).then(function (f) {
+        return dims(f).then(function (d) { if (d.w && d.h >= d.w * 1.6) out.push(f); });
+      }).catch(function () {}).then(next);
+    }
+    return next();
+  }
+  function importStore() {
+    var url = val("b-store"), btn = document.getElementById("b-import");
+    var say = function (t) { var el = document.getElementById("store-status"); if (el) el.textContent = t; };
+    if (!url) { toast("Paste your App Store or Google Play link first."); return; }
+    if (btn.disabled) return;
+    btn.disabled = true;
+    say("Reading your store listing…");
+    fn("studio-store", { url: url }).then(function (r) {
+      if (!r.ok) throw Object.assign(new Error(errText(r.data.error, "Couldn't read that listing. Try again, or add your screenshots below.")), { code: r.data.error });
+      var d = r.data, b = brief(), plats = (b.platforms || []).slice();
+      var store = d.store === "apple" ? "ios" : "android";
+      if (plats.indexOf(store) < 0) plats.push(store);
+      var nb = Object.assign({}, b, { store_url: url, platforms: plats });
+      if (!b.name) nb.name = d.name;
+      if (!b.one_liner) { nb.one_liner = storeLine(d); nb.category = category(nb.one_liner); }
+      S.project.brief = nb;
+      S.project.name = nb.name || "Untitled app";
+      document.getElementById("p-name").textContent = S.project.name;
+      later({ name: S.project.name, brief: nb });
+      flush();
+      renderApp();
+      document.getElementById("b-import").disabled = true;
+      say("Got the details. Fetching your screenshots…");
+      // Screenshots only for a project that has none yet, so a second click never duplicates them
+      var room = MAX_ASSETS - S.assets.length - (icon() ? 0 : 1);
+      var want = shots().length ? 0 : Math.max(0, Math.min(STORE_SHOTS, room));
+      return Promise.all([
+        storeShots(d.screenshots || [], want),
+        !icon() && d.icon ? storeFile(d.icon, "App icon").catch(function () { return null; }) : null
+      ]).then(function (got) {
+        return addFiles(got[0], false).then(function () { return got[1] && addFiles([got[1]], true); }).then(function () {
+          var kept = got[0].length;
+          say(want === 0 ? "Filled in the details. Your screenshots are as you left them."
+            : kept ? "Filled in the details and " + kept + " screenshot" + (kept === 1 ? "" : "s") + " from your listing. Check the name and the line, then carry on."
+            : "Filled in the details. The listing had no phone screenshots we could use, so add yours below.");
+        });
+      });
+    }).catch(function (e) {
+      say(e.message || "Couldn't read that listing.");
+    }).then(function () {
+      var b2 = document.getElementById("b-import");
+      if (b2) b2.disabled = false;
     });
   }
   function removeAsset(a) {

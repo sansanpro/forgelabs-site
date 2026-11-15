@@ -45,6 +45,7 @@ function reorder(v) {
   if (v && typeof v === 'object') return Object.fromEntries(Object.keys(v).sort((a, b) => a.length - b.length || (a < b ? -1 : 1)).map(k => [k, reorder(v[k])]));
   return v;
 }
+const MZ = 'https://is1-ssl.mzstatic.com/test/';  // the App Store's image host, served from the fixture
 const json = (route, status, body) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
 async function api(route) {
@@ -55,6 +56,13 @@ async function api(route) {
   if (method === 'OPTIONS') return route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' } });
   if (path.startsWith('/auth/v1/')) return json(route, 200, { access_token: 'tok', refresh_token: 'ref', user: USER });
   if (path === '/functions/v1/studio-ai') return json(route, 503, { error: 'ai_unavailable' });
+  if (path === '/functions/v1/studio-store') {
+    if (!/apps\.apple\.com\/.*id\d+/.test(JSON.parse(body).url)) return json(route, 400, { error: 'store_link' });
+    // The square icon in the screenshot list stands in for a tablet shot: it must be skipped
+    return json(route, 200, { store: 'apple', name: 'Habitly', seller: 'Habitly Ltd', subtitle: 'Streaks for your daily habits',
+      description: 'Build habits that stick. More text.', category: 'Health & Fitness', icon: MZ + 'icon.png',
+      screenshots: ['today.png', 'icon.png', 'done.png', 'stats.png'].map(f => MZ + f) });
+  }
   if (path.startsWith('/storage/v1/object/sign/')) {
     const { paths } = JSON.parse(body);
     return json(route, 200, paths.map(p => ({ path: p, signedURL: '/object/sign/x/' + p + '?token=t' })));
@@ -118,6 +126,8 @@ await ctx.route(SB + '/storage/v1/object/sign/x/**', route => {
   route.fulfill({ status: 200, contentType: TYPES[extname(f)] || 'application/octet-stream', body: readFileSync(f) });
 });
 await ctx.route(SB + '/**', api);
+await ctx.route(MZ + '**', route => route.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' },
+  body: readFileSync(join(FIX, new URL(route.request().url()).pathname.split('/').pop())) }));
 
 const page = await ctx.newPage();
 const errors = [];
@@ -219,6 +229,33 @@ if (motions !== 'rise,page,zoom') errors.push('scene motions should be rise,page
 if (batch.spec.voice.id !== 'Xb7hH8MSUJpSbSDYk0k2') errors.push('the picked voice (Alice) did not reach the spec');
 if (batch.spec.cta.lines[0] !== 'Build habits that stick.') errors.push('the end-card line did not reach the spec');
 console.log('spec opening/voice/cta:', JSON.stringify([batch.spec.opening, batch.spec.voice, batch.spec.cta, batch.spec.brand]));
+
+// A second app, started from its App Store link
+await page.goto('http://forge.test/app/');
+await page.waitForSelector('#new-app');
+await page.click('#new-app');
+await page.waitForSelector('#b-store');
+await page.fill('#b-store', 'https://example.com/not-a-store');
+await page.click('#b-import');
+await page.waitForFunction(() => /isn't an App Store or Google Play link/.test(document.getElementById('store-status').textContent));
+await page.fill('#b-store', 'https://apps.apple.com/us/app/habitly/id1234567890');
+await page.click('#b-import');
+await page.waitForFunction(() => /3 screenshots from your listing/.test(document.getElementById('store-status').textContent), null, { timeout: 15000 });
+await page.waitForSelector('.iconprev');
+await shot('08-store-import');
+const p2 = db.studio_projects[1], a2 = db.studio_assets.filter(a => a.project_id === p2.id);
+console.log('store import:', p2.name, '|', p2.brief.one_liner, '|', p2.brief.platforms, '|', a2.map(a => a.kind + ':' + a.label + ':' + a.width + 'x' + a.height).join(', '));
+if (p2.name !== 'Habitly' || p2.brief.one_liner !== 'Streaks for your daily habits' || p2.brief.store_url !== 'https://apps.apple.com/us/app/habitly/id1234567890')
+  errors.push('the store import did not fill in the brief: ' + JSON.stringify([p2.name, p2.brief]));
+if (a2.filter(a => a.kind === 'screen').length !== 3 || a2.filter(a => a.kind === 'icon').length !== 1)
+  errors.push('the store import should add 3 phone screenshots and the icon');
+if (!(await page.isVisible('text=These came from your store listing'))) errors.push('the note about store screenshots is missing');
+await page.click('#b-import');
+await page.waitForFunction(() => /screenshots are as you left them/.test(document.getElementById('store-status').textContent), null, { timeout: 15000 });
+if (db.studio_assets.filter(a => a.project_id === p2.id).length !== 4) errors.push('a second import duplicated the screenshots');
+const next2 = await page.$eval('#a-need', el => el.textContent);
+if (next2) errors.push('step 1 should be complete after the import, but says: ' + next2);
+
 console.log(errors.length ? errors.join('\n') : 'no page errors');
 await b.close();
 process.exit(errors.length ? 1 : 0);

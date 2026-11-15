@@ -20,6 +20,7 @@ The site and product at [forgelaboratory.net](https://forgelaboratory.net): a se
 | The Studio app | `app/index.html`, `assets/studio.js`, `assets/app.css` | GitHub Pages; talks to Supabase from the browser |
 | Database, sign-in, file storage | `supabase/migrations/` | The Studio's Supabase project (`cuijqoorjgvlyiyizgxi`) |
 | AI hook writer and claim check | `supabase/functions/studio-ai/` | Supabase Edge Functions, calling Claude |
+| Start from a store link (name, line, icon, screenshots) | `supabase/functions/studio-store/` | Supabase Edge Functions, reading public App Store and Google Play listings |
 | Render engine | `engine/forge_engine/` | Python (Pillow + ffmpeg) |
 | Render worker | `engine/worker.py` | The owner's Windows PC (Hassano), as a boot-time scheduled task (`engine/deploy/windows/`). Any machine with Python 3.11+ works; `engine/deploy/gcp.sh` can set up a GCP server (deleted to save cost) |
 
@@ -78,10 +79,11 @@ engine/deploy/gcp.sh logs      # recent worker log lines
 # database: run the migration through the Management API (it is safe to run again)
 # functions:
 npx -y supabase@2 functions deploy studio-ai --project-ref cuijqoorjgvlyiyizgxi --use-api
+npx -y supabase@2 functions deploy studio-store --project-ref cuijqoorjgvlyiyizgxi --use-api
 npx -y supabase@2 secrets set --project-ref cuijqoorjgvlyiyizgxi ANTHROPIC_API_KEY=...   # switches AI on
 ```
 
-**Optional secret:** `STUDIO_AI_MODEL` overrides the AI model (the default is `claude-opus-5-5`).
+**Optional secret:** `STUDIO_AI_MODEL` overrides the AI model (the default is `claude-sonnet-5-5`).
 
 ## Limits during the beta
 

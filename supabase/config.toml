@@ -4,3 +4,6 @@ project_id = "cuijqoorjgvlyiyizgxi"
 
 [functions.studio-ai]
 verify_jwt = true
+
+[functions.studio-store]
+verify_jwt = true
