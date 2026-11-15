@@ -10,10 +10,10 @@
 //
 // Needs the ANTHROPIC_API_KEY secret. Without it every action answers 503 ai_unavailable and the
 // app falls back to its templates and the in-browser hook lint. STUDIO_AI_MODEL overrides the
-// model (default claude-opus-5-5). Each account gets 60 calls a day (studio_ai_allow()).
+// model (default claude-sonnet-5-5). Each account gets 60 calls a day (studio_ai_allow()).
 import Anthropic from "npm:@anthropic-ai/sdk@1.3.0";
 
-const MODEL = Deno.env.get("STUDIO_AI_MODEL") ?? "claude-opus-5-5";
+const MODEL = Deno.env.get("STUDIO_AI_MODEL") ?? "claude-sonnet-5-5";
 const KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;

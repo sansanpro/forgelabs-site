@@ -10,7 +10,7 @@
                            and voiceovers that don't say the script. Returns issues and fixes.
 
 Both need ANTHROPIC_API_KEY and the anthropic package; without either, available() is False and
-the pack renders as before. FORGE_AI_MODEL overrides the model (default claude-opus-5-5).
+the pack renders as before. FORGE_AI_MODEL overrides the model (default claude-sonnet-5-5).
 """
 import base64
 import copy
@@ -21,7 +21,7 @@ import re
 
 from . import job as jobs
 
-MODEL = os.environ.get('FORGE_AI_MODEL', 'claude-opus-5-5')
+MODEL = os.environ.get('FORGE_AI_MODEL', 'claude-sonnet-5-5')
 SOUNDS = ('whoosh', 'tap')
 
 

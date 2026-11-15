@@ -16,7 +16,7 @@ With `ANTHROPIC_API_KEY` set (and the `anthropic` package installed), Claude wor
 - **The director** looks at each body scene's screenshot and line. It decides what the customer left on auto: the move, the band to zoom into, an empty heading, and which moments get a sound. The worker makes it once per batch and keeps it in storage (`direction.json`), so the pack matches the approved preview.
 - **The quality check** looks at frames of every ad before encoding, along with the script, the brief and a transcript of each voiceover. It fixes zoom bands and headings, records a voiceover again when words are missing, checks the fixed scenes once more, and writes `quality-check.txt`. It flags claims but never changes them.
 
-`FORGE_AI_MODEL` overrides the model (default `claude-opus-5-5`).
+`FORGE_AI_MODEL` overrides the model (default `claude-sonnet-5-5`; set `claude-opus-5-5` if its judgement falls short).
 
 ## Files
 
