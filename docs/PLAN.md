@@ -107,8 +107,15 @@ The engine is ported from `marketing/ads/scripts/render_videos.py`, `voiceover.m
 | End-to-end test | **Passed on the live site** with `tests/live-flow.mjs`: sign-in, uploads, hooks, script, preview ready 16 s after queueing, pack 61 s after, and the zip downloaded with every file. |
 | Worker | **Live on the owner's Windows PC (Hassano, on the home network)** as the ForgeWorker scheduled task, which starts at boot and restarts the worker if it exits. End-to-end passed against it on 2026-11-09: preview in 13 s, a two-ad pack in 77 s. The GCP server was deleted to save about $50 a month; `engine/deploy/gcp.sh setup` recreates it. Renders only happen while the PC is on. |
 
+**AI (2026-11-20):** `ANTHROPIC_API_KEY` is set as a Supabase secret and `studio-ai` was
+redeployed; a live `suggest_hooks` call returned hooks in 18.5 s. `studio-store` is deployed (v2).
+The worker's director and quality check need the key on the Windows PC too (see the open items).
+
 **Open items for the owner:**
-- **The Anthropic key**, to switch on AI suggestions.
+- **The worker PC:** pull the repo, add `ANTHROPIC_API_KEY` to `C:\forge\forgelabs-site\.env.local`,
+  run `pip install -r engine\requirements.txt` in the venv (it now needs `anthropic`), and
+  restart the ForgeWorker task. Then run `tests/live-flow.mjs` and check the pack has
+  `quality-check.txt`.
 - **Third-party terms:** ElevenLabs' commercial terms and the licence of the Canva hand photo.
 
 ## MVP build order

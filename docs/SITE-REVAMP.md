@@ -175,8 +175,21 @@ CapCut"), with verified claims only.
   sitemap URLs were sent and came back 202 (accepted while the key is checked). Run
   `npm run indexnow` after page changes deploy.
 
+**Done 2026-11-20 (the rest of Phase 2):**
+- **`/hooks/`:** eight hook types, each with its pattern. Real StockMatcherAI hooks carry their
+  Meta click-through; types without a real ad use example lines for an imaginary habit app,
+  labelled as examples. It also covers the lines that fail or get rejected, and the rules.
+- **`/examples/`:** the three demo ads with full scripts, hook type, why each works, results where
+  the ad passed 500 impressions, and the shared structure. VideoObject for each.
+- **`/faq/`:** 23 questions in five groups, with FAQPage markup for the main eight. The home FAQ
+  links to it, and its hook answer now says AI suggestions are on.
+- **Links:** footers on every article page and the home page, a link from the guide's hook table,
+  the sitemap and `/llms.txt`.
+- The `/for/ios-apps/` and `/for/android-apps/` pages were skipped, as the plan allows, until
+  there's real platform detail to put on them.
+
 **Next:**
 - **Phase 3, owner's accounts:** Bing Webmaster Tools, imported from Search Console, so you can
-  see Bing's reports.
+  see Bing's reports. Then the profiles, listings and launch posts (see the Reddit plan).
 - **PageSpeed:** measure on the live site.
-- **The rest of Phase 2:** `/hooks/`, `/examples/` and a full FAQ page.
+- **Search Console:** request indexing for `/hooks/`, `/examples/` and `/faq/`.

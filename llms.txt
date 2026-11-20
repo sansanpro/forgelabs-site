@@ -6,6 +6,9 @@ The founder names the app, says what it does in one line, uploads its real scree
 
 - [Home page](https://forgelaboratory.net/): what the Studio does, example ads, pricing and FAQ
 - [How to make video ads for your app](https://forgelaboratory.net/guide/app-video-ads/): the core method, from hook to test
+- [App ad hook examples](https://forgelaboratory.net/hooks/): eight hook types with patterns, real hooks and their Meta results, and lines that fail
+- [App video ad examples](https://forgelaboratory.net/examples/): three real ads with scripts, structure and results
+- [FAQ](https://forgelaboratory.net/faq/): what the Studio does, the pack, AI hooks and voices, ad approval, pricing and data
 - [Case study: StockMatcherAI](https://forgelaboratory.net/case-studies/stockmatcherai/): real Meta results from ads made with the engine
 - [Sign up](https://forgelaboratory.net/app/?new=1)
 
