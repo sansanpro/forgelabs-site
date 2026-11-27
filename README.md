@@ -22,7 +22,8 @@ The site and product at [forgelaboratory.net](https://forgelaboratory.net): a se
 | AI hook writer and claim check | `supabase/functions/studio-ai/` | Supabase Edge Functions, calling Claude |
 | Start from a store link (name, line, icon, screenshots) | `supabase/functions/studio-store/` | Supabase Edge Functions, reading public App Store and Google Play listings |
 | Render engine | `engine/forge_engine/` | Python (Pillow + ffmpeg) |
-| Visit counting | `assets/visit.js`, `supabase/migrations/20261127120000_site_visits.sql` | The browser calls `site_visit()` on the Studio's Supabase project: no cookies, no pixels. `supabase/launch-report.sql` reads it |
+| Visit counting and the waitlist | `assets/visit.js`, the pricing form in `index.html`, `supabase/migrations/20261127120000_site.sql` | The browser calls `site_visit()` and `site_waitlist_join()` on the Studio's Supabase project: no cookies, no pixels. `supabase/launch-report.sql` reads both |
+| Not-found pages | `404.html`, `pricing/` (sends people to `/#pricing`) | GitHub Pages |
 | Render worker | `engine/worker.py` | The owner's Windows PC, as a boot-time scheduled task (`engine/deploy/windows/`). Any machine with Python 3.11+ works; `engine/deploy/gcp.sh` can set up a GCP server (deleted to save cost) |
 
 `remove/` and `unsubscribe/` belong to ForgeLabs' earlier lead product and stay live so its opt-outs keep working. They still talk to that product's own Supabase project (`xhtwtnsvdmabfvewjgwz`), which is separate from the Studio's.
@@ -37,8 +38,13 @@ Everything in this repository is public, because it's served by GitHub Pages. Se
 SUPABASE_ACCESS_TOKEN=...        # Supabase account token: deploys the migration and functions
 SUPABASE_SERVICE_ROLE_KEY=...    # the worker's key for the ForgeLabs project
 ELEVENLABS_API_KEY=...           # voiceovers
-ANTHROPIC_API_KEY=...            # optional: AI hook suggestions (set as a Supabase secret)
+ANTHROPIC_API_KEY=...            # optional: AI hook suggestions (set as a Supabase secret); on the worker, the director and quality check
+SMTP_USER=noreply@forgelaboratory.net   # optional, on the worker: emails (Google Workspace, with an app password)
+SMTP_PASSWORD=...
+ALERT_EMAIL=...                  # optional, on the worker: who hears when a pack fails or skips its quality check
 ```
+
+With the SMTP settings, the worker emails customers when a pack is ready or didn't finish (`MAIL_CUSTOMERS=0` turns that off) and sends alerts to `ALERT_EMAIL`. Without them, both only go to the worker's log.
 
 **The site.** It's plain files: open them through any static server, or push to `main` and GitHub Pages publishes them.
 
@@ -47,6 +53,7 @@ ANTHROPIC_API_KEY=...            # optional: AI hook suggestions (set as a Supab
 ```
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m tests.test_golden                      # re-renders the approved x2 ad and compares frames
+.venv/bin/python -m tests.test_screens                     # tablet screenshots shown whole, zooms moved off empty space
 .venv/bin/python -m tests.make_fixture                     # draws a test app ("Habitly")
 .venv/bin/python -m forge_engine.cli preview tests/fixture.job.json --out tests/out/fixture
 .venv/bin/python -m forge_engine.cli pack JOB.json --out OUT   # spends ElevenLabs credits
@@ -85,5 +92,6 @@ npx -y supabase@2 secrets set --project-ref cuijqoorjgvlyiyizgxi ANTHROPIC_API_K
 - **Packs:** every account gets one free pack (`studio_accounts.free_packs`). To give someone more, raise that number in the database. Setting `is_admin` removes all limits for that account.
 - **Previews:** 40 a day per account.
 - **Renders waiting:** two queued or running per account at a time, so one account can't fill the queue. The app shows how many renders are ahead and when the renderer is off.
-- **AI calls:** 60 a day per account.
-- **Failed packs:** a pack that fails is refunded automatically.
+- **AI calls:** 60 a day per account, and 2,000 a day across all accounts (`studio_ai_allow()`).
+- **Recordings:** up to 120 seconds, read only as MP4 or MOV.
+- **Failed packs:** a pack that fails is refunded automatically. A job is finished only by the worker holding it, so a late report from a stalled worker can't overwrite or refund a finished pack.

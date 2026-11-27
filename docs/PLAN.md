@@ -115,7 +115,7 @@ The worker's director and quality check need the key on the Windows PC too (see 
 - The README no longer shows the worker PC's local address, SSH user or host name. Older commits
   still contain them; the address is a home-network one, not reachable from the internet.
 - Visit counting: `assets/visit.js` on every public page, `site_visit()` in
-  `supabase/migrations/20261127120000_site_visits.sql`, read with `supabase/launch-report.sql`.
+  `supabase/migrations/20261127120000_site.sql`, read with `supabase/launch-report.sql`.
   No cookies or pixels; the privacy page says what's counted. Sign-ups and packs are traced to the
   visitor's source within the same day.
 - The queue: two open renders per account (`too_many_queued`), worker heartbeats in
@@ -125,9 +125,53 @@ The worker's director and quality check need the key on the Windows PC too (see 
   Until the migrations are applied, the app falls back to its old waiting message and visits
   aren't recorded.
 
+**From the external review (2026-11-27):**
+- The ads: the whole hook is on screen from frame one (`hook_reveal`), the scene going out of a
+  transition no longer leaves its text over the new one, the end card holds 1.2 s after the last
+  word instead of 2.2 s, a zoom over an empty stretch of screen moves to the content, tablet and
+  desktop screenshots are shown whole on a blurred copy of themselves (the app marks them), and
+  the end-card defaults no longer say "free". A one-hook pack gets a baseline test plan instead
+  of the comparison plan.
+- The quality check says when it didn't run, and why: in `quality-check.txt`, the manifest, a
+  warning on the pack in the app, and an email to `ALERT_EMAIL`.
+- Jobs: `studio_finish_job` takes `p_worker` and only finishes a job that worker still holds, the
+  worker sends a heartbeat every 30 s whatever the engine is doing, and it retries reporting a
+  result before giving up. Before this, a stalled job was already given up after three tries;
+  that limit stays.
+- Recordings are decoded once, as MP4 or MOV only, from local files only, with a time limit and a
+  120 s cap. The encode has a timeout.
+- AI calls have a ceiling of 2,000 a day across all accounts, on top of 60 per account. 2,000 is a
+  placeholder; set it from the real cost per call.
+- The site: `/pricing/` sends people to the pricing section, there's a branded `404.html`, the
+  "Tell me when it's ready" link is now a waitlist form (`site_waitlist_join()`), and the hero
+  draws about 30 frames a second, caps its pixel count, and holds a still frame if the GPU still
+  can't keep up.
+- Packs that are ready or failed are emailed to the customer once the worker has SMTP settings.
+- Not done, and why: see "Decisions for the owner" below.
+
+**Decisions for the owner (from the review):**
+- **Leave the home PC:** a hosted worker costs about $50 a month (`engine/deploy/gcp.sh`).
+  Staying on the PC, the next step is running the task as a low-privilege account instead of
+  SYSTEM. Both change where the service-role key lives, so neither was done without a decision.
+- **Billing and real prices.** No Stripe key exists for the Studio.
+- **Sign-up without a password:** magic links need only an app change and an email template;
+  Google sign-in needs a Google OAuth client the owner creates. A public "check your hook" box
+  on the home page would let people try something before signing up.
+- **Three to five hooks required?** The plan says a pack is 3–5 videos, but the app allows one.
+- **Music** needs a licensed library. **Store badges** need Apple's and Google's artwork, used
+  under their guidelines.
+- **The claim check on the server:** today the app runs it and the terms make customers
+  responsible for their claims. Enforcing it on the server means moving the hook lint into the
+  worker. It protects the customer from themselves, not the system, so it waits.
+- **Sign-up abuse:** Supabase already rate-limits sign-ups per IP and email confirmation is on.
+  A CAPTCHA (Turnstile or hCaptcha) needs an account. `site_visit()` can be called by anyone, like
+  any page counter; it stops counting one visitor after 200 an hour.
+- **Captions** break at punctuation or at about 860 px. Breaking at phrase boundaries would
+  change every ad's captions, so it needs a look at real packs first.
+
 **Open items for the owner:**
 - **Apply the migrations:** run `supabase/migrations/20261108120000_studio.sql` and then
-  `20261127120000_site_visits.sql` in the Studio project's SQL editor (both are safe to run again).
+  `20261127120000_site.sql` in the Studio project's SQL editor (both are safe to run again).
   Neither has been run against a database yet: they pass Postgres's parser, nothing more.
 - **The worker PC:** pull the repo, add `ANTHROPIC_API_KEY` to `C:\forge\forgelabs-site\.env.local`,
   run `pip install -r engine\requirements.txt` in the venv (it now needs `anthropic`), and
@@ -137,6 +181,8 @@ The worker's director and quality check need the key on the Windows PC too (see 
 - **ElevenLabs plan:** three workers can record at once. On a plan that allows fewer concurrent
   requests, a worker that's turned away retries for about 45 seconds, then the pack fails and is
   refunded. If that shows up in the logs, set `FORGE_WORKERS` to the plan's limit.
+- **Email from the worker:** add `SMTP_USER`, `SMTP_PASSWORD` (a Google Workspace app password for
+  noreply@forgelaboratory.net) and `ALERT_EMAIL` to the PC's `.env.local`, then restart the task.
 - **Third-party terms:** ElevenLabs' commercial terms and the licence of the Canva hand photo.
 
 ## MVP build order
