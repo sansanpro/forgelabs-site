@@ -1,7 +1,7 @@
-// End-to-end on the live site and the real backend: signs in as the test account, adds an app,
-// uploads the engine's fixture screens, writes hooks, scripts, previews and makes a pack (which
-// spends ElevenLabs credits), then downloads the zip and lists it. The render worker must be
-// running (engine/worker.py).
+// End-to-end on the live site and the real backend: signs in as the test account, sets up an app
+// by hand (the fixture isn't in a store), uploads the engine's fixture screens, picks three or more
+// hooks, writes the script, previews and makes a pack (which spends ElevenLabs credits), then
+// downloads the zip and lists it. The render worker must be running (engine/worker.py).
 //
 //   node --env-file=.env.local tests/live-flow.mjs [https://forgelaboratory.net]
 //
@@ -35,9 +35,9 @@ await page.goto(SITE + '/app/');
 await page.fill('#a-email', email);
 await page.fill('#a-pw', password);
 await page.click('button[type=submit]');
-await page.waitForSelector('#new-app', { timeout: 20000 });
+await page.waitForSelector('#start-manual', { timeout: 20000 });
 await shot('01-signed-in');
-await page.click('#new-app');
+await page.click('#start-manual');
 await page.waitForSelector('#b-name', { timeout: 20000 });
 
 // 1. Your app (saves as it's typed)
@@ -54,48 +54,63 @@ await page.waitForFunction(() => [...document.querySelectorAll('.shot img')].eve
 await shot('02-app');
 await page.click('#a-next');
 
-// 2. Hooks: the comparison starts picked; AI is off, so add a problem hook by hand
-await page.waitForSelector('.hook.on', { timeout: 20000 });
-await page.click('[data-tmpl="problem"]');
-await page.fill('#h-text', 'Starting a habit is easy. Keeping it is the hard part.');
-await page.press('#h-text', 'Enter');
-await page.waitForFunction(() => document.querySelectorAll('.hook.on').length === 2, null, { timeout: 20000 });
+// 2. Review. With AI on, five hooks arrive and the ones that pass come picked; with it off, the
+// comparison is the only one, so two more are written by hand. Either way a pack needs three.
+await page.waitForURL(/\/review$/, { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector('.hook') && !document.querySelector('.badge.wait') &&
+  !/Writing/.test(document.getElementById('h-status').textContent), null, { timeout: 120000 });
+const own = ['Starting a habit is easy. Keeping it is the hard part.', 'Watch a week of habits turn into one streak.'];
+for (const t of own) {
+  if (await page.locator('.hook input[type=checkbox]:checked').count() >= 3) break;
+  await page.fill('#h-text', t);
+  await page.press('#h-text', 'Enter');
+  await page.waitForTimeout(800);
+}
+const picked = await page.locator('.hook input[type=checkbox]:checked').count();
+console.log('hooks picked:', picked, await page.$$eval('.hook.on .htext', els => els.map(e => e.value)));
+if (picked < 3) errors.push('fewer than three hooks picked');
 await shot('03-hooks');
-await page.click('#h-next');
 
-// 3. Make the ads. Line 1 plays the recording, 2 swipes to the streaks chart, 3 to friends
+// The script: line 1 plays the recording, 2 is the streaks chart, 3 is friends (Advanced has the headings)
+await page.click('[data-panel=script]');
 await page.waitForSelector('[data-s="0"][data-f="say"]', { timeout: 20000 });
 await page.selectOption('[data-s="0"][data-f="screen"]', { label: 'Recording 5' });
-await page.waitForFunction(() => document.querySelector('[data-s="0"][data-f="move"]').options[0].text === 'Play recording', null, { timeout: 20000 });
 await page.waitForTimeout(500);
 await page.fill('[data-s="0"][data-f="say"]', 'Tick off a habit and watch your day fill up.');
-await page.fill('[data-s="0"][data-f="head"]', 'Tap to tick it off');
 await page.selectOption('[data-s="1"][data-f="screen"]', { label: 'Screen 3' });
 await page.fill('[data-s="1"][data-f="say"]', "Every streak shows how far you've come.");
-await page.fill('[data-s="1"][data-f="head"]', 'See your streaks');
 await page.selectOption('[data-s="2"][data-f="screen"]', { label: 'Screen 4' });
 await page.fill('[data-s="2"][data-f="say"]', 'Friends keep you honest.');
-await page.fill('[data-s="2"][data-f="head"]', 'Bring a friend');
-await page.click('details.more summary');
+await page.click('#adv summary');
+await page.fill('#adv-body [data-s="0"][data-f="head"]', 'Tick it off');
+await page.fill('#adv-body [data-s="1"][data-f="head"]', 'See your streaks');
+await page.fill('#adv-body [data-s="2"][data-f="head"]', 'Bring a friend');
+await page.click('[data-panel=end]');
 await page.fill('#sc-line', 'Build habits that stick.');
 await page.waitForTimeout(1200);
-await shot('04-make');
+await shot('04-review');
 
-await page.waitForSelector('#m-prev', { timeout: 20000 });
+// Frames first, then the pack from the preview screen
+const ack = await page.$('#m-ack');
+if (ack) await ack.check();
+await page.waitForSelector('#m-prev:not([disabled])', { timeout: 20000 });
 await page.click('#m-prev');
-await page.waitForSelector('.batch', { timeout: 20000 });
+await page.waitForSelector('.progress', { timeout: 20000 });
 console.log('preview queued', secs());
 await page.waitForSelector('.strips img', { timeout: 180000 });
 await page.waitForFunction(() => [...document.querySelectorAll('.strips img')].every(i => i.complete && i.naturalWidth > 0), null, { timeout: 30000 });
 console.log('preview ready', secs());
 await shot('05-preview');
 
-await page.click('#m-pack');
+await page.click('#p-pack');
 console.log('pack queued', secs());
-await page.waitForSelector('.vids video', { timeout: 600000 });
+await page.waitForSelector('.progress', { timeout: 20000 });
+await page.waitForFunction(() => /Rendering the videos/.test(document.body.innerText), null, { timeout: 600000 });
+await shot('06-rendering');
+await page.waitForSelector('.ready video', { timeout: 600000 });
 console.log('pack ready', secs());
 await page.waitForTimeout(2000);
-await shot('06-pack');
+await shot('07-pack');
 
 const zip = await page.$eval('a.btn.pri[data-dl]', a => a.href);
 const r = await fetch(zip);

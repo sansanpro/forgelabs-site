@@ -66,7 +66,7 @@ await page.click('button[type=submit]');
 check(/10 characters/.test(await page.locator('#a-err').innerText()), 'short passwords are refused');
 await page.fill('#a-pw', 'a new long password');
 await page.click('button[type=submit]');
-await page.waitForSelector('#new-app, #new-app-2');
+await page.waitForSelector('#start-link');
 check(calls.some(c => c.startsWith('PUT /auth/v1/user') && c.includes('a new long password')), 'the new password is saved');
 
 console.log(errors.length ? `\n${errors.length} problem(s)` : '\nall passed');

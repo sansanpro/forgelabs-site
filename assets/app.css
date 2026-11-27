@@ -260,6 +260,73 @@ details.more[open] summary{margin-bottom:12px}
 .go p.small{margin:0 0 12px}
 .go p.note{margin:12px 0 0}
 .banner.small{font-size:13px; padding:9px 12px}
+/* paste the link, review, generate */
+.start{padding:28px}
+.start h1,.start h2{font-size:24px; margin-bottom:8px}
+.start > p.muted{margin:0 0 16px; max-width:60ch}
+.start .row input{flex:1; min-width:0; font-size:16px; padding:13px 14px}
+.start .btn.pri{padding:13px 20px; font-size:15px}
+.start p.small{margin:14px 0 0}
+.list-head{margin:26px 0 12px}
+#pane.wide{max-width:1180px}
+.review{display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px; align-items:start}
+.rv-side{position:sticky; top:72px}
+.pv canvas{display:block; width:100%; height:auto; aspect-ratio:9/16; border-radius:18px; border:1px solid var(--line); background:#000}
+.rv-side p{margin:8px 2px 0}
+@media(max-width:900px){
+  .review{grid-template-columns:1fr}
+  .rv-side{position:static; order:-1; max-width:240px; margin:0 auto}
+}
+.hook{align-items:flex-start; padding:10px 12px}
+.hook .pick{padding-top:4px}
+.hook.pv{box-shadow:0 0 0 1px var(--ember-tx) inset}
+.hook .hmeta{flex-direction:row; align-items:center; gap:8px; margin-bottom:2px}
+.angle{font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.badge{display:inline-flex; align-items:center; gap:5px; padding:1px 8px; border-radius:99px; font-size:11.5px; font-weight:600; border:1px solid var(--line)}
+.badge.ok{color:var(--good); border-color:rgba(123,216,143,.4)}
+.badge.warn{color:#F2C46D; border-color:rgba(242,196,109,.45)}
+.badge.bad{color:var(--bad); border-color:rgba(255,143,143,.45)}
+.badge.wait{color:var(--muted)}
+.badge .spin{width:9px; height:9px}
+.hacts{display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; margin-top:4px}
+.hacts .rw{flex:1 1 220px; min-width:0}
+.h-more{margin:6px 0 2px}
+.pchips{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px}
+.pchip{display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+  background:var(--card-2); color:var(--ink); font:600 14px Inter,sans-serif; text-align:left; cursor:pointer; min-width:0}
+.pchip b{display:flex; align-items:center; gap:7px; max-width:100%; font-weight:600}
+.pchip b span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+.pchip:hover{border-color:var(--ember-tx)}
+.pchip.on{border-color:var(--ember-line); background:var(--ember-wash)}
+.pchip.need{border-color:rgba(242,196,109,.45)}
+.pchip.need b{color:#F2C46D}
+.sw{display:inline-block; width:14px; height:14px; border-radius:4px; border:1px solid var(--line); margin-right:7px; vertical-align:-2px}
+textarea.htext{display:block; min-height:0; resize:none; overflow:hidden; line-height:1.35}
+.panel{margin-top:12px; padding:14px; border:1px solid var(--line-2); border-radius:10px; background:#140E09}
+.panel > .row:first-child p{margin:0 0 10px}
+.panel .look{margin-top:0}
+.panel .pace{margin:12px 0 0; max-width:200px}
+.adv-line{margin-bottom:6px; flex-wrap:nowrap}
+.adv-line .small{width:16px; flex:none}
+.btn.big{padding:12px 22px; font-size:15px}
+.stages{list-style:none; margin:12px 0; padding:0}
+.stages li{position:relative; padding:5px 0 5px 26px; color:var(--muted); font-size:13.5px}
+.stages li::before{content:""; position:absolute; left:4px; top:10px; width:10px; height:10px; border-radius:50%; border:1.5px solid var(--line)}
+.stages li.done{color:var(--body)}
+.stages li.done::before{border-color:var(--good); background:var(--good)}
+.stages li.on{color:var(--ink); font-weight:600}
+.stages li.on::before{display:none}
+.stages li.on .spin{position:absolute; left:3px; top:9px}
+.bar{height:10px; border-radius:99px; background:var(--line-2); overflow:hidden; margin:6px 0 10px}
+.bar i{display:block; height:100%; background:var(--ember); border-radius:99px; transition:width .6s ease}
+.progress h3{margin:16px 0 6px}
+.hooklist{margin:0; padding-left:20px; font-size:13.5px; color:var(--ink)}
+.hooklist li{margin:3px 0}
+.ready h2{font-size:24px}
+.ready > .row{margin:14px 0 18px}
+.ready .vid .angle{display:inline-block; margin-top:4px}
+details.earlier{margin-top:6px}
+details.earlier .batch{margin:10px 0 0}
 @media(max-width:860px){.cols3,.write .cols3{grid-template-columns:1fr}.cols2{grid-template-columns:1fr}}
 @media(max-width:700px){
   .top{flex-wrap:wrap; padding:8px 12px}
