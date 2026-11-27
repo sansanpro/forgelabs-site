@@ -1,7 +1,7 @@
 # ForgeLabs App Ad Studio
 
-The site and product at [forgelaboratory.net](https://forgelaboratory.net): a self-serve tool that turns an app's real screens into a ready-to-test pack of vertical video ads. The pack has:
-- hooks checked for false claims
+The site and product at [forgelaboratory.net](https://forgelaboratory.net): a self-serve tool that turns an app's real screens into a ready-to-test pack of vertical video ads. The customer pastes their store link, reviews what the Studio filled in, and generates. The pack has:
+- three to five videos, each opening with a different hook, checked for false claims
 - a voiceover
 - captions
 - 9:16 and 4:5 images
@@ -19,8 +19,8 @@ The site and product at [forgelaboratory.net](https://forgelaboratory.net): a se
 | Landing page, terms, privacy | `index.html`, `terms/`, `privacy/`, `assets/forge.css`, `assets/motion.*`, `assets/hero.js`, `assets/blackhole.js` | GitHub Pages (static, no build step) |
 | The Studio app | `app/index.html`, `assets/studio.js`, `assets/app.css` | GitHub Pages; talks to Supabase from the browser |
 | Database, sign-in, file storage | `supabase/migrations/` | The Studio's Supabase project (`cuijqoorjgvlyiyizgxi`) |
-| AI hook writer and claim check | `supabase/functions/studio-ai/` | Supabase Edge Functions, calling Claude |
-| Start from a store link (name, line, icon, screenshots) | `supabase/functions/studio-store/` | Supabase Edge Functions, reading public App Store and Google Play listings |
+| AI hook writer (five angles) and claim check | `supabase/functions/studio-ai/` | Supabase Edge Functions, calling Claude |
+| Start from a store link (name, line, rating, icon, screenshots) | `supabase/functions/studio-store/` | Supabase Edge Functions, reading public App Store and Google Play listings |
 | Render engine | `engine/forge_engine/` | Python (Pillow + ffmpeg) |
 | Visit counting and the waitlist | `assets/visit.js`, the pricing form in `index.html`, `supabase/migrations/20261127120000_site.sql` | The browser calls `site_visit()` and `site_waitlist_join()` on the Studio's Supabase project: no cookies, no pixels. `supabase/launch-report.sql` reads both |
 | Not-found pages | `404.html`, `pricing/` (sends people to `/#pricing`) | GitHub Pages |
@@ -65,7 +65,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python worker.py
 ```
 
-**The worker on a Windows PC**: see `engine/deploy/windows/install.ps1`. It runs three workers side by side (`FORGE_WORKERS` in the system environment changes that). To update it after engine changes, `git pull` the PC's copy of the repo, then restart the ForgeWorker task from an administrator prompt (`schtasks /end /tn ForgeWorker`, then `schtasks /run /tn ForgeWorker`). Worker 1 logs to `C:\forge\worker.log`, the others to `worker-2.log` and so on.
+**The worker on a Windows PC**: see `engine/deploy/windows/install.ps1`. It runs six workers side by side (`FORGE_WORKERS` in the system environment changes that; 8 is the most worth running on the current PC, see "Render capacity" in [docs/PLAN.md](docs/PLAN.md)). To update it after engine changes, `git pull` the PC's copy of the repo, then restart the ForgeWorker task from an administrator prompt (`schtasks /end /tn ForgeWorker`, then `schtasks /run /tn ForgeWorker`). Worker 1 logs to `C:\forge\worker.log`, the others to `worker-2.log` and so on.
 
 **The worker on Google Cloud** (the server was deleted to save cost; `engine/deploy/gcp.sh setup` recreates it), from the repo root, with Docker Desktop running:
 
@@ -89,7 +89,7 @@ npx -y supabase@2 secrets set --project-ref cuijqoorjgvlyiyizgxi ANTHROPIC_API_K
 
 ## Limits during the beta
 
-- **Packs:** every account gets one free pack (`studio_accounts.free_packs`). To give someone more, raise that number in the database. Setting `is_admin` removes all limits for that account.
+- **Packs:** a pack is three to five videos, each opening with a different hook (`studio_queue()` and the worker refuse fewer, or the same hook twice). Every account gets one free pack (`studio_accounts.free_packs`). To give someone more, raise that number in the database. Setting `is_admin` removes all limits for that account.
 - **Previews:** 40 a day per account.
 - **Renders waiting:** two queued or running per account at a time, so one account can't fill the queue. The app shows how many renders are ahead and when the renderer is off.
 - **AI calls:** 60 a day per account, and 2,000 a day across all accounts (`studio_ai_allow()`).

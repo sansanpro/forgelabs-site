@@ -5,14 +5,14 @@ Approved by the owner on 2026-11-08. This file is the source of truth for what t
 ## What it is
 
 **ForgeLabs App Ad Studio** makes hook-tested video and image ads for apps, from the app's real screens. A founder:
-1. describes their app
-2. uploads screenshots or a short screen recording
-3. picks hooks that passed a claim check
-4. reviews the frames
-5. downloads a ready-to-test pack
+1. pastes their App Store or Google Play link (or sets the app up by hand), and the Studio brings
+   in the name, icon and screenshots, writes five hooks and a script, and checks every claim
+2. reviews the hooks, each with a claim badge and a live preview, and changes anything
+3. generates, watches the progress, and downloads a ready-to-test pack
 
 The pack contains:
-- 3–5 vertical videos that share one body, so a test compares only the hooks
+- 3–5 vertical videos that share one body, each opening with a different hook, so a test
+  compares only the hooks
 - 9:16 and 4:5 images
 - caption files
 - ad copy
@@ -29,9 +29,9 @@ It grew out of the ads made for StockMatcherAI. `docs/HOW-THE-ADS-ARE-MADE.md` i
 | Visuals in v1 | Uploaded screenshots and short screen recordings | Works for any app. Capturing from a URL is fragile and comes later, if at all. |
 | Shape | Self-serve web app | |
 | Name | "ForgeLabs App Ad Studio" on the existing domain, forgelaboratory.net | Keeps the ForgeLabs name; the descriptor says what it's for. The site was rebuilt for this product, replacing the lead-finding product. |
-| Payments | **None in the MVP.** Each new account gets one free pack (up to 5 videos); the owner can grant more in the database. Stripe comes after the MVP works. | The owner's call: MVP first. |
+| Payments | **None in the MVP.** Each new account gets one free pack (3 to 5 videos); the owner can grant more in the database. Stripe comes after the MVP works. | The owner's call: MVP first. |
 | Backend | A new Supabase project for the Studio (`cuijqoorjgvlyiyizgxi`, created 2026-11-08): Auth, Postgres, Storage, Edge Functions. Tables are prefixed `studio_`. | The owner chose a clean project on 2026-11-08, after the token they had reached a new account rather than the old ForgeLabs project (`xhtwtnsvdmabfvewjgwz`), which keeps serving the old product's opt-out pages. |
-| Renderer | A Python worker (Pillow + ffmpeg), the generalized StockMatcherAI renderer. It polls a jobs table. It runs on the owner's Windows PC as a boot-time scheduled task (`engine/deploy/windows/`). A GCP server setup (`engine/deploy/gcp.sh`) exists; the server was deleted to save cost. | Renders take minutes of CPU, too long for edge functions. Edge functions allow 2 s of CPU per request and can't run Python or ffmpeg. |
+| Renderer | A Python worker (Pillow + ffmpeg), the generalized StockMatcherAI renderer. It polls a jobs table. It runs on the owner's Windows PC as a boot-time scheduled task (`engine/deploy/windows/`). A GCP server setup (`engine/deploy/gcp.sh`) exists; the server was deleted to save cost. The owner decided on 2026-11-27 to keep rendering on the PC; "Render capacity" below says how much it can take. | Renders take minutes of CPU, too long for edge functions. Edge functions allow 2 s of CPU per request and can't run Python or ffmpeg. |
 | Hook writing and claim check | Claude (`claude-opus-5-5` by default, `STUDIO_AI_MODEL` overrides it) via the `studio-ai` Supabase Edge Function. It uses the official SDK, structured JSON output and the server-side refusal fallback (`fallbacks: "default"`). A deterministic "hook lint" in the browser works without AI. | **No Anthropic key yet** (2026-11-08). Until one is added, customers write hooks from patterns, checked by the lint. AI suggestions switch on when `ANTHROPIC_API_KEY` is set as a Supabase secret; the landing page's FAQ says they're being switched on during the beta. |
 | Voice | ElevenLabs with word timestamps, plus a product-name pronunciation check. The MVP reuses the StockMatcherAI ElevenLabs key (owner approved). | Word timing drives the whole edit. |
 | Repo | Public (GitHub Pages). The engine, prompts and docs are visible to anyone. | Pages on a free GitHub plan needs a public repo. Moving the engine to a private repo is an option before launch. |
@@ -149,15 +149,78 @@ The worker's director and quality check need the key on the Windows PC too (see 
 - Packs that are ready or failed are emailed to the customer once the worker has SMTP settings.
 - Not done, and why: see "Decisions for the owner" below.
 
+**The Studio flow (2026-11-27), from the owner's five changes:**
+- **Paste the store link.** The apps page leads with the paste box, and a pasted link starts the
+  import without a click (`runImport` in `assets/studio.js`): the listing, phone screenshots, the
+  icon, a brand colour taken from the icon, then the hooks, their claim checks and the script.
+  The import shows each step, and ends on the review step. "Set it up by hand" keeps the old form.
+- **Five hooks, one per angle:** pain point, result, "watch this", comparison and social proof
+  (`suggest_angles` in `studio-ai`). Social proof uses only the store's own rating and count
+  (`studio-store` now returns them); without at least 50 ratings at 4.0 or better, that slot is
+  written from another angle. The hooks that can pass come picked, one per angle, up to five.
+  Each can be edited, rewritten by AI ("New idea"), or deleted, and people can write their own.
+- **A claim badge and a live preview on every hook.** Passes, Check this, or Won't pass, from the
+  AI check (which now sees the store listing and rating) and the browser's own check, and a
+  one-click rewrite when the AI offers one. The preview types the picked hook over the app's
+  first screen in a phone, laid out like the ad's first second.
+- **Everything else is filled in** and shown as four chips: script, voice, colour and end card.
+  Tapping one opens it. Headings, moves, the opening, effects, the ad headline and the
+  disclaimer moved into Advanced. Without AI, the script comes from the listing's own feature
+  lines (none with numbers).
+- **Their own screens for the wait and the result.** A progress bar with the stages (waiting,
+  screens, planning, voiceovers, checking, rendering video n of N, uploading) and the time left,
+  then "Your ads are ready" with every video playable. Earlier renders sit below, each openable.
+- **Each video has its own hook.** A pack needs three to five hooks, and no two can be the same
+  (ignoring case, spacing and punctuation). The app enforces it, `studio_queue()` refuses
+  `pack_needs_3_hooks` and `hooks_must_differ`, and the worker refuses both too. Previews can
+  still use one hook. A video's 9:16 and 4:5 images carry that video's hook.
+- `studio-ai` and `studio-store` changes need a redeploy. Until then the app uses the deployed
+  `suggest_hooks` and maps its categories to the closest angles (problem to pain point, outcome to
+  result, curiosity to "watch this"), so there's no social proof hook yet.
+- Tested in Chrome against a fake backend (`tests/studio-flow.mjs`, `tests/auth-flow.mjs`), with
+  the new studio-ai, the deployed one, and AI off, at desktop and phone width. Not tested against
+  the real backend: `tests/live-flow.mjs` was updated for the new screens but needs the test
+  account's password, which isn't on this machine.
+
+**Render capacity (measured 2026-11-27 on the render PC: Core i9-12900K, 16 threads, 64 GB).**
+Each run rendered real packs from the golden test's recording, with typing and camera moves on:
+20-second videos, their 9:16 and 4:5 images, captions and the zip. No voice or AI calls, so this is
+the PC's own work. A video takes about 40 s on its own.
+
+| Packs at once | Each 3-ad pack takes | 3-ad packs an hour | CPU average / peak | Memory |
+|---|---|---|---|---|
+| 1 | 2.0 min | 30 | 16% / 51% | 1.2 GB |
+| 2 | 2.2 min | 55 | 26% / 60% | 2.4 GB |
+| 3 | 2.4 min | 76 | 34% / 71% | 3.6 GB |
+| 4 | 2.5 min | 95 | 44% / 78% | 4.9 GB |
+| 6 | 2.9 min | 125 | 60% / 80% | 7.2 GB |
+| 8 | 3.4 min | 141 | 72% / 81% | 9.7 GB |
+| 10 | 4.2 min | 144 | 82% / 97% | 12.1 GB |
+| 12 | 4.8 min | 149 | 82% / 98% | 14.3 GB |
+
+- **8 at once is the most worth running.** Past 8 the CPU is full: 10 or 12 at once add 2–6% more
+  packs an hour while each one takes up to 40% longer. A 5-ad pack takes about 3.5 minutes alone.
+- **The default is now 6** (`FORGE_WORKERS` in `run-worker.cmd`): about 125 three-ad packs an hour
+  of rendering, with the CPU at about 60% so the PC stays usable.
+- **A real pack also waits on the network**, which takes no CPU: Claude plans the scenes and checks
+  the ads, ElevenLabs records each voice, and the files upload. That wasn't measured here (there
+  are no keys on this machine); the app estimates about 2 minutes of it for a 3-ad pack, so a 3-ad
+  pack takes about 4–5 minutes from start to finish.
+- **ElevenLabs is the next limit.** Each worker records one voiceover at a time, and the engine's
+  model (`eleven_v4`) allows 3 at once on Starter, 5 on Creator and 10 on Pro. A worker turned away
+  retries for about 45 s. With 6 workers, Creator is enough; on Starter, set `FORGE_WORKERS=3`.
+- **Upload isn't a limit.** A 3-ad pack is about 31 MB (each video about 4.7 MB) and the PC's
+  connection uploads about 10 MB/s (Cloudflare speed test), so about 3 s a pack.
+- Memory isn't a limit either: 1.2 GB a pack, 14 GB at 12 at once, of 64 GB.
+
 **Decisions for the owner (from the review):**
-- **Leave the home PC:** a hosted worker costs about $50 a month (`engine/deploy/gcp.sh`).
-  Staying on the PC, the next step is running the task as a low-privilege account instead of
-  SYSTEM. Both change where the service-role key lives, so neither was done without a decision.
+- **Rendering stays on the PC** (decided 2026-11-27). Still open: running the task as a
+  low-privilege account instead of SYSTEM, which changes where the service-role key lives.
 - **Billing and real prices.** No Stripe key exists for the Studio.
 - **Sign-up without a password:** magic links need only an app change and an email template;
   Google sign-in needs a Google OAuth client the owner creates. A public "check your hook" box
   on the home page would let people try something before signing up.
-- **Three to five hooks required?** The plan says a pack is 3–5 videos, but the app allows one.
+- **Three to five hooks:** decided 2026-11-27. A pack needs three to five different hooks.
 - **Music** needs a licensed library. **Store badges** need Apple's and Google's artwork, used
   under their guidelines.
 - **The claim check on the server:** today the app runs it and the terms make customers
@@ -173,14 +236,17 @@ The worker's director and quality check need the key on the Windows PC too (see 
 - **Apply the migrations:** run `supabase/migrations/20261108120000_studio.sql` and then
   `20261127120000_site.sql` in the Studio project's SQL editor (both are safe to run again).
   Neither has been run against a database yet: they pass Postgres's parser, nothing more.
+- **Redeploy `studio-ai` and `studio-store`** (five angles, the store rating, the "no Tap" script
+  rule): `npx -y supabase@2 functions deploy studio-ai --project-ref cuijqoorjgvlyiyizgxi --use-api`
+  and the same for `studio-store`. Needs `SUPABASE_ACCESS_TOKEN`, which isn't on this machine.
 - **The worker PC:** pull the repo, add `ANTHROPIC_API_KEY` to `C:\forge\forgelabs-site\.env.local`,
   run `pip install -r engine\requirements.txt` in the venv (it now needs `anthropic`), and
-  restart the ForgeWorker task, which now starts three workers. Check three `polling` lines
+  restart the ForgeWorker task, which now starts six workers. Check six `polling` lines
   appear across `C:\forge\worker*.log`. Then run `tests/live-flow.mjs` and check the pack has
   `quality-check.txt`.
-- **ElevenLabs plan:** three workers can record at once. On a plan that allows fewer concurrent
-  requests, a worker that's turned away retries for about 45 seconds, then the pack fails and is
-  refunded. If that shows up in the logs, set `FORGE_WORKERS` to the plan's limit.
+- **ElevenLabs plan:** six workers can record at once; `eleven_v4` allows 3 at once on Starter,
+  5 on Creator and 10 on Pro. A worker that's turned away retries for about 45 seconds, then the
+  pack fails and is refunded. On Starter, set `FORGE_WORKERS=3` in the system environment.
 - **Email from the worker:** add `SMTP_USER`, `SMTP_PASSWORD` (a Google Workspace app password for
   noreply@forgelaboratory.net) and `ALERT_EMAIL` to the PC's `.env.local`, then restart the task.
 - **Third-party terms:** ElevenLabs' commercial terms and the licence of the Canva hand photo.
