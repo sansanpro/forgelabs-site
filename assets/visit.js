@@ -1,4 +1,4 @@
-/* Counts this page view, so launch traffic can be measured (supabase/migrations/20261127120000_site_visits.sql).
+/* Counts this page view, so launch traffic can be measured (supabase/migrations/20261127120000_site.sql).
    No cookie and nothing stored in the browser: it sends the page, the host of the site that sent
    the visitor and any utm_ tags in the link. The Studio calls flVisit("signup") and
    flVisit("pack") so those can be traced back to where the visitor came from. */

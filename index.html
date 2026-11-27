@@ -202,6 +202,12 @@ body[data-hero="hole"] #hero .emberlight{display:none}
 .price li::before{content:""; position:absolute; left:2px; top:13px; width:9px; height:5px;
   border-left:2px solid var(--ember-tx); border-bottom:2px solid var(--ember-tx); transform:rotate(-45deg)}
 @media(max-width:720px){.prices{grid-template-columns:1fr}}
+.wait{display:flex; flex-wrap:wrap; gap:10px}
+.wait input{flex:1 1 180px; min-width:0; background:transparent; border:1px solid var(--line); border-radius:3px;
+  color:var(--ink); font:500 15px Inter,sans-serif; padding:11px 14px}
+.wait input:focus{outline:none; border-color:var(--ember-tx)}
+.wait-msg{flex-basis:100%; margin:0; font-size:13.5px; color:var(--muted)}
+.wait-msg:empty{display:none}
 
 .qa{margin-top:40px; max-width:780px}
 .qa details{border-top:1px solid var(--line); padding:16px 0}
@@ -430,7 +436,11 @@ setTimeout(function(){
           <li>Monthly pack allowance</li>
           <li>Everything in the beta</li>
         </ul>
-        <a class="btn ghost" href="mailto:hassan@forgelaboratory.net?subject=App%20Ad%20Studio%20plans">Tell me when it's ready</a>
+        <form class="wait" id="wait" novalidate>
+          <input id="wait-email" type="email" autocomplete="email" placeholder="you@yourapp.com" aria-label="Your email" required>
+          <button class="btn ghost" type="submit">Tell me when it's ready</button>
+          <p class="wait-msg" id="wait-msg" role="status"></p>
+        </form>
       </div>
     </div>
   </div>
@@ -514,6 +524,32 @@ setTimeout(function(){
       quiet(v);
       if(on){ v.muted = false; v.currentTime = 0; v.play().catch(function(){}); b.textContent = "Mute"; }
       else { v.muted = true; b.textContent = v.id === "hero-video" ? "Sound on" : "Play"; if(v.id !== "hero-video") v.pause(); }
+    });
+  });
+})();
+</script>
+<script>
+/* The paid-plans waitlist: site_waitlist_join() in supabase/migrations/20261127120000_site.sql.
+   If that can't be reached, the visitor gets the email address instead of a dead end. */
+(function(){
+  var form = document.getElementById("wait");
+  if(!form) return;
+  var URL_ = "https://cuijqoorjgvlyiyizgxi.supabase.co";
+  var ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aWpxb29yamd2bHlpeWl6Z3hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNTUwMjMsImV4cCI6MjEwOTczMTAyM30.jwsfTktibmwUHKj3Gn6Ulk-TQJv__xczdQ5VgQvbXx8";
+  var input = document.getElementById("wait-email"), msg = document.getElementById("wait-msg"), btn = form.querySelector("button");
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    var email = input.value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg.textContent = "Enter your email address."; input.focus(); return; }
+    btn.disabled = true; msg.textContent = "";
+    fetch(URL_ + "/rest/v1/rpc/site_waitlist_join", {
+      method: "POST",
+      headers: { apikey: ANON, Authorization: "Bearer " + ANON, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_email: email, p_note: "paid plans" })
+    }).then(function(r){ return r.ok ? r.json() : false; }).catch(function(){ return false; }).then(function(ok){
+      btn.disabled = false;
+      if(ok === true){ form.reset(); msg.textContent = "You're on the list. We'll email you when paid plans open."; return; }
+      msg.innerHTML = 'That didn\'t go through. Email <a href="mailto:hassan@forgelaboratory.net?subject=App%20Ad%20Studio%20plans">hassan@forgelaboratory.net</a> and we\'ll add you.';
     });
   });
 })();

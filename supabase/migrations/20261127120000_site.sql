@@ -1,14 +1,14 @@
--- Site visits: a count of page views, sign-ups and packs, and where the visitor came from.
--- Safe to run again.
+-- The public site's own data: visit counts and the paid-plans waitlist. Safe to run again.
 --
--- Nothing is stored in the visitor's browser and no cookie is set. assets/visit.js sends the
--- page, the host of the site that sent the visitor and any utm_ tags in the link. A visitor is
--- a hash of their IP address and browser with a salt that changes daily, and the old salt is
--- deleted, so one visitor can be counted within a day but not followed from day to day. The IP
--- address itself is never stored. supabase/launch-report.sql reads it.
+-- Visits: a count of page views, sign-ups and packs, and where the visitor came from. Nothing
+-- is stored in the visitor's browser and no cookie is set. assets/visit.js sends the page, the
+-- host of the site that sent the visitor and any utm_ tags in the link. A visitor is a hash of
+-- their IP address and browser with a salt that changes daily, and the old salt is deleted, so
+-- one visitor can be counted within a day but not followed from day to day. The IP address
+-- itself is never stored. supabase/launch-report.sql reads it.
 --
 -- Who can do what:
---   the browser (anon, authenticated)  calls site_visit() and nothing else
+--   the browser (anon, authenticated)  calls site_visit() and site_waitlist_join(), nothing else
 --   the owner                          reads the tables in the SQL editor
 
 create table if not exists public.site_salts (
@@ -62,3 +62,30 @@ end $$;
 
 revoke all on function public.site_visit(text, text, jsonb, text) from public;
 grant execute on function public.site_visit(text, text, jsonb, text) to anon, authenticated;
+
+-- ── the paid-plans waitlist ────────────────────────────────────────────────
+-- One row per email, from the pricing section's form. The owner emails the list when plans open.
+
+create table if not exists public.site_waitlist (
+  email text primary key,
+  note text,
+  at timestamptz not null default now()
+);
+alter table public.site_waitlist enable row level security;
+revoke all on public.site_waitlist from anon, authenticated;
+
+create or replace function public.site_waitlist_join(p_email text, p_note text default null)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare
+  e text := lower(trim(coalesce(p_email, '')));
+begin
+  if char_length(e) > 254 or e !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then return false; end if;
+  -- A script filling the list with made-up addresses stops after a couple of hundred an hour
+  if (select count(*) from site_waitlist where at > now() - interval '1 hour') >= 200 then return false; end if;
+  insert into site_waitlist (email, note) values (e, nullif(left(trim(coalesce(p_note, '')), 200), ''))
+    on conflict (email) do nothing;
+  return true;
+end $$;
+
+revoke all on function public.site_waitlist_join(text, text) from public;
+grant execute on function public.site_waitlist_join(text, text) to anon, authenticated;

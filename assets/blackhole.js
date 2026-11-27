@@ -262,6 +262,13 @@
     var scale = Math.min(window.devicePixelRatio || 1, full ? 1.0 : 1.5);
     var floorScale = full ? 0.58 : 0.72;
     var slow = 0, last = t0;
+    /* A ceiling on raymarched pixels per frame, whatever the screen: a 4K monitor at one pixel
+       per CSS pixel is several million rays, enough to stall integrated graphics. The disk is
+       soft-edged, so the upscale doesn't show. */
+    var MAX_PX = 900000;
+    /* The disk turns slowly, so about 30 frames a second looks the same as 60 or 120 at a
+       fraction of the GPU time */
+    var STEP = 31;
 
     /* preventDefault is what makes the context eligible to be restored at all */
     canvas.addEventListener("webglcontextlost", function(e){
@@ -283,8 +290,9 @@
       var w = canvas.clientWidth || canvas.offsetWidth;
       var h = canvas.clientHeight || canvas.offsetHeight;
       if(!w || !h) return;
-      var W = Math.max(1, Math.round(w * scale));
-      var H = Math.max(1, Math.round(h * scale));
+      var s = Math.min(scale, Math.sqrt(MAX_PX / (w * h)));
+      var W = Math.max(1, Math.round(w * s));
+      var H = Math.max(1, Math.round(h * s));
       if(canvas.width !== W || canvas.height !== H){
         canvas.width = W; canvas.height = H;
       }
@@ -299,12 +307,20 @@
       return a > 1.25 ? [0.30 * a, 0.0] : [0.0, -0.04];
     }
 
+    /* Returns false once the GPU can't keep up even at the floor resolution: the caller then
+       holds a still frame instead of stalling the visitor's machine. */
     function draw(now){
-      if(!ok || gl.isContextLost()) return;
+      if(!ok || gl.isContextLost()) return true;
+      var dtms = now - last;
+      if(dtms < STEP) return true;
+      last = now;
       resize();
-      var dtms = now - last; last = now;
-      if(dtms > 34){ slow++; } else { slow = Math.max(0, slow - 1); }
-      if(slow > 24 && scale > floorScale){ scale = floorScale; slow = 0; }
+      /* Under about 20 frames a second, counted between the frames actually drawn */
+      if(dtms > 50){ slow++; } else { slow = Math.max(0, slow - 1); }
+      if(slow > 24){
+        if(scale > floorScale){ scale = floorScale; slow = 0; }
+        else return false;
+      }
 
       mx += (tx - mx) * 0.055;
       my += (ty - my) * 0.055;
@@ -319,6 +335,7 @@
       var o = offset();
       gl.uniform2f(uOff, o[0], o[1]);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      return true;
     }
 
     return {

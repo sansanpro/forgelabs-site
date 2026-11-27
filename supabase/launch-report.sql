@@ -1,8 +1,8 @@
--- Launch report: traffic, sign-ups, packs and the render queue.
+-- Launch report: traffic, sign-ups, packs, the render queue, quality checks and the waitlist.
 -- Paste into the SQL editor of the Studio's Supabase project (cuijqoorjgvlyiyizgxi), highlight
 -- one block and run it: run the whole file and the editor shows only the last block's result.
 -- Visits come from assets/visit.js
--- (supabase/migrations/20261127120000_site_visits.sql). A visitor is counted once a day, so a
+-- (supabase/migrations/20261127120000_site.sql). A visitor is counted once a day, so a
 -- sign-up is traced to where that visitor first came from on the same day.
 
 -- 1. By day and source: visitors, and how many of them signed up and made a pack
@@ -44,3 +44,13 @@ select (select count(*) from studio_jobs where status = 'queued') as queued,
        (select round(extract(epoch from now() - min(created_at)) / 60) from studio_jobs where status = 'queued') as oldest_wait_min,
        (select count(*) from studio_workers where seen_at > now() - interval '3 minutes') as workers_on,
        (select max(seen_at) from studio_workers) as last_seen;
+
+-- 5. Packs that went out without their quality check, and why (the customer sees a warning)
+select updated_at, owner, result -> 'manifest' -> 'quality' ->> 'reason' as reason
+  from studio_batches
+ where status = 'done' and result -> 'manifest' -> 'quality' ->> 'ran' = 'false'
+ order by updated_at desc
+ limit 50;
+
+-- 6. The paid-plans waitlist
+select email, note, at from site_waitlist order by at desc;

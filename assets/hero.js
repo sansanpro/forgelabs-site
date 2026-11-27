@@ -77,13 +77,18 @@
       return;
     }
 
-    var raf = null, running = false;
+    var raf = null, running = false, frozen = false;
     function loop(now){
       if(!running) return;
-      bh.draw(now);
+      if(bh.draw(now) === false){
+        /* Too slow for this machine even at the lowest resolution: hold one frame for good */
+        frozen = true; stop(); bh.still();
+        window.addEventListener("resize", function(){ bh.still(); }, {passive:true});
+        return;
+      }
       raf = requestAnimationFrame(loop);
     }
-    function start(){ if(!running){ running = true; raf = requestAnimationFrame(loop); } }
+    function start(){ if(!running && !frozen){ running = true; raf = requestAnimationFrame(loop); } }
     function stop(){
       running = false;
       if(raf !== null){ cancelAnimationFrame(raf); raf = null; }
