@@ -1,5 +1,7 @@
 // ForgeLabs App Ad Studio: the AI half of hook writing.
 //
+//   POST { action: "suggest_angles", brief, screens?, angle?, avoid? }
+//        one hook from each of five angles, strongest first; with angle, new hooks for that angle only
 //   POST { action: "suggest_hooks", brief, screens? }     hooks by category, from docs/AD-PLAYBOOK.md's rules
 //   POST { action: "check_hooks", brief, hooks: [text] }  each hook checked against the brief
 //   POST { action: "draft_script", brief, screens }       body lines matched to the uploaded screens
@@ -20,6 +22,7 @@ const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 const ORIGINS = ["https://forgelaboratory.net", "https://www.forgelaboratory.net", "http://localhost:8080"];
 
 const CATEGORIES = ["comparison", "problem", "outcome", "anti-gatekeeping", "callout", "curiosity", "values"];
+const ANGLES = ["pain", "result", "watch", "comparison", "proof"];
 
 const RULES = `You write the first line of short vertical video ads for apps: the hook. Most viewers decide
 in about two seconds whether to keep watching, so the hook does most of the work.
@@ -33,7 +36,9 @@ Rules for every hook:
 1. Every claim must be true of this app today, according to the brief. The brief is short, so stay
    inside it: never invent numbers, results, ratings, user counts or features. Use a number only if
    the brief states it. Features you can see in the app's screenshots are true too, but numbers,
-   names and results shown in them are sample data: never quote them as claims.
+   names and results shown in them are sample data: never quote them as claims. The store listing
+   is the developer's own words: the features it describes are true, but its superlatives,
+   rankings and numbers are unproven, except the store rating and number of ratings.
 2. Never imply the app knows or sees anything about the viewer (their money, health, location,
    messages, photos) unless the brief says it does. "Where your money's been going" implies access
    to someone's finances.
@@ -53,6 +58,40 @@ const HOOK_CATEGORIES = `Categories:
 - callout: describes the viewer's own behaviour back to them, without asserting personal attributes.
 - curiosity: opens a question the ad answers.
 - values: ties the app to something the viewer cares about.`;
+
+const ANGLE_GUIDE = `Angles:
+- pain: names a frustration the viewer already has, which this app removes.
+- result: the result the viewer wants, as if it's already happening, without the usual effort.
+- watch: invites the viewer to watch the app do one thing ("Watch this turn a receipt into a
+  budget"). The ad shows the app straight after the hook, so it must be something the app does.
+- comparison: explains the app by something everyone knows. "It's [known thing], but for [this
+  app's thing]."
+- proof: social proof, only from the store rating and number of ratings in the brief, or another
+  fact the brief states. Round down, never up ("over 12,000 ratings" for 12,345). If the brief has
+  no such fact, fewer than 50 ratings or a rating under 4.0, write this one from the strongest
+  other angle instead and label it with that angle.`;
+
+const anglesSchema = {
+  type: "object",
+  properties: {
+    hooks: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          angle: { type: "string", enum: ANGLES },
+          text: { type: "string" },
+          benefit: { type: "string" },
+          why: { type: "string" },
+        },
+        required: ["angle", "text", "benefit", "why"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["hooks"],
+  additionalProperties: false,
+};
 
 const hooksSchema = {
   type: "object",
@@ -142,6 +181,10 @@ function describe(brief: Brief): string {
     ["cant_do", "What the app can NOT do or see", 600], ["facts", "Provable facts and numbers", 800],
   ];
   for (const [key, label, n] of extra) if (cut(brief[key], n)) lines.push(`${label}: ${cut(brief[key], n)}`);
+  // From the store listing, when the project started from one
+  const rating = Number(brief.store_rating), count = Math.floor(Number(brief.store_ratings));
+  if (rating > 0 && count > 0) lines.push(`Store rating: ${rating.toFixed(1)} out of 5, from ${count.toLocaleString("en-US")} ratings`);
+  if (cut(brief.store_text, 1500)) lines.push(`The store listing (the developer's own words): ${cut(brief.store_text, 1500)}`);
   return lines.join("\n");
 }
 
@@ -243,6 +286,36 @@ Deno.serve(async (req) => {
   const client = new Anthropic({ apiKey: KEY });
 
   try {
+    if (body.action === "suggest_angles") {
+      // With an angle: new hooks for that angle only, unlike the ones in avoid (regenerating one)
+      const one = ANGLES.includes(String(body.angle)) ? String(body.angle) : "";
+      const avoid = (Array.isArray(body.avoid) ? body.avoid : []).map((t) => cut(t, 160)).filter(Boolean).slice(0, 20);
+      const ask_ = one
+        ? `Write three different hooks for the ${one} angle only, unlike these:\n${avoid.join("\n") || "(none yet)"}\n` +
+          `Label each with the ${one} angle, even if you have to write it from another.`
+        : `Write one hook for each angle (five in total), strongest first: the one most likely to stop a ` +
+          `stranger scrolling comes first.`;
+      const shots = await screenshots(auth, body.screens);
+      const draft = await ask(client, `${RULES}\n\n${ANGLE_GUIDE}`,
+        [{ type: "text", text: describe(brief) }, ...shots, { type: "text", text:
+          `${ask_} For each, give a benefit line of at most 60 characters that sits under the hook on an ` +
+          `image ad and says what the app does, and one short sentence on why the hook works.` }],
+        anglesSchema, "medium");
+      if (draft.declined) return json(req, 422, { error: "ai_declined" });
+      const r = await ask(client, `${EDITOR}\n\n${ANGLE_GUIDE}`,
+        `${describe(brief)}\n\nDraft hooks (angle | hook | benefit):\n` +
+          (draft.data.hooks ?? []).map((h: Record<string, string>) => `${h.angle} | ${h.text} | ${h.benefit}`).join("\n") +
+          `\n\nReturn the edited list, strongest first. For each hook, "why" says in one short sentence why it passes the clarity test.`,
+        anglesSchema, "medium");
+      if (r.declined) return json(req, 422, { error: "ai_declined" });
+      const seen = new Set(avoid.map((t) => t.toLowerCase()));
+      const hooks = (r.data.hooks ?? []).map((h: Record<string, string>) => ({
+        angle: ANGLES.includes(h.angle) ? h.angle : (one || "custom"),
+        text: cut(h.text, 160), benefit: cut(h.benefit, 140), why: cut(h.why, 300),
+      })).filter((h: { text: string }) => h.text.length >= 3 && !seen.has(h.text.toLowerCase()));
+      return json(req, 200, { hooks });
+    }
+
     if (body.action === "suggest_hooks") {
       const shots = await screenshots(auth, body.screens);
       const draft = await ask(client, `${RULES}\n\n${HOOK_CATEGORIES}`,
@@ -290,6 +363,7 @@ Each scene: one spoken line of at most 14 words naming a concrete feature (no ad
 powerful), a heading of at most 28 characters for the top of the screen, the id of the screen that shows
 it, and a motion: "rise" (the phone slides up), "page" (swipes across from the previous scene's screen),
 "zoom" (enlarges part of the screen so small text is readable) or "play" (only for screen recordings).
+Say what the app does, never how to use it: an ad isn't a tutorial, so no "Tap", "Swipe" or "Click".
 End on the most satisfying moment. Also give a benefit line (at most 60 characters) and an end-card
 line (at most 40 characters) that says what the app does. Match each line to the screen that shows it.`;
       const list = `Screens you can use (id: label, kind):\n${screens.map((s) => `${s.id}: ${s.label || "unlabelled"} (${s.kind})`).join("\n")}`;

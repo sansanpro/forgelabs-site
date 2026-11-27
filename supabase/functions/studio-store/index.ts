@@ -1,7 +1,7 @@
 // ForgeLabs App Ad Studio: start a project from a store link.
 //
 //   POST { url }   an App Store or Google Play link
-//   200  { store, name, seller, subtitle, description, category, icon, screenshots: [url] }
+//   200  { store, name, seller, subtitle, description, category, rating, ratings, icon, screenshots: [url] }
 //
 // Only reads public listings, and only from Apple and Google: the app's id is taken out of the link
 // and the request is built here, so a link can never point this function anywhere else. The App
@@ -99,6 +99,8 @@ export async function apple(id: string, country: string) {
     subtitle,
     description: app.description,
     category: app.primaryGenreName,
+    rating: app.averageUserRating,
+    ratings: app.userRatingCount,
     icon: app.artworkUrl512 ? app.artworkUrl512.replace(/\/[^/]+$/, "/1024x1024bb.png") : "",
     screenshots: (app.screenshotUrls ?? []).map(full),
   };
@@ -118,6 +120,8 @@ export async function google(id: string) {
     if (!shots.includes(m[1])) shots.push(m[1]);
   }
   const icon = meta("og:image").split("=")[0];
+  // The listing's structured data carries the rating
+  const stars = html.match(/"aggregateRating":\{[^}]*?"ratingValue":"?([\d.]+)"?[^}]*?"ratingCount":"?(\d+)"?/);
   return {
     store: "google",
     name,
@@ -125,6 +129,8 @@ export async function google(id: string) {
     subtitle: meta("og:description"),
     description: meta("og:description"),
     category: (html.match(/"applicationCategory":"([A-Z_]+)"/)?.[1] ?? "").replace(/_/g, " ").toLowerCase(),
+    rating: stars ? Number(stars[1]) : null,
+    ratings: stars ? Number(stars[2]) : null,
     icon: icon ? `${icon}=s1024` : "",
     screenshots: shots.map((s) => `${s}=w1080`),
   };
@@ -154,8 +160,11 @@ Deno.serve(async (req) => {
       name: text(app.name, 80),
       seller: text(app.seller, 80),
       subtitle: text(app.subtitle, 200),
-      description: text(app.description, 1000),
+      description: text(app.description, 1500),
       category: text(app.category, 60),
+      // Only a real rating, for hooks that quote it
+      rating: Number.isFinite(app.rating) && app.rating > 0 && app.rating <= 5 ? Math.round(app.rating * 10) / 10 : null,
+      ratings: Number.isInteger(app.ratings) && app.ratings > 0 ? app.ratings : null,
       icon: safe(app.icon),
       screenshots: app.screenshots.map(safe).filter(Boolean).slice(0, MAX_SHOTS),
     });
