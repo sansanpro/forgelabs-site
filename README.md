@@ -22,7 +22,7 @@ The site and product at [forgelaboratory.net](https://forgelaboratory.net): a se
 | AI hook writer and claim check | `supabase/functions/studio-ai/` | Supabase Edge Functions, calling Claude |
 | Start from a store link (name, line, icon, screenshots) | `supabase/functions/studio-store/` | Supabase Edge Functions, reading public App Store and Google Play listings |
 | Render engine | `engine/forge_engine/` | Python (Pillow + ffmpeg) |
-| Render worker | `engine/worker.py` | The owner's Windows PC (Hassano), as a boot-time scheduled task (`engine/deploy/windows/`). Any machine with Python 3.11+ works; `engine/deploy/gcp.sh` can set up a GCP server (deleted to save cost) |
+| Render worker | `engine/worker.py` | The owner's Windows PC, as a boot-time scheduled task (`engine/deploy/windows/`). Any machine with Python 3.11+ works; `engine/deploy/gcp.sh` can set up a GCP server (deleted to save cost) |
 
 `remove/` and `unsubscribe/` belong to ForgeLabs' earlier lead product and stay live so its opt-outs keep working. They still talk to that product's own Supabase project (`xhtwtnsvdmabfvewjgwz`), which is separate from the Studio's.
 
@@ -57,13 +57,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python worker.py
 ```
 
-**The worker on a Windows PC**: see `engine/deploy/windows/install.ps1`. To update it after engine changes:
-
-```
-ssh t10admin@192.168.1.69 "cd /d C:\forge\forgelabs-site & git pull & schtasks /end /tn ForgeWorker & schtasks /run /tn ForgeWorker"
-```
-
-Its log is `C:\forge\worker.log`.
+**The worker on a Windows PC**: see `engine/deploy/windows/install.ps1`. To update it after engine changes, `git pull` the PC's copy of the repo, then restart the ForgeWorker task from an administrator prompt (`schtasks /end /tn ForgeWorker`, then `schtasks /run /tn ForgeWorker`). Its log is `C:\forge\worker.log`.
 
 **The worker on Google Cloud** (the server was deleted to save cost; `engine/deploy/gcp.sh setup` recreates it), from the repo root, with Docker Desktop running:
 

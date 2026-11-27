@@ -105,7 +105,7 @@ The engine is ported from `marketing/ads/scripts/render_videos.py`, `voiceover.m
 | App and landing page | Live on forgelaboratory.net |
 | Sign-in emails | Sent through Google Workspace (smtp.gmail.com) as noreply@forgelaboratory.net, with branded templates, password reset and resend link. SPF, DKIM and DMARC (`p=none`, reports to noreply@) are set. Delivery was confirmed on 2026-11-09. Reapply with `supabase/auth-email.mjs`. |
 | End-to-end test | **Passed on the live site** with `tests/live-flow.mjs`: sign-in, uploads, hooks, script, preview ready 16 s after queueing, pack 61 s after, and the zip downloaded with every file. |
-| Worker | **Live on the owner's Windows PC (Hassano, on the home network)** as the ForgeWorker scheduled task, which starts at boot and restarts the worker if it exits. End-to-end passed against it on 2026-11-09: preview in 13 s, a two-ad pack in 77 s. The GCP server was deleted to save about $50 a month; `engine/deploy/gcp.sh setup` recreates it. Renders only happen while the PC is on. |
+| Worker | **Live on the owner's Windows PC** as the ForgeWorker scheduled task, which starts at boot and restarts the worker if it exits. End-to-end passed against it on 2026-11-09: preview in 13 s, a two-ad pack in 77 s. The GCP server was deleted to save about $50 a month; `engine/deploy/gcp.sh setup` recreates it. Renders only happen while the PC is on. |
 
 **AI (2026-11-20):** `ANTHROPIC_API_KEY` is set as a Supabase secret and `studio-ai` was
 redeployed; a live `suggest_hooks` call returned hooks in 18.5 s. `studio-store` is deployed (v2).
