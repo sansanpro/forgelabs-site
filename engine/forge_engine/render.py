@@ -128,6 +128,19 @@ def cover(im, w, h):
     x = (im.width - w) // 2
     return im.crop((x, 0, x + w, h))
 
+def fit(im, w, h):
+    """A screenshot fitted to w x h. One close to the phone's shape fills it (cover); a tablet,
+    desktop or old 16:9 phone screenshot is shown whole on a blurred copy of itself, instead of
+    losing its sides."""
+    if (im.height / im.width) / (h / w) >= .85:
+        return cover(im, w, h)
+    bg = cover(im, max(1, w // 8), max(1, h // 8)).filter(ImageFilter.GaussianBlur(6)).resize((w, h), Image.BILINEAR)
+    bg = Image.blend(bg, Image.new('RGB', (w, h), (0, 0, 0)), .35)
+    s = min(w / im.width, h / im.height)
+    fg = im.resize((max(1, round(im.width * s)), max(1, round(im.height * s))), Image.LANCZOS)
+    bg.paste(fg, ((w - fg.width) // 2, (h - fg.height) // 2))
+    return bg
+
 def with_band(shot):
     """A capture with no status bar of its own gets one drawn above it."""
     top = shot.getpixel((SHOT_W // 2, 4))
@@ -143,6 +156,29 @@ def with_band(shot):
     return screen
 
 
+# A customer's recording is read only as MP4/MOV from a local file. Left to guess, ffmpeg would
+# also read a playlist dressed up as an .mp4, and follow it to other files on the machine.
+SAFE_INPUT = ['-protocol_whitelist', 'file', '-f', 'mov']
+
+def check_recording(path, longest=120):
+    """Decodes a screen recording once, with a time limit, before it's used. Refuses a file that
+    isn't a real MP4 or MOV, won't decode, or runs longer than `longest` seconds. Returns its
+    length in seconds."""
+    try:
+        r = subprocess.run([FFMPEG, '-hide_banner', '-nostats', *SAFE_INPUT, '-i', path, '-t', str(longest + 1),
+                            '-map', '0:v:0', '-f', 'null', '-'],
+                           capture_output=True, encoding='utf-8', errors='replace', timeout=90)
+    except subprocess.TimeoutExpired:
+        raise ValueError('A screen recording took too long to read. Upload a shorter MP4 or MOV.')
+    m = re.search(r'Duration: (\d+):(\d+):(\d+(?:\.\d+)?)', r.stderr)
+    if r.returncode or not m:
+        raise ValueError("A screen recording couldn't be read. Upload it as an MP4 or MOV.")
+    secs = int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
+    if secs > longest:
+        raise ValueError(f'A screen recording is longer than {longest} seconds. Trim it and upload it again.')
+    return secs
+
+
 class Recording:
     """A screen recording, played at FPS and fitted to w x h. Reads forward and starts again
     if asked for an earlier moment; after the last frame it holds that frame."""
@@ -154,7 +190,7 @@ class Recording:
         self.close()
         w, h = self.w, self.h
         vf = f'fps={FPS},scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h}:(iw-{w})/2:0'
-        self.proc = subprocess.Popen([FFMPEG, '-v', 'error', '-i', self.path, '-vf', vf, '-f', 'rawvideo',
+        self.proc = subprocess.Popen([FFMPEG, '-v', 'error', *SAFE_INPUT, '-i', self.path, '-vf', vf, '-f', 'rawvideo',
                                       '-pix_fmt', 'rgb24', '-'], stdout=subprocess.PIPE)
         self.i = -1
 
@@ -203,6 +239,8 @@ class Screens:
         k = ('raw', key)
         if k not in self.cache:
             im = self._open(key)
+            if (im.height / im.width) / (SHOT_H / SHOT_W) < .85:
+                im = fit(im, SHOT_W, SHOT_H)
             if im.width != SHOT_W:
                 im = im.resize((SHOT_W, round(im.height * SHOT_W / im.width)), Image.LANCZOS)
             if im.height != SHOT_H:
@@ -246,11 +284,25 @@ class Screens:
             k = None
         spec = self.spec(key)
         if spec.get('status_bar', True) or spec.get('kind') == 'video':
-            im = cover(frame if frame is not None else self._open(key), SCREEN_W, SCREEN_H)
+            im = fit(frame if frame is not None else self._open(key), SCREEN_W, SCREEN_H)
         else:
             im = with_band(frame if frame is not None else self.raw(key))
         if k: self.cache[k] = im
         return im
+
+    def busy_band(self, key, a, b):
+        """A zoom band (shares of the screen's height) moved to the busiest stretch of the
+        screen when the one asked for is nearly empty, so a zoom never fills the frame with
+        blank background. Returns (a, b)."""
+        g = self.phone(key).convert('L').resize((90, 300), Image.BILINEAR).filter(ImageFilter.FIND_EDGES)
+        px = list(g.getdata())
+        rows = [sum(px[y * 90 + 1:y * 90 + 89]) for y in range(1, 299)]  # the filter's border rows and columns are noise
+        n, top = len(rows), max(0, min(len(rows) - 1, int(a * len(rows))))
+        span = max(1, min(n - top, int((b - a) * n)))
+        if sum(rows[top:top + span]) / span >= .3 * sum(rows) / n:
+            return a, b
+        best = max(range(n - span + 1), key=lambda i: sum(rows[i:i + span]))
+        return round(best / n, 3), round((best + span) / n, 3)
 
     def hand(self, key, w, h, frame=None):
         """The screen for the hand photo's w x h screen box."""
@@ -262,7 +314,7 @@ class Screens:
             k = None
         spec = self.spec(key)
         if spec.get('status_bar', True) or spec.get('kind') == 'video':
-            im = cover(frame if frame is not None else self._open(key), w, h)
+            im = fit(frame if frame is not None else self._open(key), w, h)
         else:
             shot = frame if frame is not None else self.raw(key)
             sized = shot.resize((w, int(SHOT_H * w / SHOT_W)), Image.BILINEAR)
@@ -434,9 +486,15 @@ class Ad:
         self.display = job.display
         self.bg = background(self.theme)
         self.words = words
-        self.end = words[-1]['e'] + 2.2
+        self.end = words[-1]['e'] + 1.2  # the end card holds a moment after the last word, no longer
         scenes = [dict(kind='hook', say=hook['say'], screen=job.hook_screen(hook))]
         scenes += [dict(s, kind='body') for s in job.body]
+        for s in scenes:
+            if s.get('motion') == 'zoom' and S.spec(s['screen']).get('kind') != 'video':
+                z = s.get('zoom') or [0, .3, 1, .7]
+                a, b = (z[1], z[3]) if len(z) == 4 else (z[0], z[1])
+                if S.busy_band(s['screen'], a, b) != (a, b):
+                    s['zoom'] = list(S.busy_band(s['screen'], a, b))
         scenes.append(dict(kind='outro', say=job.cta['say']))
         i = 0
         for s in scenes:
@@ -511,7 +569,7 @@ class Ad:
         else:
             draw_phone(fr, self.S, view, top, 640)
 
-    def hook_frame(self, fr, s, t):
+    def hook_frame(self, fr, s, t, text=True):
         th = self.theme
         words = s['say'].split()
         size = 96
@@ -525,9 +583,11 @@ class Ad:
         else:
             p = ease((t - .02) / .5)
             draw_phone(fr, self.S, self.view(s, t), ptop + (1 - p) * 120, 640)
+        if not text: return
         y = SAFE_T; i = s['a']; f = F(size)
         n_q = self.hook.get('accent_from', next((n for n, w in enumerate(words) if w[-1] in '.?'), len(words) - 1) + 1) - 1
-        typing = self.fx['type']
+        whole = self.job.hook_reveal == 'all'
+        typing = self.fx['type'] and not whole
         caret = (SAFE_X, SAFE_T, th['text'])  # where the caret sits: after the last letter typed
         for line in lines:
             x = SAFE_X
@@ -535,7 +595,9 @@ class Ad:
                 st = self.words[i]['s']
                 col = th['accent'] if (i - s['a']) > n_q else th['text']
                 word = shown(w, self.display)
-                if typing:
+                if whole:
+                    put(fr, sprite(word, size, col), x, y)
+                elif typing:
                     a, d = typed_span(st, self.words[i]['e'])
                     k = int(round(clamp((t - a) / d) * len(word)))
                     if k:
@@ -559,10 +621,10 @@ class Ad:
             return ('video', key, max(0, t - s['t0']), id(s))
         return ('static', key)
 
-    def body_frame(self, fr, s, t):
+    def body_frame(self, fr, s, t, text=True):
         th = self.theme; t0 = s['t0']
         p = ease((t - t0) / .35)
-        head = s.get('head') or ''
+        head = (s.get('head') or '') if text else ''
         if head:
             size = fit_size(head, 74 if len(head) < 27 else 62, W - 2 * SAFE_X)
             if self.fx['type']:
@@ -610,9 +672,9 @@ class Ad:
                 draw_hand(fr, self.S, self.view(s, t), top + (1 - p2) * 90 - push * 260, 1.15 * (1 + push), rot=math.sin(t * 2.3) * .5)
             else:
                 draw_phone(fr, self.S, self.view(s, t), top + (1 - p2) * 90 - push * 120, int(680 * (1 + push)))
-        self.caption(fr, t, s)
+        if text: self.caption(fr, t, s)
 
-    def outro_frame(self, fr, s, t):
+    def outro_frame(self, fr, s, t, text=True):
         th = self.theme; t0 = s['t0']; job = self.job
         p = ease((t - t0) / .45)
         icon = self.S.icon(job.icon, 170)
@@ -642,8 +704,8 @@ class Ad:
             d = sprite(job.disclaimer, fit_size(job.disclaimer, 34, W - 2 * SAFE_X, 500), th['text'], 500)
             put(fr, d, (W - d.width) / 2, SAFE_B - 60, q)
 
-    def draw(self, s, t, fr):
-        {'hook': self.hook_frame, 'body': self.body_frame, 'outro': self.outro_frame}[s['kind']](fr, s, t)
+    def draw(self, s, t, fr, text=True):
+        {'hook': self.hook_frame, 'body': self.body_frame, 'outro': self.outro_frame}[s['kind']](fr, s, t, text)
 
     def head_span(self, s):
         """When a scene's heading types out: (start, duration)."""
@@ -656,7 +718,8 @@ class Ad:
             if s['t0'] <= t < s['t1']:
                 fr = self.bg.copy(); self.draw(s, t, fr)
                 if i > 0 and t < s['t0'] + xf and s.get('motion') not in ('swipe', 'page'):
-                    o = self.bg.copy(); self.draw(self.scenes[i - 1], t, o)
+                    # The scene going out leaves its words behind, so two sets of text never stack
+                    o = self.bg.copy(); self.draw(self.scenes[i - 1], t, o, text=False)
                     k = smooth((t - s['t0']) / xf)
                     if cam:  # zoom through: the old scene rushes past the viewer, the new one settles in
                         o, fr = zoomed(o, 1 + .12 * k, self.bg), zoomed(fr, .93 + .07 * k, self.bg)
@@ -734,7 +797,10 @@ class Ad:
                 p.stdin.write(self.frame(i / FPS).tobytes())
         finally:
             p.stdin.close()
-            p.wait()
+            try:
+                p.wait(timeout=300)
+            except subprocess.TimeoutExpired:
+                p.kill(); p.wait()
             if fx_wav and os.path.exists(fx_wav): os.remove(fx_wav)
         if p.returncode:
             raise RuntimeError(f'ffmpeg failed with code {p.returncode} for {out}')

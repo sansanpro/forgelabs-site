@@ -9,7 +9,7 @@ A job is JSON (see engine/README.md for the full format):
     body     [{say, head, screen, motion: rise | page | zoom | play | swipe, ...}]
     cta      {say, button, lines, headline}
     voice    {id, model, seed, speed, stability, similarity}
-    disclaimer, display, outputs
+    disclaimer, display, outputs, effects, hook_reveal: all | spoken
 
 Paths are relative to the job file. Every hook in a job shares the body and the CTA, so a
 test compares only the hooks.
@@ -84,12 +84,17 @@ class Job:
         if not self.body:
             raise JobError('the job has no body scenes')
 
+        # The defaults don't say "free": not every app is
         cta = dict(data.get('cta') or {})
-        cta['say'] = clean(cta.get('say')) or f'Download {self.spoken_name} free on the App Store.'
-        cta.setdefault('button', 'Download free on the App Store')
+        cta['say'] = clean(cta.get('say')) or f'Download {self.spoken_name} on the App Store.'
+        cta.setdefault('button', 'Download on the App Store')
         cta['lines'] = [clean(l) for l in cta.get('lines') or [] if clean(l)][:2]
-        cta.setdefault('headline', f'Download {self.name} free')
+        cta.setdefault('headline', f'Download {self.name}')
         self.cta = cta
+
+        # all: the whole hook is on screen from the first frame, for viewers who decide with the
+        # sound off. spoken: each word appears as it's said, the original look the golden test uses.
+        self.hook_reveal = data.get('hook_reveal') if data.get('hook_reveal') in ('all', 'spoken') else 'all'
 
         op = dict(data.get('opening') or {'style': 'rise'})
         op.setdefault('style', 'rise')

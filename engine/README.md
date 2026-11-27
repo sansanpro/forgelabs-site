@@ -12,7 +12,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 `ELEVENLABS_API_KEY` must be set for a pack, unless every hook has a prerecorded voice.
 
-With `ANTHROPIC_API_KEY` set (and the `anthropic` package installed), Claude works on every pack. `--no-ai` skips both steps below; without the key the pack renders as before.
+With `ANTHROPIC_API_KEY` set (and the `anthropic` package installed), Claude works on every pack. `--no-ai` skips both steps below. Without the key, or when the check fails, the pack still renders, but `quality-check.txt` and the manifest's `quality` say it didn't run and why (`{"ran": false, "reason": ...}`), and the Studio shows the customer a warning.
 - **The director** looks at each body scene's screenshot and line. It decides what the customer left on auto: the move, the band to zoom into, an empty heading, and which moments get a sound. The worker makes it once per batch and keeps it in storage (`direction.json`), so the pack matches the approved preview.
 - **The quality check** looks at frames of every ad before encoding, along with the script, the brief and a transcript of each voiceover. It fixes zoom bands and headings, records a voiceover again when words are missing, checks the fixed scenes once more, and writes `quality-check.txt`. It flags claims but never changes them.
 
@@ -36,6 +36,7 @@ With `ANTHROPIC_API_KEY` set (and the `anthropic` package installed), Claude wor
 | `tests/make_fixture.py`, `tests/fixture.job.json` | A made-up habit tracker with screenshots, a recording and an icon |
 | `tests/test_worker.py` | The worker's checks, without Supabase |
 | `tests/test_agents.py` | The director and the quality check, with a stand-in for Claude |
+| `tests/test_screens.py` | Tablet and desktop screenshots shown whole, and zooms moved off empty space |
 
 ## The job format
 
@@ -64,7 +65,7 @@ Paths are relative to the job file. Every hook shares the body and the call to a
     {"say": "Every streak shows how far you've come.", "head": "See your streaks", "screen": "stats", "motion": "page"},
     {"say": "Your best week, in one chart.", "head": "Your best week", "screen": "stats", "motion": "zoom", "zoom": [0.12, 0.5]}
   ],
-  "cta": {"say": "Download Habitly free on the App Store.", "button": "Download free on the App Store",
+  "cta": {"say": "Download Habitly on the App Store.", "button": "Download on the App Store",
           "lines": ["Build habits that stick."], "headline": "Download Habitly free"},
   "voice": {"id": "JBFqnCBsd6RMkjVDRZzb", "speed": 1.15},
   "disclaimer": "",
@@ -107,7 +108,7 @@ The swipe (`motion`) is one of:
 |---|---|
 | `rise` | The phone slides up |
 | `page` | Swipes across from the previous scene's screen |
-| `zoom` | Enlarges a band of the screen: `zoom: [top, bottom]` as shares of the phone's height |
+| `zoom` | Enlarges a band of the screen: `zoom: [top, bottom]` as shares of the phone's height. A band over a nearly empty stretch of a screenshot moves to the busiest stretch of the same height |
 | `play` | A screen recording plays inside the phone |
 | `swipe` | A card cutout flies off: `card`, `dir` |
 
@@ -115,6 +116,8 @@ The swipe (`motion`) is one of:
 - **`voice`**: an ElevenLabs voice. `id`, `model` (default `eleven_v4`), `seed`, `speed`, `stability` and `similarity`.
 - **`brief`**: `{one_liner, comparison, category}`, what the director and the quality check judge claims against.
 - **`display`**: extra spoken-to-written spellings for captions, such as `{"P.E.": "P/E"}`. Dotted letters like "A.I." are always shown as "AI".
+- **`hook_reveal`**: `all` (the default) puts the whole hook on screen from the first frame, for viewers who decide with the sound off. `spoken` brings each word in as it's said, the original look the golden test uses.
+- **Screenshots** close to a phone's shape fill the screen. Squarer ones (tablet, desktop, old 16:9 phones) are shown whole on a blurred copy of themselves instead of being cropped. Recordings are decoded once as MP4 or MOV, with a time limit, and refused past 120 seconds.
 - **`effects`**: `true` (the default) or `false`, or an object that switches `sfx`, `type` and `camera` on or off one by one.
   - **`sfx`:** off unless the object switches it on. A few sounds per ad, never under every word:
     - a whoosh on a swipe or a change of screen

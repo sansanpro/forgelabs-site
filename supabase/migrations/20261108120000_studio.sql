@@ -221,16 +221,22 @@ end $$;
 
 -- ── the worker's side ──────────────────────────────────────────────────────
 
-create or replace function public.studio_finish_job(p_job uuid, p_ok boolean, p_result jsonb, p_error text)
-returns void language plpgsql security definer set search_path = public as $$
+-- A job is finished only while it's running and, when p_worker is given, only by the worker
+-- that holds it: a worker that went quiet and came back can't overwrite a pack another worker
+-- finished, or refund one that went through. Returns whether the report was used.
+drop function if exists public.studio_finish_job(uuid, boolean, jsonb, text);  -- the version before p_worker
+create or replace function public.studio_finish_job(p_job uuid, p_ok boolean, p_result jsonb, p_error text,
+                                                    p_worker text default null)
+returns boolean language plpgsql security definer set search_path = public as $$
 declare
   j public.studio_jobs;
   b public.studio_batches;
 begin
   update studio_jobs set status = case when p_ok then 'done' else 'failed' end, error = p_error,
          progress = null, finished_at = now()
-   where id = p_job returning * into j;
-  if not found then return; end if;
+   where id = p_job and status = 'running' and (p_worker is null or worker = p_worker)
+   returning * into j;
+  if not found then return false; end if;
   select * into b from studio_batches where id = j.batch_id for update;
   if p_ok and j.kind = 'preview' then
     update studio_batches set preview = p_result, status = 'preview_ready', error = null, updated_at = now() where id = j.batch_id;
@@ -244,6 +250,7 @@ begin
       update studio_batches set charged = false where id = j.batch_id;
     end if;
   end if;
+  return true;
 end $$;
 
 create or replace function public.studio_claim_job(p_worker text)
@@ -321,15 +328,20 @@ begin
   update studio_accounts
      set ai_calls = case when ai_day = current_date then ai_calls + 1 else 1 end, ai_day = current_date
    where id = auth.uid() returning * into a;
-  return a.is_admin or a.ai_calls <= 60;
+  if a.is_admin then return true; end if;
+  -- A ceiling across every account as well, so a wave of new sign-ups can't run up the AI bill
+  if (select coalesce(sum(ai_calls), 0) from studio_accounts where ai_day = current_date) > 2000 then
+    return false;
+  end if;
+  return a.ai_calls <= 60;
 end $$;
 
-revoke all on function public.studio_queue(uuid, text), public.studio_finish_job(uuid, boolean, jsonb, text),
+revoke all on function public.studio_queue(uuid, text), public.studio_finish_job(uuid, boolean, jsonb, text, text),
   public.studio_claim_job(text), public.studio_job_progress(uuid, text), public.studio_ai_allow(),
   public.studio_queue_status(uuid), public.studio_handle_new_user() from public, anon, authenticated;
 grant execute on function public.studio_queue(uuid, text), public.studio_ai_allow(), public.studio_queue_status(uuid)
   to authenticated;
-grant execute on function public.studio_finish_job(uuid, boolean, jsonb, text), public.studio_claim_job(text),
+grant execute on function public.studio_finish_job(uuid, boolean, jsonb, text, text), public.studio_claim_job(text),
   public.studio_job_progress(uuid, text) to service_role;
 
 -- ── storage: uploads and finished packs, each user in their own folder ─────

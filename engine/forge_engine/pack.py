@@ -48,7 +48,7 @@ def ad_copy(job, items):
         out += [f"--- {h['id']} ---",
                 f"Primary text: {' '.join(x for x in [h['say'], job.benefit(h)] if x)}",
                 f"Headline: {job.cta['headline']}",
-                f"Button: Download (or Install now / Learn more, whichever your objective offers)",
+                "Button: Download (or Install now / Learn more, whichever your objective offers)",
                 f"Video: videos/{it['files']['video']}" if it['files'].get('video') else '',
                 *[f"Image {k}: images/{v}" for k, v in it['files'].get('stills', {}).items()],
                 '']
@@ -80,6 +80,30 @@ Before you run: read every ad once with sound on and once with sound off, check 
 is true today, and check your platform's policies for your app's category.
 """
 
+# A pack with one hook has nothing to compare inside it, so its plan sets a baseline instead
+ONE_AD_PLAN = """How to run this ad
+==================
+
+This pack has one hook, so it can't tell you which hook works best on its own. It gives you a
+baseline for {name}: the number every later hook has to beat.
+
+1. Run the video in one ad set (or campaign) with broad targeting and a budget you can keep
+   steady for a week.
+2. Use the primary text and headline from ad-copy.txt. Upload the 9:16 still as the video's
+   cover image if your platform asks for one.
+3. Don't edit anything while it runs. Edits reset the platform's learning.
+4. After about 1,000 impressions, note the link click-through rate (link clicks /
+   impressions) and cost per link click. Then check installs or sign-ups in App Store
+   Connect, Google Play Console or your analytics: that's the real goal.
+5. Next time, make a pack with three to five hooks. They share this ad's body, so the test
+   compares only the hooks, and this ad's numbers are the bar to clear.
+
+Specs: 1080x1920 (9:16) H.264 video with burned-in captions; 4:5 (1080x1350) and 9:16 images.
+Text stays inside the 9:16 safe zone, so platform buttons and captions won't cover it.
+Before you run: watch the ad once with sound on and once with sound off, check every claim
+is true today, and check your platform's policies for your app's category.
+"""
+
 
 def voice_for(job, hook, workdir, log=print):
     if hook.get('voice'):
@@ -107,10 +131,12 @@ def direct(job, log=print):
 def check_quality(job, voices, S, workdir, log=print):
     """Claude reviews frames of every ad (agents.review), the fixes are applied, voiceovers that
     miss words are recorded again, and the fixed scenes are checked once more. Returns (job,
-    voices, report), with report None when the check didn't run."""
+    voices, report). When the check couldn't run, report is {'ran': False, 'reason': ...}, so
+    the pack says so instead of going out looking checked."""
     c = agents.client()
     if not c:
-        return job, voices, None
+        log('the quality check did not run: no ANTHROPIC_API_KEY')
+        return job, voices, {'ran': False, 'reason': 'the AI reviewer is not switched on for this renderer'}
     key = os.environ.get('ELEVENLABS_API_KEY')
     try:
         heard = {hid: voice.transcribe(v[0], key) for hid, v in voices.items()} if key else {}
@@ -118,7 +144,8 @@ def check_quality(job, voices, S, workdir, log=print):
         log('Checking the ads')
         first = agents.review(job, ads, heard, c)
         if not first:
-            return job, voices, None
+            log('the quality check did not run: the reviewer gave no answer')
+            return job, voices, {'ran': False, 'reason': 'the AI reviewer gave no answer'}
         job, changed = agents.apply_fixes(job, first['fixes'])
         retaken = []
         for h in job.hooks:
@@ -134,14 +161,20 @@ def check_quality(job, voices, S, workdir, log=print):
         if changed:
             ads = [Ad(job, h, voices[h['id']][1], S) for h in job.hooks if h['id'] in voices]
             recheck = agents.review(job, ads, heard, c, scenes=changed)
-        return job, voices, {'summary': first['summary'], 'issues': first['issues'],
+        return job, voices, {'ran': True, 'summary': first['summary'], 'issues': first['issues'],
                              'fixed_scenes': [i + 1 for i in changed], 'retaken': retaken, 'recheck': recheck}
     except Exception as e:
         log(f'the quality check failed ({type(e).__name__}: {str(e)[:120]}); rendering without it')
-        return job, voices, None
+        return job, voices, {'ran': False, 'reason': f'the AI reviewer failed ({type(e).__name__})'}
 
 
 def quality_text(q):
+    if not q.get('ran', True):
+        return ('Quality check\n=============\n\n'
+                f"The quality check didn't run on this pack: {q['reason']}.\n\n"
+                'Nothing was reviewed for zooms, headings, misread words or claims. Watch every video\n'
+                'once with sound on and once with it off, and check every claim yourself, before you\n'
+                'run the ads.\n')
     def issues(items):
         return [f"- {i['where']} ({i['check']}): {i['problem']}" for i in items]
     out = ['Quality check', '=============', '',
@@ -215,7 +248,7 @@ def make_pack(job, out, hooks=None, log=print, workdir=None, ai=True):
     with open(os.path.join(out, 'ad-copy.txt'), 'w') as f:
         f.write(ad_copy(job, items))
     with open(os.path.join(out, 'test-plan.txt'), 'w') as f:
-        f.write(TEST_PLAN.format(name=job.name, n=len(items)))
+        f.write((TEST_PLAN if len(items) > 1 else ONE_AD_PLAN).format(name=job.name, n=len(items)))
     if quality:
         with open(os.path.join(out, 'quality-check.txt'), 'w') as f:
             f.write(quality_text(quality))

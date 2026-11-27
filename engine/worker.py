@@ -10,25 +10,34 @@ reports back (studio_finish_job). One job at a time.
 Reads SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ELEVENLABS_API_KEY and ANTHROPIC_API_KEY (optional:
 the director and the quality check) from the environment, or from .env.local at the repo root. The service role key bypasses row level security, so a job is
 treated as untrusted input: every upload path must sit in the job owner's own folder, voices
-come from a fixed list, and text lengths and counts are capped before the engine sees them.
+come from a fixed list, recordings are decoded once under a time limit, and text lengths and
+counts are capped before the engine sees them.
+
+Email (optional): with SMTP_USER and SMTP_PASSWORD set (SMTP_HOST and SMTP_PORT default to
+Google's smtp.gmail.com:587, MAIL_FROM to SMTP_USER), customers hear when a pack is ready or
+failed (MAIL_CUSTOMERS=0 turns that off), and ALERT_EMAIL hears when a pack fails or goes out
+without its quality check. Without them, those messages only go to the log.
 """
 import json
 import mimetypes
 import os
 import re
 import shutil
+import smtplib
 import socket
 import sys
 import tempfile
+import threading
 import time
 import traceback
+from email.message import EmailMessage
 
 import requests
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from forge_engine import agents, job as jobs, pack  # noqa: E402
+from forge_engine import agents, job as jobs, pack, render  # noqa: E402
 
 Image.MAX_IMAGE_PIXELS = 40_000_000  # a phone screenshot is under 4 million
 
@@ -39,6 +48,8 @@ VOICES = {  # the voices the app offers (assets/studio.js)
 MOTIONS = {'rise', 'page', 'zoom', 'play'}
 HEX = re.compile(r'^#[0-9a-fA-F]{6}$')
 MAX_UPLOAD = 60 * 1024 * 1024
+SITE = 'https://forgelaboratory.net'
+SUPPORT = 'hassan@forgelaboratory.net'
 
 
 def load_env():
@@ -124,7 +135,9 @@ def build_job(spec, owner, workdir, sb):
             raise ValueError('Screens must be PNG, JPEG, WebP, MP4 or MOV.')
         local = os.path.join('up', f'{i}{ext}')
         sb.download('studio-uploads', path, os.path.join(workdir, local))
-        if kind != 'video':
+        if kind == 'video':
+            render.check_recording(os.path.join(workdir, local))
+        else:
             with Image.open(os.path.join(workdir, local)) as im:
                 im.verify()
         k = f's{i}'
@@ -221,16 +234,30 @@ def directed(sb, job, path, workdir, log):
     return job
 
 
+def heartbeat(jid, last, stop):
+    """Keeps a running job's lock fresh every 30 seconds, whether or not the engine is logging,
+    so a long voice or encode step never looks like a dead worker and gets rendered twice."""
+    beat = Supabase()  # its own connection: requests sessions aren't shared between threads
+    while not stop.wait(30):
+        try:
+            beat.rpc('studio_job_progress', {'p_job': jid, 'p_text': last[1]})
+        except Exception:
+            pass
+
+
 def run(sb, job_row, name):
     jid, owner, kind = job_row['id'], job_row['owner'], job_row['kind']
     batch = sb.get('studio_batches', f'id=eq.{job_row["batch_id"]}&select=id,spec,owner')[0]
     if batch['owner'] != owner:
         raise ValueError('That pack belongs to another account.')
     workdir = tempfile.mkdtemp(prefix=f'studio-{jid[:8]}-')
-    last = [0.0]
+    last = [0.0, 'Working']
+    stop = threading.Event()
+    threading.Thread(target=heartbeat, args=(jid, last, stop), daemon=True).start()
 
     def log(msg):
         print(f'  {msg}', flush=True)
+        last[1] = msg
         if time.time() - last[0] > 2:
             last[0] = time.time()
             try:
@@ -261,7 +288,75 @@ def run(sb, job_row, name):
             sb.upload('studio-renders', f'{base}/{rel}', os.path.join(out, rel))
         return {'base': base, 'files': files, 'manifest': manifest}
     finally:
+        stop.set()
         shutil.rmtree(workdir, ignore_errors=True)
+
+
+def send_mail(to, subject, body):
+    """A plain-text email through SMTP (see the module docstring). False, and a log line, when
+    there are no SMTP settings or sending fails: email never stops a render."""
+    user, password = os.environ.get('SMTP_USER'), os.environ.get('SMTP_PASSWORD')
+    if not (user and password and to):
+        print(f'  (no email sent: {subject})', flush=True)
+        return False
+    msg = EmailMessage()
+    msg['From'] = os.environ.get('MAIL_FROM') or f'ForgeLabs <{user}>'
+    msg['To'], msg['Subject'] = to, subject
+    msg.set_content(body)
+    try:
+        with smtplib.SMTP(os.environ.get('SMTP_HOST', 'smtp.gmail.com'), int(os.environ.get('SMTP_PORT', '587')), timeout=30) as s:
+            s.starttls()
+            s.login(user, password)
+            s.send_message(msg)
+        return True
+    except Exception as e:
+        print('  email failed:', e, flush=True)
+        return False
+
+
+def alert(subject, body):
+    send_mail(os.environ.get('ALERT_EMAIL'), f'[ForgeLabs worker] {subject}', body)
+
+
+def tell_customer(sb, row, ok, error=None):
+    """Emails a pack's owner that it's ready, or that it failed and wasn't charged."""
+    if row['kind'] != 'pack' or os.environ.get('MAIL_CUSTOMERS') == '0' or not os.environ.get('SMTP_USER'):
+        return
+    try:
+        email = sb.get('studio_accounts', f'id=eq.{row["owner"]}&select=email')[0]['email']
+        b = sb.get('studio_batches', f'id=eq.{row["batch_id"]}&select=project_id,spec')[0]
+    except Exception as e:
+        print('  could not look up who to email:', e, flush=True)
+        return
+    app = text((b['spec'].get('brand') or {}).get('name'), 60) or 'your app'
+    link = f'{SITE}/app/#/app/{b["project_id"]}/make'
+    if ok:
+        send_mail(email, f'Your ads for {app} are ready',
+                  f'Your test pack for {app} is ready to download:\n{link}\n\n'
+                  'Watch every video once with sound on and once with it off, and check every claim is\n'
+                  'true today, before you run them.\n\nForgeLabs App Ad Studio\n')
+    else:
+        send_mail(email, f"Your ad pack for {app} didn't finish",
+                  f"Your test pack for {app} didn't finish: {error}\n\n"
+                  f"It didn't use up your pack. Open the Studio to try again:\n{link}\n\n"
+                  f'If it keeps happening, email {SUPPORT}.\n\nForgeLabs App Ad Studio\n')
+
+
+def finish(sb, row, name, ok, result, error):
+    """Reports how a job ended, trying again through a network blip. False when the job wasn't
+    this worker's to finish any more: another worker took it over after this one went quiet."""
+    args = {'p_job': row['id'], 'p_ok': ok, 'p_result': result, 'p_error': error, 'p_worker': name}
+    for wait in (2, 5, 15, 30, None):
+        try:
+            return sb.rpc('studio_finish_job', args) is not False
+        except (RuntimeError, requests.RequestException) as e:
+            if 'PGRST202' in str(e) and 'p_worker' in args:
+                args.pop('p_worker')  # a database from before p_worker: finish the old way
+                continue
+            if wait is None:
+                raise
+            print(f'  reporting the result failed ({e}); trying again in {wait}s', flush=True)
+            time.sleep(wait)
 
 
 def main():
@@ -286,15 +381,32 @@ def main():
         t0 = time.time()
         try:
             result = run(sb, row, name)
-            sb.rpc('studio_finish_job', {'p_job': row['id'], 'p_ok': True, 'p_result': result, 'p_error': None})
-            print(f'  done in {time.time() - t0:.0f}s', flush=True)
         except Exception as e:
-            traceback.print_exc()
-            msg = str(e) if isinstance(e, (ValueError, jobs.JobError)) else 'Something went wrong while rendering. Try again, and tell us if it keeps happening.'
+            trace = traceback.format_exc()
+            print(trace, flush=True)
+            known = isinstance(e, (ValueError, jobs.JobError))
+            msg = (str(e) if known else 'Something went wrong while rendering. Try again, and tell us if it keeps happening.')[:300]
             try:
-                sb.rpc('studio_finish_job', {'p_job': row['id'], 'p_ok': False, 'p_result': None, 'p_error': msg[:300]})
+                if finish(sb, row, name, False, None, msg):
+                    tell_customer(sb, row, False, msg)
             except Exception as e2:
                 print('could not report the failure:', e2, flush=True)
+            if not known and row['kind'] == 'pack':
+                alert(f'a pack failed ({row["id"][:8]})', f'job {row["id"]} for {row["owner"]}\n\n{trace}')
+        else:
+            try:
+                if finish(sb, row, name, True, result, None):
+                    print(f'  done in {time.time() - t0:.0f}s', flush=True)
+                    tell_customer(sb, row, True)
+                    q = result['manifest'].get('quality') or {}
+                    if row['kind'] == 'pack' and q.get('ran') is False:
+                        alert(f'a pack went out without its quality check ({row["id"][:8]})',
+                              f'job {row["id"]} for {row["owner"]}: {q.get("reason")}.\n'
+                              'The customer sees a warning on the pack and in quality-check.txt.')
+                else:
+                    print('  another worker had taken this job over; this result was not used', flush=True)
+            except Exception as e2:
+                print('could not report the result:', e2, flush=True)
         if once:
             return 0
 

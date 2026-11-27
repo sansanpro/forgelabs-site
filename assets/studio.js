@@ -62,7 +62,7 @@
     too_many_queued: "You already have two renders waiting. Start this one when one of them is done.",
     hooks_1_to_5: "Pick between one and five hooks.",
     ai_unavailable: "AI suggestions aren't switched on yet. Use the templates, or write your own.",
-    ai_daily_limit: "You've used today's AI suggestions. They reset tomorrow.",
+    ai_daily_limit: "AI suggestions are used up for today. They reset tomorrow; the templates still work.",
     ai_busy: "The AI is busy. Try again in a minute.",
     ai_declined: "The AI declined that request. Try different wording in your brief.",
     ai_failed: "The AI didn't answer. Try again.",
@@ -540,6 +540,9 @@
     el.textContent = miss.length ? "Add " + miss.join(", ").replace(/, ([^,]*)$/, " and $1") + "." : "";
     el.className = "small " + (loud && miss.length ? "bad" : "muted");
   }
+  /* A phone screenshot is about twice as tall as it's wide; anything squarer is shown whole on a
+     blurred background rather than cropped. 1.96 matches fit() in engine/forge_engine/render.py. */
+  function phoneShaped(a) { return !a.width || !a.height || a.height / a.width >= 1.96; }
   function renderShots() {
     var list = shots(), ic = icon();
     signed("studio-uploads", S.assets.map(function (a) { return a.path; })).then(function () {
@@ -555,15 +558,19 @@
           '<span class="tools"><button class="btn small" data-up="' + i + '" type="button" aria-label="Move earlier"' + (i ? "" : " disabled") + ">←</button>" +
           '<button class="btn small" data-down="' + i + '" type="button" aria-label="Move later"' + (i < list.length - 1 ? "" : " disabled") + ">→</button>" +
           '<button class="btn small" data-del="' + esc(a.id) + '" type="button" aria-label="Remove">✕</button></span>' +
-          (!a.width || a.height > a.width ? "" : '<span class="warnbadge">Landscape</span>') + "</figure>";
+          (phoneShaped(a) ? "" : '<span class="warnbadge">' + (a.width >= a.height ? "Landscape" : "Tablet shape") + "</span>") + "</figure>";
       }).join("") + "</div>" : "";
+      if (!list.every(phoneShaped)) {
+        box.innerHTML += '<p class="small muted">Marked screens aren\'t phone-shaped. They\'ll be shown whole inside the phone, on a blurred copy of themselves; ' +
+          "a screenshot taken on a phone fills the screen and looks better.</p>";
+      }
       if (list.some(function (a) { return /^Store screenshot/.test(a.label || ""); })) {
         box.innerHTML += '<p class="small muted">These came from your store listing. Store screenshots often have captions or a phone frame already; ' +
           "plain screenshots from your phone make cleaner ads, so swap any that look busy.</p>";
       }
       document.getElementById("icon-row").innerHTML = ic
         ? '<img class="iconprev" src="' + esc(link("studio-uploads", ic.path)) + '" alt="App icon"><span class="small muted">App icon, on the end card</span><button class="btn small link" data-del="' + esc(ic.id) + '" type="button">Remove</button>'
-        : '<label class="btn small" for="up-icon">Add your app icon<input id="up-icon" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><span class="small muted">Optional, for the end card</span>';
+        : '<label class="btn small" for="up-icon">Add your app icon<input id="up-icon" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><span class="small muted">For the end card. Without it, the end card shows only your app\'s name.</span>';
       var upi = document.getElementById("up-icon");
       if (upi) upi.onchange = function (e) { addFiles(e.target.files, true); };
       root.querySelectorAll("#shots [data-del], #icon-row [data-del]").forEach(function (el) {
@@ -915,10 +922,11 @@
   /* ── 3. make the ads ─────────────────────────────────────────── */
   function platformCta() {
     var b = brief(), p = b.platforms || ["ios"], name = b.spoken_name || b.name || S.project.name;
-    if (p.indexOf("ios") >= 0 && p.indexOf("android") >= 0) return ["Download " + name + " free today.", "Download free today"];
-    if (p.indexOf("ios") >= 0) return ["Download " + name + " free on the App Store.", "Download free on the App Store"];
-    if (p.indexOf("android") >= 0) return ["Get " + name + " free on Google Play.", "Get it free on Google Play"];
-    return ["Try " + name + " free today.", "Try it free"];
+    /* No "free" by default: not every app is. People with a free app can add it in the script. */
+    if (p.indexOf("ios") >= 0 && p.indexOf("android") >= 0) return ["Download " + name + " today.", "Download today"];
+    if (p.indexOf("ios") >= 0) return ["Download " + name + " on the App Store.", "Download on the App Store"];
+    if (p.indexOf("android") >= 0) return ["Get " + name + " on Google Play.", "Get it on Google Play"];
+    return ["Try " + name + " today.", "Try it today"];
   }
   /* A new script starts as one line per screenshot, up to three, in upload order */
   function seedScript() {
@@ -1198,7 +1206,11 @@
       }
       if (b.result && b.result.base) {
         var m = b.result.manifest, base = b.result.base;
-        html += '<h3>Your pack</h3><p><a class="btn pri" data-dl="' + esc(base + "/" + m.zip) + '" href="#">Download everything (.zip)</a></p><div class="vids">' +
+        html += '<h3>Your pack</h3>' +
+          (m.quality && m.quality.ran === false
+            ? '<div class="banner warn small">The quality check didn\'t run on this pack (' + esc(m.quality.reason) + "). Nothing was reviewed for zooms, headings, misread words or claims, so watch every video and check every claim yourself before you run them.</div>"
+            : "") +
+          '<p><a class="btn pri" data-dl="' + esc(base + "/" + m.zip) + '" href="#">Download everything (.zip)</a></p><div class="vids">' +
           (m.ads || []).map(function (ad) {
             var f = ad.files, nc = ad.name_check;
             var cover = f.stills && f.stills["9x16"] ? ' data-render-poster="' + esc(base + "/images/" + f.stills["9x16"]) + '"' : "";
@@ -1209,7 +1221,8 @@
               (f.srt ? ' · <a href="#" data-dl="' + esc(base + "/captions/" + f.srt) + '">Captions</a>' : "") + "</p>" +
               (nc && nc.passed === false ? '<p class="small bad">Listen to how your app\'s name is said: the check heard “' + esc(nc.heard) + "”.</p>" : "") + "</div>";
           }).join("") + "</div>" +
-          '<p class="small"><a href="#" data-dl="' + esc(base + "/ad-copy.txt") + '">Ad copy</a> · <a href="#" data-dl="' + esc(base + "/test-plan.txt") + '">Test plan</a></p>' +
+          '<p class="small"><a href="#" data-dl="' + esc(base + "/ad-copy.txt") + '">Ad copy</a> · <a href="#" data-dl="' + esc(base + "/test-plan.txt") + '">Test plan</a>' +
+          (m.quality ? ' · <a href="#" data-dl="' + esc(base + "/quality-check.txt") + '">Quality check</a>' : "") + "</p>" +
           '<p class="small muted">Watch every video once with sound on and once with it off, and check every claim is true today, before you run them.</p>';
       }
       return html + "</div>";
