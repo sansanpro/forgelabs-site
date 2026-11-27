@@ -1,13 +1,25 @@
 @echo off
-rem Keeps the render worker running on a Windows PC: restarts it 10 seconds after any exit.
+rem Keeps the render workers running on a Windows PC: each restarts 10 seconds after any exit.
 rem Started at boot by the ForgeWorker scheduled task (install.ps1). Expects the repo at
 rem C:\forge\forgelabs-site, the virtualenv at C:\forge\venv and the keys in the repo's .env.local.
-rem Logs go to C:\forge\worker.log, which rolls over to worker.old.log at 10 MB.
+rem Runs FORGE_WORKERS workers side by side, 3 unless that's set in the system environment.
+rem studio_claim_job's skip-locked claim keeps them off each other's jobs.
+rem Worker 1 logs to worker.log, worker 2 to worker-2.log and so on, in FORGE_HOME (C:\forge
+rem unless set). Each log rolls over to .old.log at 10 MB.
 cd /d "%~dp0..\.."
+if "%FORGE_HOME%"=="" set FORGE_HOME=C:\forge
+set id=%~1
+if not "%id%"=="" goto start
+if "%FORGE_WORKERS%"=="" set FORGE_WORKERS=3
+for /l %%i in (2,1,%FORGE_WORKERS%) do start "" /b cmd /c ""%~f0" %%i"
+set id=1
+:start
+set log=%FORGE_HOME%\worker-%id%.log
+if "%id%"=="1" set log=%FORGE_HOME%\worker.log
 :loop
-for %%F in (C:\forge\worker.log) do if %%~zF GTR 10000000 move /y C:\forge\worker.log C:\forge\worker.old.log >nul
-echo [%date% %time%] starting the worker >> C:\forge\worker.log
-"C:\forge\venv\Scripts\python.exe" -u worker.py >> C:\forge\worker.log 2>&1
+if exist "%log%" for %%F in ("%log%") do if %%~zF GTR 10000000 move /y "%log%" "%log:.log=.old.log%" >nul
+echo [%date% %time%] starting worker %id% >> "%log%"
+"%FORGE_HOME%\venv\Scripts\python.exe" -u worker.py >> "%log%" 2>&1
 rem `timeout` needs a console, which a scheduled task doesn't have; ping waits instead
 ping -n 11 127.0.0.1 >nul
 goto loop

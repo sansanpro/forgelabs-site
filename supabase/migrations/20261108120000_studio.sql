@@ -5,7 +5,8 @@
 --
 -- Who can do what:
 --   the browser (authenticated)  reads and edits its own rows; queues work only through
---                                studio_queue(), which checks the free pack allowance
+--                                studio_queue(), which checks the free pack allowance, and asks
+--                                where a job stands with studio_queue_status()
 --   the worker (service_role)    claims jobs with studio_claim_job() and reports back with
 --                                studio_finish_job() and studio_job_progress()
 
@@ -96,8 +97,15 @@ create table if not exists public.studio_jobs (
   created_at timestamptz not null default now(),
   finished_at timestamptz
 );
+alter table public.studio_jobs add column if not exists started_at timestamptz;  -- when a worker claimed it
 create index if not exists studio_jobs_queue on public.studio_jobs (status, created_at);
 create index if not exists studio_jobs_batch on public.studio_jobs (batch_id, created_at desc);
+
+-- The workers seen lately, so the app can say when the renderer is off
+create table if not exists public.studio_workers (
+  name text primary key,   -- host-pid, from engine/worker.py
+  seen_at timestamptz not null default now()
+);
 
 -- ── every signed-up user gets an account row ────────────────────────────────
 
@@ -123,9 +131,10 @@ alter table public.studio_assets enable row level security;
 alter table public.studio_hooks enable row level security;
 alter table public.studio_batches enable row level security;
 alter table public.studio_jobs enable row level security;
+alter table public.studio_workers enable row level security;   -- no policies: only the functions below touch it
 
 revoke all on public.studio_accounts, public.studio_projects, public.studio_assets, public.studio_hooks,
-  public.studio_batches, public.studio_jobs from anon, authenticated;
+  public.studio_batches, public.studio_jobs, public.studio_workers from anon, authenticated;
 
 grant select on public.studio_accounts to authenticated;
 grant select, insert, update, delete on public.studio_projects, public.studio_assets, public.studio_hooks to authenticated;
@@ -190,6 +199,11 @@ begin
   if n < 1 or n > 5 then raise exception 'hooks_1_to_5'; end if;
 
   select * into a from studio_accounts where id = auth.uid() for update;
+  -- One account can't fill the queue: there is a single renderer, and everyone waits behind it
+  if not a.is_admin and (select count(*) from studio_jobs
+                          where owner = auth.uid() and status in ('queued', 'running')) >= 2 then
+    raise exception 'too_many_queued';
+  end if;
   if p_kind = 'preview' then
     select count(*) into n from studio_jobs
       where owner = auth.uid() and kind = 'preview' and created_at > now() - interval '1 day';
@@ -237,6 +251,10 @@ returns setof public.studio_jobs language plpgsql security definer set search_pa
 declare
   j public.studio_jobs;
 begin
+  insert into studio_workers (name, seen_at) values (p_worker, now())
+    on conflict (name) do update set seen_at = now();
+  delete from studio_workers where seen_at < now() - interval '1 day';
+
   -- Jobs whose worker vanished three times are given up on, and refunded
   for j in select * from studio_jobs
             where status = 'running' and locked_at < now() - interval '20 minutes' and attempts >= 3 loop
@@ -250,7 +268,7 @@ begin
    for update skip locked;
   if not found then return; end if;
   update studio_jobs set status = 'running', attempts = attempts + 1, worker = p_worker, locked_at = now(),
-         progress = 'Starting'
+         started_at = now(), progress = 'Starting'
    where id = j.id returning * into j;
   update studio_batches set status = 'running', updated_at = now() where id = j.batch_id;
   return next j;
@@ -259,7 +277,37 @@ end $$;
 create or replace function public.studio_job_progress(p_job uuid, p_text text)
 returns void language sql security definer set search_path = public as $$
   update studio_jobs set progress = left(p_text, 200), locked_at = now() where id = p_job and status = 'running';
+  update studio_workers set seen_at = now() where name = (select worker from studio_jobs where id = p_job);
 $$;
+
+-- Where a queued job stands, for the app: the jobs that run before it, how many workers are on,
+-- and a rough wait until it's done, from the last week's render times
+create or replace function public.studio_queue_status(p_job uuid)
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare
+  j public.studio_jobs;
+  n_workers int;
+  n_previews int;
+  n_packs int;
+  t_preview float;
+  t_pack float;
+begin
+  select * into j from studio_jobs where id = p_job and owner = auth.uid();
+  if not found then return null; end if;
+  select count(*) into n_workers from studio_workers where seen_at > now() - interval '3 minutes';
+  select count(*) filter (where kind = 'preview'), count(*) filter (where kind = 'pack')
+    into n_previews, n_packs
+    from studio_jobs
+   where id <> j.id and (status = 'running' or (status = 'queued' and created_at < j.created_at));
+  select coalesce(avg(extract(epoch from finished_at - started_at)) filter (where kind = 'preview'), 20),
+         coalesce(avg(extract(epoch from finished_at - started_at)) filter (where kind = 'pack'), 90)
+    into t_preview, t_pack
+    from studio_jobs
+   where status = 'done' and started_at is not null and finished_at > now() - interval '7 days';
+  return jsonb_build_object('ahead', n_previews + n_packs, 'workers', n_workers,
+    'wait_s', round((n_previews * t_preview + n_packs * t_pack) / greatest(n_workers, 1)
+                    + case when j.kind = 'pack' then t_pack else t_preview end));
+end $$;
 
 -- ── AI calls: a daily allowance per account ────────────────────────────────
 
@@ -278,8 +326,9 @@ end $$;
 
 revoke all on function public.studio_queue(uuid, text), public.studio_finish_job(uuid, boolean, jsonb, text),
   public.studio_claim_job(text), public.studio_job_progress(uuid, text), public.studio_ai_allow(),
-  public.studio_handle_new_user() from public, anon, authenticated;
-grant execute on function public.studio_queue(uuid, text), public.studio_ai_allow() to authenticated;
+  public.studio_queue_status(uuid), public.studio_handle_new_user() from public, anon, authenticated;
+grant execute on function public.studio_queue(uuid, text), public.studio_ai_allow(), public.studio_queue_status(uuid)
+  to authenticated;
 grant execute on function public.studio_finish_job(uuid, boolean, jsonb, text), public.studio_claim_job(text),
   public.studio_job_progress(uuid, text) to service_role;
 

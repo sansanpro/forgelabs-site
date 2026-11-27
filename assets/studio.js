@@ -59,6 +59,7 @@
     no_packs_left: "You've used your free pack. Email " + SUPPORT + " during the beta and we'll add more.",
     preview_limit: "That's 40 previews today. Previews reset tomorrow.",
     already_queued: "That pack is already queued.",
+    too_many_queued: "You already have two renders waiting. Start this one when one of them is done.",
     hooks_1_to_5: "Pick between one and five hooks.",
     ai_unavailable: "AI suggestions aren't switched on yet. Use the templates, or write your own.",
     ai_daily_limit: "You've used today's AI suggestions. They reset tomorrow.",
@@ -80,7 +81,7 @@
     million: 1000000, billion: 1000000000, double: 2, twice: 2, triple: 3, tenfold: 10 };
 
   var S = {
-    session: null, account: null, projects: [], project: null, assets: [], hooks: [], batches: [], jobs: {},
+    session: null, account: null, projects: [], project: null, assets: [], hooks: [], batches: [], jobs: {}, queue: {},
     step: "app", urls: {}, poll: null, ai: undefined, playing: null, ack: false, suggested: {}, saveT: null
   };
   var root = document.getElementById("root");
@@ -242,8 +243,17 @@
         .then(function (jobs) {
           S.jobs = {};
           jobs.forEach(function (j) { if (!S.jobs[j.batch_id]) S.jobs[j.batch_id] = j; });
+          return loadQueue();
         });
     });
+  }
+  /* Where each waiting job stands (studio_queue_status). If that fails, the batch just says it's waiting. */
+  function loadQueue() {
+    var waiting = Object.keys(S.jobs).map(function (k) { return S.jobs[k]; }).filter(function (j) { return j.status === "queued"; });
+    var q = {};
+    return Promise.all(waiting.map(function (j) {
+      return rpc("studio_queue_status", { p_job: j.id }).then(function (r) { if (r) q[j.id] = r; }).catch(function () {});
+    })).then(function () { S.queue = q; });
   }
   function defaults(sc) {
     sc.body = Array.isArray(sc.body) ? sc.body : [];
@@ -1167,8 +1177,17 @@
         '<span class="small muted">' + esc((b.spec.hooks || []).map(function (h) { return h.say; }).join(" · ")) + "</span></div>";
       if (busy) {
         var waiting = j && j.status === "queued" && Date.now() - new Date(j.created_at).getTime() > 120000;
+        var q = j && j.status === "queued" && S.queue[j.id], note = "";
+        if (q && !q.workers) {
+          note = "The renderer is off right now. Your " + (j.kind === "pack" ? "pack" : "preview") + " stays in the queue and starts when it's back. You can leave this page and come back later.";
+        } else if (q && q.ahead) {
+          var min = Math.max(1, Math.round(q.wait_s / 60));
+          note = q.ahead + " render" + (q.ahead === 1 ? " is" : "s are") + " ahead of yours. It should be ready in about " + min + " minute" + (min === 1 ? "" : "s") + ". You can leave this page; it keeps going.";
+        } else if (waiting) {
+          note = "During the beta the renderer can take a few minutes to pick up a job. You can leave this page; it keeps going.";
+        }
         html += '<p class="small"><span class="spin" aria-hidden="true"></span> ' + esc((j && j.progress) || (j && j.status === "queued" ? "Waiting for the renderer" : "Working")) + "…</p>" +
-          (waiting ? '<p class="small muted">During the beta the renderer can take a few minutes to pick up a job. You can leave this page; it keeps going.</p>' : "");
+          (note ? '<p class="small muted">' + esc(note) + "</p>" : "");
       }
       if (st === "failed" && b.error) html += '<p class="small bad">' + esc(b.error) + "</p>";
       if (b.preview && b.preview.base) {

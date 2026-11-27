@@ -111,11 +111,32 @@ The engine is ported from `marketing/ads/scripts/render_videos.py`, `voiceover.m
 redeployed; a live `suggest_hooks` call returned hooks in 18.5 s. `studio-store` is deployed (v2).
 The worker's director and quality check need the key on the Windows PC too (see the open items).
 
+**Launch prep (2026-11-27):**
+- The README no longer shows the worker PC's local address, SSH user or host name. Older commits
+  still contain them; the address is a home-network one, not reachable from the internet.
+- Visit counting: `assets/visit.js` on every public page, `site_visit()` in
+  `supabase/migrations/20261127120000_site_visits.sql`, read with `supabase/launch-report.sql`.
+  No cookies or pixels; the privacy page says what's counted. Sign-ups and packs are traced to the
+  visitor's source within the same day.
+- The queue: two open renders per account (`too_many_queued`), worker heartbeats in
+  `studio_workers`, and `studio_queue_status()`, which the app uses to show the renders ahead,
+  the expected wait, and that the renderer is off. `run-worker.cmd` starts three workers
+  (`FORGE_WORKERS`), and the voice step retries ElevenLabs' 429 when they record at once.
+  Until the migrations are applied, the app falls back to its old waiting message and visits
+  aren't recorded.
+
 **Open items for the owner:**
+- **Apply the migrations:** run `supabase/migrations/20261108120000_studio.sql` and then
+  `20261127120000_site_visits.sql` in the Studio project's SQL editor (both are safe to run again).
+  Neither has been run against a database yet: they pass Postgres's parser, nothing more.
 - **The worker PC:** pull the repo, add `ANTHROPIC_API_KEY` to `C:\forge\forgelabs-site\.env.local`,
   run `pip install -r engine\requirements.txt` in the venv (it now needs `anthropic`), and
-  restart the ForgeWorker task. Then run `tests/live-flow.mjs` and check the pack has
+  restart the ForgeWorker task, which now starts three workers. Check three `polling` lines
+  appear across `C:\forge\worker*.log`. Then run `tests/live-flow.mjs` and check the pack has
   `quality-check.txt`.
+- **ElevenLabs plan:** three workers can record at once. On a plan that allows fewer concurrent
+  requests, a worker that's turned away retries for about 45 seconds, then the pack fails and is
+  refunded. If that shows up in the logs, set `FORGE_WORKERS` to the plan's limit.
 - **Third-party terms:** ElevenLabs' commercial terms and the licence of the Canva hand photo.
 
 ## MVP build order

@@ -11,6 +11,7 @@ import json
 import os
 import re
 import subprocess
+import time
 
 import requests
 
@@ -21,6 +22,16 @@ API = 'https://api.elevenlabs.io/v1'
 
 class VoiceError(RuntimeError):
     pass
+
+
+def post(url, **kw):
+    """ElevenLabs answers 429 when more requests run at once than the plan allows, which happens
+    when several workers record at the same time. Waits and tries again before giving up."""
+    for wait in (3, 6, 12, 24, None):
+        r = requests.post(url, **kw)
+        if r.status_code != 429 or wait is None:
+            return r
+        time.sleep(wait)
 
 
 def to_words(al):
@@ -37,14 +48,14 @@ def to_words(al):
 
 
 def synthesize(text, cfg, key, seed):
-    r = requests.post(f"{API}/text-to-speech/{cfg['id']}/with-timestamps",
-                      params={'output_format': 'mp3_44100_128'},
-                      headers={'xi-api-key': key, 'Content-Type': 'application/json'},
-                      json={'text': text, 'model_id': cfg.get('model', 'eleven_v4'), 'seed': seed,
-                            'voice_settings': {'stability': cfg.get('stability', .5),
-                                               'similarity_boost': cfg.get('similarity', .75),
-                                               'speed': cfg.get('speed', 1.0)}},
-                      timeout=120)
+    r = post(f"{API}/text-to-speech/{cfg['id']}/with-timestamps",
+             params={'output_format': 'mp3_44100_128'},
+             headers={'xi-api-key': key, 'Content-Type': 'application/json'},
+             json={'text': text, 'model_id': cfg.get('model', 'eleven_v4'), 'seed': seed,
+                   'voice_settings': {'stability': cfg.get('stability', .5),
+                                      'similarity_boost': cfg.get('similarity', .75),
+                                      'speed': cfg.get('speed', 1.0)}},
+             timeout=120)
     if r.status_code != 200:
         raise VoiceError(f'ElevenLabs text-to-speech failed ({r.status_code}): {r.text[:300]}')
     d = r.json()
@@ -56,9 +67,10 @@ def synthesize(text, cfg, key, seed):
 
 def transcribe(path, key):
     with open(path, 'rb') as f:
-        r = requests.post(f'{API}/speech-to-text', headers={'xi-api-key': key},
-                          data={'model_id': 'scribe_v2'}, files={'file': (os.path.basename(path), f, 'audio/mpeg')},
-                          timeout=120)
+        audio = f.read()  # read once, so a retry sends the whole clip again
+    r = post(f'{API}/speech-to-text', headers={'xi-api-key': key},
+             data={'model_id': 'scribe_v2'}, files={'file': (os.path.basename(path), audio, 'audio/mpeg')},
+             timeout=120)
     if r.status_code != 200:
         raise VoiceError(f'ElevenLabs speech-to-text failed ({r.status_code}): {r.text[:300]}')
     return r.json().get('text', '')
