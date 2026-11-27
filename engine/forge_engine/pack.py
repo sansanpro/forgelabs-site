@@ -222,10 +222,15 @@ def make_pack(job, out, hooks=None, log=print, workdir=None, ai=True):
     S = Screens(job.screens)
     items = []
     try:
-        voices = {h['id']: voice_for(job, h, workdir, log) for h in job.hooks if not hooks or h['id'] in hooks}
+        todo = [h for h in job.hooks if not hooks or h['id'] in hooks]
+        voices = {}
+        for i, h in enumerate(todo, 1):
+            log(f'Recording voiceover {i} of {len(todo)}')  # the app's progress bar reads these lines
+            voices[h['id']] = voice_for(job, h, workdir, log)
         job, voices, quality = check_quality(job, voices, S, workdir, log) if ai else (job, voices, None)
-        for h in job.hooks:
-            if h['id'] not in voices: continue
+        done = [h for h in job.hooks if h['id'] in voices]
+        for i, h in enumerate(done, 1):
+            log(f'Rendering video {i} of {len(done)}')
             mp3, words, check = voices[h['id']]
             ad = Ad(job, h, words, S)
             name = slug(h['id'])

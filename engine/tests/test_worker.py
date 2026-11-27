@@ -1,6 +1,7 @@
 """The worker's checks on a batch spec, without Supabase: a spec shaped like the one
 assets/studio.js builds is turned into an engine job and previewed, and specs that reach into
-another account or break the limits are refused.
+another account or break the limits are refused, including a pack whose videos don't each have
+their own hook.
 
     .venv/bin/python -m tests.test_worker        from engine/ (needs tests/fixture/: run make_fixture first)
 """
@@ -54,10 +55,10 @@ def spec(**over):
     return s
 
 
-def refused(s, why):
+def refused(s, why, kind='preview'):
     d = tempfile.mkdtemp()
     try:
-        worker.build_job(s, OWNER, d, FakeSupabase())
+        worker.build_job(s, OWNER, d, FakeSupabase(), kind)
     except ValueError as e:
         print(f'refused as expected ({why}): {e}')
         return True
@@ -91,6 +92,18 @@ def main():
     ok &= refused(spec(body=[{'say': 'Words', 'screen': 'nope', 'motion': 'rise'}]), 'unknown screen')
     s = spec(); s['screens']['a-today']['path'] = f'{OWNER}/proj/today.gif'
     ok &= refused(s, 'unsupported file type')
+    three = [{'id': 'h1-pain', 'say': 'Habits fall apart by Friday.'}, {'id': 'h2-result', 'say': 'A month of streaks, without the guilt.'},
+             {'id': 'h3-comparison', 'say': "It's like Duolingo, but for your habits."}]
+    ok &= refused(spec(), 'a pack with one hook', 'pack')
+    ok &= refused(spec(hooks=three[:2]), 'a pack with two hooks', 'pack')
+    ok &= refused(spec(hooks=three[:2] + [{'id': 'h3-x', 'say': 'habits FALL apart, by friday!'}]), 'the same hook twice', 'pack')
+    d = tempfile.mkdtemp()
+    try:
+        job = worker.build_job(spec(hooks=three), OWNER, d, FakeSupabase(), 'pack')
+        assert [h['id'] for h in job.hooks] == ['h1-pain', 'h2-result', 'h3-comparison']
+        print('a pack with three different hooks: built')
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
 
     d = tempfile.mkdtemp()
     try:

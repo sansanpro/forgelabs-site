@@ -107,8 +107,15 @@ def text(v, n):
     return re.sub(r'\s+', ' ', str(v or '')).strip()[:n]
 
 
-def build_job(spec, owner, workdir, sb):
-    """Checks a batch spec from the browser and turns it into an engine job with local files."""
+def same_hook(say):
+    """A hook's words without case, spacing or punctuation: two hooks that match this way are the
+    same hook (assets/studio.js norm(), studio_queue() in the migration)."""
+    return re.sub(r'[\W_]+', '', say.lower())
+
+
+def build_job(spec, owner, workdir, sb, job_kind='preview'):
+    """Checks a batch spec from the browser and turns it into an engine job with local files. Every
+    video in a pack opens with its own hook, so a pack has three to five different ones."""
     brand = spec.get('brand') or {}
     theme = brand.get('theme') or {}
     t = {'style': 'light' if theme.get('style') == 'light' else 'dark'}
@@ -153,6 +160,10 @@ def build_job(spec, owner, workdir, sb):
     hooks = spec.get('hooks') or []
     if not 1 <= len(hooks) <= 5:
         raise ValueError('Pick between one and five hooks.')
+    if job_kind == 'pack' and len(hooks) < 3:
+        raise ValueError('Pick at least three hooks. Each video opens with its own, so the pack compares them.')
+    if len({same_hook(text(h.get('say'), 160)) for h in hooks}) < len(hooks):
+        raise ValueError('Two of the hooks are the same. Each video needs a different one.')
     seen = set()
     for i, h in enumerate(hooks):
         hid = re.sub(r'[^a-z0-9-]+', '-', str(h.get('id') or f'hook-{i + 1}').lower()).strip('-')[:40] or f'hook-{i + 1}'
@@ -267,7 +278,7 @@ def run(sb, job_row, name):
 
     try:
         log('Fetching your screens')
-        job = build_job(batch['spec'], owner, workdir, sb)
+        job = build_job(batch['spec'], owner, workdir, sb, kind)
         job = directed(sb, job, f'{owner}/{batch["id"]}/direction.json', workdir, log)
         out = os.path.join(workdir, 'out')
         if kind == 'preview':

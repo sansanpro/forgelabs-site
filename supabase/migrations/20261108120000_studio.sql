@@ -197,6 +197,13 @@ begin
   end if;
   n := jsonb_array_length(coalesce(b.spec -> 'hooks', '[]'::jsonb));
   if n < 1 or n > 5 then raise exception 'hooks_1_to_5'; end if;
+  -- Every video in a pack opens with its own hook, so a pack compares three to five different ones.
+  -- Hooks are the same when only case, spacing or punctuation differ (engine/worker.py same_hook).
+  if p_kind = 'pack' and n < 3 then raise exception 'pack_needs_3_hooks'; end if;
+  if (select count(distinct regexp_replace(lower(h ->> 'say'), '[^[:alnum:]]+', '', 'g'))
+        from jsonb_array_elements(b.spec -> 'hooks') h) < n then
+    raise exception 'hooks_must_differ';
+  end if;
 
   select * into a from studio_accounts where id = auth.uid() for update;
   -- One account can't fill the queue: there is a single renderer, and everyone waits behind it
@@ -306,8 +313,9 @@ begin
     into n_previews, n_packs
     from studio_jobs
    where id <> j.id and (status = 'running' or (status = 'queued' and created_at < j.created_at));
-  select coalesce(avg(extract(epoch from finished_at - started_at)) filter (where kind = 'preview'), 20),
-         coalesce(avg(extract(epoch from finished_at - started_at)) filter (where kind = 'pack'), 90)
+  -- Until there's a week of history: about what the render PC takes (docs/PLAN.md, "Render capacity")
+  select coalesce(avg(extract(epoch from finished_at - started_at)) filter (where kind = 'preview'), 45),
+         coalesce(avg(extract(epoch from finished_at - started_at)) filter (where kind = 'pack'), 360)
     into t_preview, t_pack
     from studio_jobs
    where status = 'done' and started_at is not null and finished_at > now() - interval '7 days';
