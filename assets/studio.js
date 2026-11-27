@@ -295,6 +295,7 @@
       btn.disabled = true;
       authCall(up ? "signup" : "token?grant_type=password", { email: email, password: pw }).then(function (r) {
         btn.disabled = false;
+        if (up && r.ok && window.flVisit) window.flVisit("signup");
         if (r.ok && r.data.access_token) { saveSession(r.data); boot(); return; }
         if (up && r.ok) { renderAuth("signin", "Check your email to confirm your account, then sign in."); return; }
         var m = r.data.msg || r.data.error_description || r.data.message;
@@ -1128,6 +1129,7 @@
     flush().then(function () { return batchFor(kind); }).then(function (b) {
       return rpc("studio_queue", { p_batch: b.id, p_kind: kind });
     }).then(function () {
+      if (kind === "pack" && window.flVisit) window.flVisit("pack");
       toast(kind === "pack" ? "Your pack is queued." : "Preview queued.");
       return Promise.all([loadBatches(S.project.id), loadAccount()]);
     }).then(function () { renderProject(); startPoll(); }).catch(function (e) { fail(e); renderProject(); });
