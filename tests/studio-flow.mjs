@@ -276,6 +276,7 @@ if (!(await page.isDisabled('#m-pack'))) errors.push('one hook: the pack should 
 await page.click('[data-tmpl="pain"]');
 await page.fill('#h-text', 'Starting a habit is easy. Keeping it is the hard part.');
 await page.press('#h-text', 'Enter');
+await page.waitForFunction(() => document.querySelectorAll('.hook.on').length === 2);  // saved before the next one
 await page.fill('#h-text', 'Watch a week of habits turn into one streak.');
 await page.press('#h-text', 'Enter');
 await page.waitForFunction(() => document.querySelectorAll('.hook.on').length === 3);

@@ -314,8 +314,8 @@ begin
     from studio_jobs
    where id <> j.id and (status = 'running' or (status = 'queued' and created_at < j.created_at));
   -- Until there's a week of history: about what the render PC takes (docs/PLAN.md, "Render capacity")
-  select coalesce(avg(extract(epoch from finished_at - started_at)) filter (where kind = 'preview'), 45),
-         coalesce(avg(extract(epoch from finished_at - started_at)) filter (where kind = 'pack'), 360)
+  select coalesce(avg(extract(epoch from finished_at - started_at)) filter (where kind = 'preview'), 15),
+         coalesce(avg(extract(epoch from finished_at - started_at)) filter (where kind = 'pack'), 165)
     into t_preview, t_pack
     from studio_jobs
    where status = 'done' and started_at is not null and finished_at > now() - interval '7 days';

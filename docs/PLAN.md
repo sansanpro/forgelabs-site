@@ -178,9 +178,11 @@ The worker's director and quality check need the key on the Windows PC too (see 
   `suggest_hooks` and maps its categories to the closest angles (problem to pain point, outcome to
   result, curiosity to "watch this"), so there's no social proof hook yet.
 - Tested in Chrome against a fake backend (`tests/studio-flow.mjs`, `tests/auth-flow.mjs`), with
-  the new studio-ai, the deployed one, and AI off, at desktop and phone width. Not tested against
-  the real backend: `tests/live-flow.mjs` was updated for the new screens but needs the test
-  account's password, which isn't on this machine.
+  the new studio-ai, the deployed one, and AI off, at desktop and phone width. On 2026-11-28
+  `tests/live-flow.mjs` passed against the live site and backend: five AI hooks, a 13 s preview, and
+  a 5-video pack (each video and its two images with their own hook) in 215 s. That pack was
+  rendered by the PC's old worker (ae95d12), which wrote no quality check at all: the worker update
+  below is still needed.
 
 **Render capacity (measured 2026-11-27 on the render PC: Core i9-12900K, 16 threads, 64 GB).**
 Each run rendered real packs from the golden test's recording, with typing and camera moves on:
@@ -198,20 +200,38 @@ the PC's own work. A video takes about 40 s on its own.
 | 10 | 4.2 min | 144 | 82% / 97% | 12.1 GB |
 | 12 | 4.8 min | 149 | 82% / 98% | 14.3 GB |
 
-- **8 at once is the most worth running.** Past 8 the CPU is full: 10 or 12 at once add 2–6% more
-  packs an hour while each one takes up to 40% longer. A 5-ad pack takes about 3.5 minutes alone.
-- **The default is now 6** (`FORGE_WORKERS` in `run-worker.cmd`): about 125 three-ad packs an hour
-  of rendering, with the CPU at about 60% so the PC stays usable.
-- **A real pack also waits on the network**, which takes no CPU: Claude plans the scenes and checks
-  the ads, ElevenLabs records each voice, and the files upload. That wasn't measured here (there
-  are no keys on this machine); the app estimates about 2 minutes of it for a 3-ad pack, so a 3-ad
-  pack takes about 4–5 minutes from start to finish.
-- **ElevenLabs is the next limit.** Each worker records one voiceover at a time, and the engine's
-  model (`eleven_v4`) allows 3 at once on Starter, 5 on Creator and 10 on Pro. A worker turned away
-  retries for about 45 s. With 6 workers, Creator is enough; on Starter, set `FORGE_WORKERS=3`.
-- **Upload isn't a limit.** A 3-ad pack is about 31 MB (each video about 4.7 MB) and the PC's
-  connection uploads about 10 MB/s (Cloudflare speed test), so about 3 s a pack.
-- Memory isn't a limit either: 1.2 GB a pack, 14 GB at 12 at once, of 64 GB.
+- **The CPU is worth up to 8 at once.** Past 8 it's full: 10 or 12 at once add 2–6% more packs an
+  hour while each one takes up to 40% longer. A 5-ad pack takes about 3.5 minutes alone.
+- Memory isn't a limit: 1.2 GB a pack, 14 GB at 12 at once, of 64 GB.
+
+**Real packs (measured 2026-11-28):** the worker's own path (`build_job`, the director, ElevenLabs
+voiceovers with the name check, the quality check, the renders, the upload to storage) with real
+Claude and ElevenLabs calls, for StockMatcherAI's screens and three different hooks. Only the
+screen download was skipped (read from disk). The uploads went to `studio-renders/bench/` and were
+deleted.
+
+| Packs at once | Each 3-ad pack takes | 3-ad packs an hour | Voices stage | Finished |
+|---|---|---|---|---|
+| 1 | 2.4 min | 25 | 18 s | 1 of 1 |
+| 3 | 2.7 min | 67 | 17 s | 3 of 3 |
+| 6 | 2.8–3.5 min | about 110 if none failed | 16–62 s | 5 of 6 |
+
+- A pack alone: 3 s screens, 5 s Claude directs, 18 s three voiceovers, 20 s Claude checks,
+  88 s three videos, 10 s upload of 30 MB (Supabase storage takes about 3 MB/s from this PC, not
+  the 10 MB/s a speed test shows). The app's progress bar uses these numbers (`stageSeconds` in
+  `assets/studio.js`).
+- **Six at once is too many on ElevenLabs Starter**, which records 3 at once (`eleven_v4`:
+  Starter 3, Creator 5, Pro 10). With six, one pack's voices waited out 45 s of retries (the whole
+  retry budget) and another failed when ElevenLabs dropped the connection, which `voice.post` didn't
+  retry then (it does now, `tests/test_voice.py`). **The default is now 3 workers** (`FORGE_WORKERS`
+  in `run-worker.cmd`): about 67 three-ad packs an hour. Raise it with the plan, up to 8.
+- **The monthly credits are the real limit, not the PC.** ElevenLabs charged 355 credits a 3-ad pack
+  (for 842 characters of script, name checks included), and Starter has 40,000 a month and can't
+  be extended: about 110 three-ad packs a month (a 5-ad pack is about 590), which the PC renders in
+  under 2 hours.
+- **Claude costs about $0.05 a pack** (Sonnet 5.5: about 14,100 tokens in and 2,500 out over the
+  director, the review and the recheck, at $2 and $10 a million), plus the app's hook and script
+  calls when a project is set up.
 
 **Decisions for the owner (from the review):**
 - **Rendering stays on the PC** (decided 2026-11-27). Still open: running the task as a
@@ -233,20 +253,18 @@ the PC's own work. A video takes about 40 s on its own.
   change every ad's captions, so it needs a look at real packs first.
 
 **Open items for the owner:**
-- **Apply the migrations:** run `supabase/migrations/20261108120000_studio.sql` and then
-  `20261127120000_site.sql` in the Studio project's SQL editor (both are safe to run again).
-  Neither has been run against a database yet: they pass Postgres's parser, nothing more.
-- **Redeploy `studio-ai` and `studio-store`** (five angles, the store rating, the "no Tap" script
-  rule): `npx -y supabase@2 functions deploy studio-ai --project-ref cuijqoorjgvlyiyizgxi --use-api`
-  and the same for `studio-store`. Needs `SUPABASE_ACCESS_TOKEN`, which isn't on this machine.
+- Done 2026-11-28: both migrations applied to the live project (each in one transaction, after
+  checking the live tables and function signatures against them), and `studio-ai` (version 7)
+  and `studio-store` (version 4) redeployed through the Management API. Checked live: the store
+  import returns the rating, `suggest_angles` writes five hooks, `check_hooks` answers,
+  `site_visit` records a visit, and `studio_queue_status` refuses anonymous callers.
 - **The worker PC:** pull the repo, add `ANTHROPIC_API_KEY` to `C:\forge\forgelabs-site\.env.local`,
   run `pip install -r engine\requirements.txt` in the venv (it now needs `anthropic`), and
-  restart the ForgeWorker task, which now starts six workers. Check six `polling` lines
-  appear across `C:\forge\worker*.log`. Then run `tests/live-flow.mjs` and check the pack has
-  `quality-check.txt`.
-- **ElevenLabs plan:** six workers can record at once; `eleven_v4` allows 3 at once on Starter,
-  5 on Creator and 10 on Pro. A worker that's turned away retries for about 45 seconds, then the
-  pack fails and is refunded. On Starter, set `FORGE_WORKERS=3` in the system environment.
+  restart the ForgeWorker task, which now starts three workers. Stop the task before pulling (see
+  README.md). Check three `polling` lines appear across `C:\forge\worker*.log`. Then run
+  `tests/live-flow.mjs` and check the pack has `quality-check.txt`.
+- **ElevenLabs plan:** Starter (3 voices at once, 40,000 credits a month, about 110 three-ad packs).
+  A bigger plan raises both; then raise `FORGE_WORKERS` to match.
 - **Email from the worker:** add `SMTP_USER`, `SMTP_PASSWORD` (a Google Workspace app password for
   noreply@forgelaboratory.net) and `ALERT_EMAIL` to the PC's `.env.local`, then restart the task.
 - **Third-party terms:** ElevenLabs' commercial terms and the licence of the Canva hand photo.

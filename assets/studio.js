@@ -1721,12 +1721,12 @@
   ];
   var PREVIEW_STAGES = [PACK_STAGES[0], PACK_STAGES[1], PACK_STAGES[2],
     ["frames", "Drawing the frames", /^(Drawing the review frames|preview )/], ["upload", "Uploading", /^Uploading/]];
-  /* About how long each stage takes for a pack of n ads, in seconds. Planning, the voices and the
-     quality check wait on Claude and ElevenLabs (estimates); rendering is the PC's own work,
-     measured: 40 s a video alone, 50 s with a few packs side by side (docs/PLAN.md, "Render capacity"). */
-  var RENDER_S = 50;
+  /* About how long each stage takes for a pack of n ads, in seconds, measured with real Claude and
+     ElevenLabs calls on the render PC (docs/PLAN.md, "Render capacity"): a 3-ad pack takes about
+     2.7 minutes with three packs side by side, a video renders in about 35 s of that. */
+  var RENDER_S = 35;
   function stageSeconds(k, n) {
-    return { fetch: 6, direct: 25, voice: 9 * n, check: 40 + 4 * n, render: RENDER_S * n, upload: 3 * n, frames: 3 * n }[k] || 0;
+    return { fetch: 5, direct: 5, voice: 6 * n, check: 10 + 3 * n, render: RENDER_S * n, upload: 4 * n, frames: 3 * n }[k] || 0;
   }
   function stagesFor(kind) { return kind === "preview" ? PREVIEW_STAGES : PACK_STAGES; }
   function estimate(kind, n) { return stagesFor(kind).reduce(function (t, s) { return t + stageSeconds(s[0], n); }, 0); }
