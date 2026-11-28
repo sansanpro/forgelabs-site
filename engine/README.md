@@ -36,6 +36,7 @@ With `ANTHROPIC_API_KEY` set (and the `anthropic` package installed), Claude wor
 | `tests/make_fixture.py`, `tests/fixture.job.json` | A made-up habit tracker with screenshots, a recording and an icon |
 | `tests/test_worker.py` | The worker's checks, without Supabase, including that a pack has three to five different hooks |
 | `tests/test_agents.py` | The director and the quality check, with a stand-in for Claude |
+| `tests/test_voice.py` | ElevenLabs calls: a 429 or a dropped connection is waited out and tried again |
 | `tests/test_screens.py` | Tablet and desktop screenshots shown whole, and zooms moved off empty space |
 
 ## The job format

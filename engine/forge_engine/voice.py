@@ -26,9 +26,16 @@ class VoiceError(RuntimeError):
 
 def post(url, **kw):
     """ElevenLabs answers 429 when more requests run at once than the plan allows, which happens
-    when several workers record at the same time. Waits and tries again before giving up."""
+    when several workers record at the same time, and now and then drops the connection (seen
+    with six packs at once on Starter, 2026-11-28). Waits and tries again before giving up."""
     for wait in (3, 6, 12, 24, None):
-        r = requests.post(url, **kw)
+        try:
+            r = requests.post(url, **kw)
+        except requests.ConnectionError:
+            if wait is None:
+                raise
+            time.sleep(wait)
+            continue
         if r.status_code != 429 or wait is None:
             return r
         time.sleep(wait)

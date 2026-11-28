@@ -65,7 +65,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python worker.py
 ```
 
-**The worker on a Windows PC**: see `engine/deploy/windows/install.ps1`. It runs six workers side by side (`FORGE_WORKERS` in the system environment changes that; 8 is the most worth running on the current PC, see "Render capacity" in [docs/PLAN.md](docs/PLAN.md)). To update it after engine changes, `git pull` the PC's copy of the repo, then restart the ForgeWorker task from an administrator prompt (`schtasks /end /tn ForgeWorker`, then `schtasks /run /tn ForgeWorker`). Worker 1 logs to `C:\forge\worker.log`, the others to `worker-2.log` and so on.
+**The worker on a Windows PC**: see `engine/deploy/windows/install.ps1`. It runs three workers side by side, as many as ElevenLabs Starter records at once (`FORGE_WORKERS` in the system environment changes that: raise it with the ElevenLabs plan, up to 8 on the current PC; see "Render capacity" in [docs/PLAN.md](docs/PLAN.md)). To update it after engine changes, from an administrator prompt: `schtasks /end /tn ForgeWorker` first, then `git pull` the PC's copy of the repo, then `schtasks /run /tn ForgeWorker`. Stop it before pulling: cmd.exe reads a running `run-worker.cmd` as it goes, so changing it underneath can run half a line. Worker 1 logs to `C:\forge\worker.log`, the others to `worker-2.log` and so on.
 
 **The worker on Google Cloud** (the server was deleted to save cost; `engine/deploy/gcp.sh setup` recreates it), from the repo root, with Docker Desktop running:
 
